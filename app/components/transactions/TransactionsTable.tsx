@@ -23,7 +23,7 @@ export default function TransactionsTable() {
 
   return (
     <Card>
-      <div className="overflow-scroll">
+      <div className="overflow-auto">
         <Table data={data} columns={columns} />
       </div>
     </Card>

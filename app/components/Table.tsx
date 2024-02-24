@@ -48,12 +48,10 @@ export default function Table<T>({ data, columns }: TableProps<T>) {
             {row.getVisibleCells().map((cell) => (
               <td
                 key={cell.id}
-                className={`px-3 py-3`}
+                className={`h-12`}
               >
-                <div>
-                  <div className="line-clamp-1">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </div>
+                <div className="pl-3 line-clamp-1 h-full flex items-center">
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </div>
               </td>
             ))}

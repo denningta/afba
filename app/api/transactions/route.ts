@@ -1,6 +1,6 @@
 import Transaction from '@/app/interfaces/transaction'
 import { database } from '@/app/lib/mongodb'
-import { listTransactions } from '@/queries/transactions'
+import { listTransactions } from '@/app/queries/transactions'
 import { v5 as uuidv5 } from 'uuid'
 
 export async function GET(request: Request) {

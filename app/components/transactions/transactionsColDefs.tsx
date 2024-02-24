@@ -1,28 +1,24 @@
 import Transaction from "@/app/interfaces/transaction"
-import { Checkbox } from "@mui/material"
 import { createColumnHelper } from "@tanstack/react-table"
+import Checkbox from "../common/Checkbox"
 
 const columnHelper = createColumnHelper<Transaction>()
 
 const columns = [
   columnHelper.display({
     id: 'select',
+    cell: ({ row }) =>
+      <Checkbox
+        checked={row.getIsSelected()}
+        disabled={!row.getCanSelect()}
+        onChange={row.getToggleSelectedHandler()}
+      />,
     header: ({ table }) =>
       <Checkbox
-        size="small"
-        disableRipple
         checked={table.getIsAllRowsSelected()}
         indeterminate={table.getIsSomeRowsSelected()}
         onChange={table.getToggleAllRowsSelectedHandler()}
       />,
-    cell: ({ row }) =>
-      <Checkbox
-        size="small"
-        disableRipple
-        checked={row.getIsSelected()}
-        disabled={!row.getCanSelect()}
-        onChange={row.getToggleSelectedHandler()}
-      />
   }),
   columnHelper.accessor('date', {
     header: 'Date',
