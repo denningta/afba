@@ -3,7 +3,6 @@ import { Category } from '@/app/interfaces/categories'
 import { createFormFactory } from '@tanstack/react-form'
 import { Button, Divider, NumberInput, TextInput } from '@tremor/react'
 
-
 export const categoryFormFactory = createFormFactory<Category>({
   defaultValues: {
     date: new Date(),
@@ -13,36 +12,48 @@ export const categoryFormFactory = createFormFactory<Category>({
   }
 })
 
-export interface AddCategoryProps {
-  onSubmit?: (args: any) => void
-  onClose?: (args: any) => void
+export interface CategoryFormProps {
+  onSubmit?: (value: Category) => void
+  onClose?: (args?: any) => void
+  onChange?: (category: Category) => void
+  formId?: string
+  initialValues?: Category
 }
 
-export default function AddCategory({
+export default function CategoryForm({
   onSubmit = () => { },
-  onClose = () => { }
-}: AddCategoryProps) {
+  onClose = () => { },
+  formId,
+  initialValues = {
+    name: '',
+    budget: 0,
+    date: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  },
+}: CategoryFormProps) {
 
   const form = categoryFormFactory.useForm({
+    defaultValues: initialValues,
     onSubmit: async ({ value }) => {
       onSubmit(value)
-    }
+    },
   })
+
+  const handleClose = () => {
+    onClose()
+  }
 
   return (
     <div>
-      <div className="text-tremor-content-strong font-extrabold text-xl">Add Category</div>
       <form.Provider>
         <form
+          id={formId}
           onSubmit={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            void form.handleSubmit()
+            form.handleSubmit()
           }}
         >
           <div className="grid grid-cols-1 gap-4">
-
-            <Divider />
 
             <form.Field
               name="date"
@@ -56,7 +67,7 @@ export default function AddCategory({
                       type="month"
                       id="date"
                       className="tremor-TextInput-input w-full focus:outline-none focus:ring-0 border-none bg-transparent text-tremor-default rounded-tremor-default transition duration-100 py-2 text-tremor-content-emphasis dark:text-dark-tremor-content-emphasis [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-3 pr-4 placeholder:text-tremor-content dark:placeholder:text-dark-tremor-content"
-                      value={field.state.value && dateToYYYYMM(field.state.value)}
+                      value={field.state.value && dateToYYYYMM(new Date(field.state.value))}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(new Date(e.target.value))}
                     />
@@ -107,13 +118,14 @@ export default function AddCategory({
               )}
             />
 
-            <Divider />
-
           </div>
+
+          <Divider />
           <div className='flex justify-end space-x-3'>
             <Button
+              type="button"
               variant="secondary"
-              onClick={onClose}
+              onClick={handleClose}
             >
               Cancel
             </Button>

@@ -1,6 +1,9 @@
 import { createColumnHelper } from "@tanstack/react-table"
 import Checkbox from "../common/Checkbox"
 import { Category } from "@/app/interfaces/categories"
+import { Icon } from "@tremor/react"
+import { RiDeleteBinFill, RiPencilFill } from "@remixicon/react"
+import CategoryActions from "./CategoryActions"
 
 const columnHelper = createColumnHelper<Category>()
 
@@ -43,7 +46,10 @@ const categoryColumns = [
       return value ? new Date(value).toLocaleDateString() : ''
     }
   }),
-
+  columnHelper.display({
+    id: 'actions',
+    cell: ({ row }) => <CategoryActions category={row.original} />
+  })
 ]
 
 export default categoryColumns

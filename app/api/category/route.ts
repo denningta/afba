@@ -1,7 +1,5 @@
-import { deleteUndefinedKeys } from "@/app/helpers/helperFunctions"
 import { Category } from "@/app/interfaces/categories"
-import { listCategory, upsertCategory } from "@/app/queries/category"
-import { ObjectId } from "mongodb"
+import { deleteCategory, insertCategory, listCategory, replaceCategory } from "@/app/queries/category"
 
 export async function GET(request: Request) {
   try {
@@ -41,11 +39,28 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    console.log(body)
+    let res: any
 
-    const filter = { _id: body?._id }
+    if (!body._id) {
+      res = await insertCategory(body)
+    } else {
+      res = await replaceCategory({ _id: body._id }, body)
+    }
 
-    const res = upsertCategory(filter, body)
+    return Response.json(res)
+
+  } catch (error: any) {
+    throw new Error(error)
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json()
+
+    if (!body._id) throw new Error('_id is missing from the request body')
+
+    const res = await deleteCategory({ _id: body._id })
 
     return Response.json(res)
 
