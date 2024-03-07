@@ -1,19 +1,22 @@
 'use client'
 
-import { Card, Icon } from "@tremor/react";
+import { Card } from "@tremor/react";
 import Table from "../Table";
-import { RiAddFill, RiDeleteBinFill } from "@remixicon/react";
-import { useContext } from "react";
 import { SnackbarProvider } from "notistack"
 import categoryColumns from "./CategoriesColDefs";
-import { CategoryContext } from "@/app/context/CategoryProvider";
 import { useConfirmationDialog } from "../common/Dialog";
 import CategoryForm from "./CategoryForm";
+import useCategories from "@/app/hooks/useCategories";
+import TableActions from "../common/TableActions";
 
 
 export default function CategoriesTable() {
-  const { data, upsertCategory } = useContext(CategoryContext)
   const dialog = useConfirmationDialog()
+
+  const {
+    upsertRecord,
+    data
+  } = useCategories()
 
   const handleDeleteCategories = async () => {
     const res = await dialog.getConfirmation({
@@ -28,7 +31,7 @@ export default function CategoriesTable() {
       content:
         <CategoryForm
           onSubmit={async (value) => {
-            await upsertCategory(value)
+            await upsertRecord(value)
             dialog.closeDialog()
           }}
           onClose={() => dialog.closeDialog()}
@@ -39,29 +42,16 @@ export default function CategoriesTable() {
 
   return (
     <Card>
-      <div className="flex justify-end space-x-3">
-        <Icon
-          icon={RiDeleteBinFill}
-          variant="solid"
-          color="rose"
-          tooltip="Delete"
-          size="lg"
-          className="cursor-pointer"
-          onClick={handleDeleteCategories}
-        />
 
-        <Icon
-          icon={RiAddFill}
-          variant="solid"
-          tooltip="Add Category"
-          size="lg"
-          className="cursor-pointer"
-          onClick={handleAddCategory}
-        />
-      </div>
+      <TableActions
+        onAdd={handleAddCategory}
+        onDelete={handleDeleteCategories}
+      />
 
-
-      <Table data={data ?? []} columns={categoryColumns} />
+      <Table
+        data={data ?? []}
+        columns={categoryColumns}
+      />
 
       <SnackbarProvider />
     </Card>

@@ -1,11 +1,11 @@
-import { CategoryContext } from "@/app/context/CategoryProvider";
 import { Category } from "@/app/interfaces/categories";
 import { RiDeleteBinFill, RiMoreFill, RiPencilFill } from "@remixicon/react";
 import { Icon } from "@tremor/react";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { useConfirmationDialog } from "../common/Dialog";
 import CategoryForm from "./CategoryForm";
 import { Menu, MenuItem } from "@mui/material"
+import useCategories from "@/app/hooks/useCategories";
 
 interface EditCategoryProps {
   category: Category
@@ -14,7 +14,7 @@ interface EditCategoryProps {
 export default function CategoryActions({
   category
 }: EditCategoryProps) {
-  const { upsertCategory, deleteCategory } = useContext(CategoryContext)
+  const { upsertRecord, deleteRecord } = useCategories()
   const dialog = useConfirmationDialog()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
@@ -28,7 +28,7 @@ export default function CategoryActions({
       content: <CategoryForm
         initialValues={category}
         onSubmit={async (values) => {
-          await upsertCategory(values)
+          await upsertRecord(values)
           dialog.closeDialog()
         }}
         onClose={() => dialog.closeDialog()}
@@ -37,7 +37,7 @@ export default function CategoryActions({
   }
 
   const handleDeleteCategory = async () => {
-    await deleteCategory(category)
+    await deleteRecord(category)
   }
 
   const handleClick = (event: React.MouseEvent<HTMLSpanElement>) => {

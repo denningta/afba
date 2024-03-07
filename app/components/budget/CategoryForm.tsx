@@ -1,143 +1,125 @@
-import { dateToYYYYMM } from '@/app/helpers/helperFunctions'
-import { Category } from '@/app/interfaces/categories'
-import { createFormFactory } from '@tanstack/react-form'
-import { Button, Divider, NumberInput, TextInput } from '@tremor/react'
+import { Category } from "@/app/interfaces/categories"
+import { Button, Divider, TextInput } from "@tremor/react"
+import CurrencyInput from "react-currency-input-field"
+import { Controller, useForm } from "react-hook-form"
 
-export const categoryFormFactory = createFormFactory<Category>({
-  defaultValues: {
-    date: new Date(),
-    name: '',
-    transactions: [],
-    budget: 0
-  }
-})
 
 export interface CategoryFormProps {
-  onSubmit?: (value: Category) => void
+  onSubmit: (value: Category) => void
   onClose?: (args?: any) => void
   onChange?: (category: Category) => void
-  formId?: string
   initialValues?: Category
 }
 
 export default function CategoryForm({
-  onSubmit = () => { },
-  onClose = () => { },
-  formId,
-  initialValues = {
-    name: '',
-    budget: 0,
-    date: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  },
+  onSubmit,
+  onClose,
+  initialValues
 }: CategoryFormProps) {
-
-  const form = categoryFormFactory.useForm({
-    defaultValues: initialValues,
-    onSubmit: async ({ value }) => {
-      onSubmit(value)
-    },
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Category>({
+    defaultValues: {
+      date: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+      ...initialValues
+    }
   })
 
-  const handleClose = () => {
-    onClose()
-  }
-
   return (
-    <div>
-      <form.Provider>
-        <form
-          id={formId}
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            form.handleSubmit()
-          }}
-        >
-          <div className="grid grid-cols-1 gap-4">
-
-            <form.Field
-              name="date"
-              children={(field) => (
-                <div>
-                  <label htmlFor="date" className="text-tremor-default font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Month
-                  </label>
-                  <div className="mt-2 tremor-TextInput-root relative w-full flex items-center min-w-[10rem] outline-none rounded-tremor-default transition duration-100 border shadow-tremor-input dark:shadow-dark-tremor-input bg-tremor-background dark:bg-dark-tremor-background hover:bg-tremor-background-muted dark:hover:bg-dark-tremor-background-muted text-tremor-content dark:text-dark-tremor-content border-tremor-border dark:border-dark-tremor-border">
-                    <input
-                      type="month"
-                      id="date"
-                      className="tremor-TextInput-input w-full focus:outline-none focus:ring-0 border-none bg-transparent text-tremor-default rounded-tremor-default transition duration-100 py-2 text-tremor-content-emphasis dark:text-dark-tremor-content-emphasis [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-3 pr-4 placeholder:text-tremor-content dark:placeholder:text-dark-tremor-content"
-                      value={field.state.value && dateToYYYYMM(new Date(field.state.value))}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(new Date(e.target.value))}
-                    />
-                  </div>
-                </div>
-              )}
-            />
-
-
-            <form.Field
-              name="name"
-              children={(field) => (
-                <div>
-                  <label htmlFor="name" className="text-tremor-default font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Category Name
-                  </label>
-                  <TextInput
-                    id="name"
-                    className='mt-2'
-                    value={field.state.value}
-                    placeholder='Ex: Rent...'
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                  />
-                </div>
-              )}
-            />
-
-
-            <form.Field
-              name="budget"
-              children={(field) => (
-                <div>
-                  <label htmlFor="budget" className="text-tremor-default font-extrabold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-                    Budget
-                  </label>
-                  <div className='mt-2 relative flex items-center'>
-                    <span className="absolute left-3 z-[40] ">$</span>
-                    <NumberInput
-                      value={field.state.value}
-                      className='pl-3'
-                      placeholder=''
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(+e.target.value)}
-                    />
-                  </div>
-                </div>
-              )}
-            />
-
+    <form
+      onSubmit={handleSubmit((value) => {
+        if (value.budget) value.budget = +value.budget
+        onSubmit(value)
+      })}
+    >
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="date" className="text-tremor-default font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            Month
+          </label>
+          <input
+            {...register('date', { required: true })}
+            type="month"
+            className="tremor-TextInput-input w-full focus:outline-none focus:ring-0 border-none bg-transparent text-tremor-default rounded-tremor-default transition duration-100 py-2 text-tremor-content-emphasis dark:text-dark-tremor-content-emphasis [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-3 pr-4 placeholder:text-tremor-content dark:placeholder:text-dark-tremor-content"
+          />
+          <div className="h-3 text-xs text-rose-600">
+            {errors.date &&
+              <em>
+                Date is required
+              </em>
+            }
           </div>
+        </div>
 
-          <Divider />
-          <div className='flex justify-end space-x-3'>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleClose}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-            >
-              Add Category
-            </Button>
+        <div>
+          <label className="text-tremor-default font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            Name
+          </label>
+          <TextInput
+            {...register('name', { required: true })}
+          />
+          <div className="h-3 text-xs text-rose-600">
+            {errors.name &&
+              <em>
+                Name is required
+              </em>
+            }
           </div>
-        </form>
-      </form.Provider>
-    </div>
+        </div>
+
+
+        <div>
+          <label htmlFor="date" className="text-tremor-default font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            Budget
+          </label>
+          <Controller
+            name="budget"
+            control={control}
+            render={({ field }) =>
+            (
+              <CurrencyInput
+                value={field.value}
+                name={field.name}
+                onValueChange={(value) => {
+                  field.onChange(value ?? null);
+                }}
+                className='mt-2 tremor-TextInput-root relative w-full flex items-center min-w-[10rem] outline-none rounded-tremor-default transition duration-100 border shadow-tremor-input dark:shadow-dark-tremor-input bg-tremor-background dark:bg-dark-tremor-background hover:bg-tremor-background-muted dark:hover:bg-dark-tremor-background-muted text-tremor-content dark:text-dark-tremor-content border-tremor-border dark:border-dark-tremor-border'
+                prefix='$'
+                decimalsLimit={2}
+              />
+
+            )
+            }
+          />
+          <div className="h-3 text-xs text-rose-600">
+            {errors.budget &&
+              <em>
+                Budget is required
+              </em>
+            }
+          </div>
+        </div>
+
+        <Divider />
+        <div className='flex justify-end space-x-3'>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+          >
+            Save
+          </Button>
+        </div>
+      </div>
+    </form>
   )
 
 }

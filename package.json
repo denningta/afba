@@ -15,7 +15,6 @@
     "@headlessui/tailwindcss": "^0.2.0",
     "@mui/material": "^5.15.10",
     "@remixicon/react": "^4.1.1",
-    "@tanstack/react-form": "^0.13.6",
     "@tanstack/react-table": "^8.12.0",
     "@tremor/react": "^3.14.0",
     "@types/uuid": "^9.0.8",
@@ -27,7 +26,9 @@
     "next": "14.1.0",
     "notistack": "^3.0.1",
     "react": "^18",
+    "react-currency-input-field": "^3.8.0",
     "react-dom": "^18",
+    "react-hook-form": "^7.51.0",
     "swr": "^2.2.5",
     "uuid": "^9.0.1"
   },

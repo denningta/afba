@@ -1,30 +1,45 @@
 'use client'
 
-import Transaction from "@/app/interfaces/transaction"
-import { useEffect, useState } from "react"
 import Table from "../Table"
 import columns from "./transactionsColDefs"
 import { Card } from "@tremor/react"
+import useData from "@/app/hooks/useData"
+import Transaction from "@/app/interfaces/transaction"
+import TableActions from "../common/TableActions"
+import { useConfirmationDialog } from "../common/Dialog"
 
 
 
 export default function TransactionsTable() {
-  const [data, setData] = useState<Transaction[]>([])
-  const [isLoading, setLoading] = useState(true)
+  const {
+    data,
+    upsertRecord,
+  } = useData<Transaction>({
+    endpoint: {
+      listRecords: '/api/transactions',
+      upsertRecord: '/api/transaction',
+      deleteRecord: '/api/transaction'
+    }
+  })
+  const dialog = useConfirmationDialog()
 
-  useEffect(() => {
-    fetch('/api/transactions')
-      .then((res) => res.json())
-      .then((data) => {
-        setData(data)
-        setLoading(false)
-      })
-  }, [])
+  const handleAddTransaction = async () => {
+    await dialog.getConfirmation({
+      title: 'Add Category',
+      content: 'test',
+      showActionButtons: false
+    })
+  }
+
 
   return (
     <Card>
       <div className="overflow-auto">
-        <Table data={data} columns={columns} />
+        <TableActions
+          onAdd={handleAddTransaction}
+        />
+
+        <Table data={data ?? []} columns={columns} />
       </div>
     </Card>
   )

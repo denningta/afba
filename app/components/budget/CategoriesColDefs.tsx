@@ -29,7 +29,7 @@ const categoryColumns = [
   }),
   columnHelper.accessor('budget', {
     header: 'Budget',
-    cell: info => info.getValue()
+    cell: info => '$' + info.getValue()?.toLocaleString()
   }),
   columnHelper.display({
     id: 'spent',
@@ -43,7 +43,7 @@ const categoryColumns = [
     header: 'Date',
     cell: info => {
       const value = info.getValue()
-      return value ? new Date(value).toLocaleDateString() : ''
+      return value ? new Date(value).toLocaleString('default', { month: 'long', year: 'numeric' }) : ''
     }
   }),
   columnHelper.display({

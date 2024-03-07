@@ -19,3 +19,6 @@ export function deleteUndefinedKeys(object: Object) {
   return object
 }
 
+export function isValidDate(d: any) {
+  return d instanceof Date && !isNaN(d as any);
+}
