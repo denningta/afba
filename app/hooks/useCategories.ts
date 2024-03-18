@@ -6,7 +6,7 @@ export default function useCategories() {
     endpoint: {
       listRecords: '/api/categories',
       upsertRecord: '/api/category',
-      deleteRecord: '/api.category'
+      deleteRecord: '/api/category'
     }
   })
 }

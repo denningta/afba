@@ -2,6 +2,8 @@ import { Category } from "@/app/interfaces/categories"
 import { Button, Divider, TextInput } from "@tremor/react"
 import CurrencyInput from "react-currency-input-field"
 import { Controller, useForm } from "react-hook-form"
+import Label from "../common/Label"
+import InputError from "../common/InputError"
 
 
 export interface CategoryFormProps {
@@ -22,10 +24,7 @@ export default function CategoryForm({
     handleSubmit,
     formState: { errors },
   } = useForm<Category>({
-    defaultValues: {
-      date: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-      ...initialValues
-    }
+    defaultValues: initialValues
   })
 
   return (
@@ -37,49 +36,31 @@ export default function CategoryForm({
     >
       <div className="space-y-4">
         <div>
-          <label htmlFor="date" className="text-tremor-default font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            Month
-          </label>
+          <Label>Month</Label>
           <input
-            {...register('date', { required: true })}
+            {...register('date', { required: 'Month is requred' })}
             type="month"
             className="tremor-TextInput-input w-full focus:outline-none focus:ring-0 border-none bg-transparent text-tremor-default rounded-tremor-default transition duration-100 py-2 text-tremor-content-emphasis dark:text-dark-tremor-content-emphasis [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-3 pr-4 placeholder:text-tremor-content dark:placeholder:text-dark-tremor-content"
           />
-          <div className="h-3 text-xs text-rose-600">
-            {errors.date &&
-              <em>
-                Date is required
-              </em>
-            }
-          </div>
+          <InputError error={errors.date} />
         </div>
 
         <div>
-          <label className="text-tremor-default font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            Name
-          </label>
+          <Label>Name</Label>
           <TextInput
-            {...register('name', { required: true })}
+            {...register('name', { required: 'Name is required' })}
+            placeholder=""
           />
-          <div className="h-3 text-xs text-rose-600">
-            {errors.name &&
-              <em>
-                Name is required
-              </em>
-            }
-          </div>
+          <InputError error={errors.name} />
         </div>
 
 
         <div>
-          <label htmlFor="date" className="text-tremor-default font-bold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-            Budget
-          </label>
+          <Label>Budget</Label>
           <Controller
             name="budget"
             control={control}
-            render={({ field }) =>
-            (
+            render={({ field }) => (
               <CurrencyInput
                 value={field.value}
                 name={field.name}
@@ -89,18 +70,11 @@ export default function CategoryForm({
                 className='mt-2 tremor-TextInput-root relative w-full flex items-center min-w-[10rem] outline-none rounded-tremor-default transition duration-100 border shadow-tremor-input dark:shadow-dark-tremor-input bg-tremor-background dark:bg-dark-tremor-background hover:bg-tremor-background-muted dark:hover:bg-dark-tremor-background-muted text-tremor-content dark:text-dark-tremor-content border-tremor-border dark:border-dark-tremor-border'
                 prefix='$'
                 decimalsLimit={2}
+                allowNegativeValue={false}
               />
-
-            )
-            }
+            )}
           />
-          <div className="h-3 text-xs text-rose-600">
-            {errors.budget &&
-              <em>
-                Budget is required
-              </em>
-            }
-          </div>
+          <InputError error={errors.budget} />
         </div>
 
         <Divider />

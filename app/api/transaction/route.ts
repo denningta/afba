@@ -1,9 +1,14 @@
 import { deleteTransaction, insertTransaction, replaceTransaction } from "@/app/queries/transaction"
+import { ObjectId } from "mongodb"
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     let res: any
+
+    if (body.userCategory && body.userCategory._id) {
+      body.userCategory = new ObjectId(body.userCategory._id)
+    }
 
     if (!body._id) {
       res = await insertTransaction(body)

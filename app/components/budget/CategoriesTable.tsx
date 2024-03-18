@@ -8,6 +8,7 @@ import { useConfirmationDialog } from "../common/Dialog";
 import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
 import TableActions from "../common/TableActions";
+import { getFirstDayOfMonth } from "@/app/helpers/csvtojson";
 
 
 export default function CategoriesTable() {

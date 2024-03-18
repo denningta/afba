@@ -7,6 +7,7 @@ import { v5 as uuidv5 } from 'uuid'
 export async function GET(request: Request) {
   try {
     const transactions = await listTransactions()
+
     return Response.json(transactions)
 
   } catch (error: any) {

@@ -1,5 +1,6 @@
 import { Button, Dialog, DialogPanel, Divider } from "@tremor/react";
 import React, { ReactNode, createContext, useContext } from "react";
+import DialogClose from "./DialogClose";
 
 type ConfirmationDialogProps = DialogConfig & {
   open: boolean
@@ -22,8 +23,9 @@ export default function ConfirmationDialog({
       open={open}
       onClose={onDismiss}
     >
-      <DialogPanel>
-        <div className="text-tremor-content-strong font-extrabold text-xl">
+      <DialogPanel className="overflow-visible">
+        <DialogClose onClick={onDismiss} />
+        <div className="text-tremor-content-strong dark:text-dark-tremor-content-strong font-extrabold text-xl">
           {title}
         </div>
 

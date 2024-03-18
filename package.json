@@ -29,6 +29,7 @@
     "react-currency-input-field": "^3.8.0",
     "react-dom": "^18",
     "react-hook-form": "^7.51.0",
+    "react-search-autocomplete": "^8.5.2",
     "swr": "^2.2.5",
     "uuid": "^9.0.1"
   },

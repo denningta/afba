@@ -25,3 +25,8 @@ function headersToCamelCase(input: string): string {
   return result
 }
 
+export function getFirstDayOfMonth(): Date {
+  var date = new Date();
+  var firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+  return firstDay
+}
