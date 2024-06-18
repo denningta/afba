@@ -19,13 +19,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} min-h-screen bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content`}>
+      <body className={`${inter.className} bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content`}>
         <DialogProvider>
           <CategoryProvider>
             <aside className="fixed top-0 left-0 h-screen w-20 z-40 flex flex-col space-y-4 bg-tremor-brand dark:bg-dark-tremor-brand">
               <Sidebar />
             </aside>
-            <div className="ml-20 p-6">
+            <div className="ml-20">
               {children}
             </div>
           </CategoryProvider>

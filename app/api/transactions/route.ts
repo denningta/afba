@@ -1,12 +1,11 @@
 import Transaction from '@/app/interfaces/transaction'
 import { database } from '@/app/lib/mongodb'
 import { listTransactions } from '@/app/queries/transactions'
-import { ObjectId } from 'mongodb'
 import { v5 as uuidv5 } from 'uuid'
 
 export async function GET(request: Request) {
   try {
-    const transactions = await listTransactions()
+    const transactions = await listTransactions(1, 50)
 
     return Response.json(transactions)
 
@@ -18,13 +17,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-
-    const data = assignIds(body)
-
     const transactions = database.collection<Transaction>('transactions')
-
-    const res = transactions.insertMany(data)
-
+    const res = transactions.insertMany(body)
     return Response.json(res)
 
   } catch (error: any) {
@@ -46,7 +40,7 @@ function assignIds(data: Transaction[]) {
     } = transaction
     if (!originalDescription || !date || !amount) return transaction
     const str = originalDescription + date + amount?.toString()
-    transaction._id = new ObjectId(uuidv5(str, namespace))
+    transaction._id = uuidv5(str, namespace)
     return transaction
   })
 

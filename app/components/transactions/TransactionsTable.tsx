@@ -11,10 +11,12 @@ import { Row } from "@tanstack/react-table"
 import Transaction from "@/app/interfaces/transaction"
 
 
+interface TransactionsTableProps {
+  data: Transaction[]
+}
 
-export default function TransactionsTable() {
+export default function TransactionsTable({ data }: TransactionsTableProps) {
   const {
-    data,
     upsertRecord,
   } = useTransactions()
   const dialog = useConfirmationDialog()
@@ -37,7 +39,7 @@ export default function TransactionsTable() {
       title: <div>
         <div>{row.original.description}</div>
         <div className={row.original.amount && row.original.amount < 0 ? 'text-rose-500' : 'text-emerald-500'}>
-          {row.original.amount}
+          ${row.original.amount}
         </div>
       </div>,
       showActionButtons: false,
@@ -54,23 +56,25 @@ export default function TransactionsTable() {
 
 
   return (
-    <Card>
-      <div className="overflow-auto">
-        <TableActions
-          onAdd={handleAddTransaction}
-        />
+    <Card className="h-dvh">
+      <TableActions
+        onAdd={handleAddTransaction}
+      />
 
-        <Table
-          data={data ?? []}
-          columns={columns}
-          initialState={{
-            columnVisibility: {
-              originalDescription: false,
-              status: false
-            }
-          }}
-        />
-      </div>
+      <Table
+        data={data ?? []}
+        columns={columns}
+        initialState={{
+          columnVisibility: {
+            originalDescription: false,
+            status: false
+          },
+          pagination: {
+            pageSize: 25,
+            pageIndex: 0
+          }
+        }}
+      />
     </Card>
   )
 }

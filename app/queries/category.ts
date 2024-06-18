@@ -37,7 +37,6 @@ export async function deleteCategory(query: Category) {
   if (query._id) {
     query._id = new ObjectId(query._id)
   }
-  console.log(query)
   const res = await categories
     .deleteOne(query)
 

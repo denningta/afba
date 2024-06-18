@@ -1,7 +1,7 @@
 import { createColumnHelper } from "@tanstack/react-table"
 import Checkbox from "../common/Checkbox"
 import { Category } from "@/app/interfaces/categories"
-import { Icon } from "@tremor/react"
+import { Icon, ProgressBar } from "@tremor/react"
 import { RiDeleteBinFill, RiPencilFill } from "@remixicon/react"
 import CategoryActions from "./CategoryActions"
 
@@ -31,20 +31,29 @@ const categoryColumns = [
     header: 'Budget',
     cell: info => '$' + info.getValue()?.toLocaleString()
   }),
-  columnHelper.display({
-    id: 'spent',
-    header: 'Spent'
+  columnHelper.accessor('spent', {
+    header: 'Spent',
+    cell: (info) => info.getValue()
   }),
   columnHelper.display({
     id: 'progress',
-    header: 'Progress'
+    header: 'Progress',
+    cell: (info) => {
+      const { budget, spent } = info.row.original
+      let percent: number = 0
+      if (budget && spent) percent = Math.round(((Math.abs(spent)) / budget) * 100)
+
+      return (
+        <div className="flex w-full">
+          <span className="min-w-[40px]">{percent}%</span>
+          <ProgressBar value={percent} color={percent <= 100 ? 'emerald' : 'rose'} />
+        </div>
+      )
+    }
   }),
   columnHelper.accessor('date', {
     header: 'Date',
-    cell: info => {
-      const value = info.getValue()
-      return value ? new Date(value).toLocaleString('default', { month: 'long', year: 'numeric' }) : ''
-    }
+    cell: info => info.getValue()
   }),
   columnHelper.display({
     id: 'actions',

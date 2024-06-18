@@ -1,10 +1,13 @@
-import CategoriesTable from "../components/budget/CategoriesTable";
+import BudgetOverview from "../components/budget/BudgetOverview";
+import { getBudgetOverview } from "../queries/categories";
 
-export default function Budget() {
+export default async function Budget() {
+
+  const data = await getBudgetOverview()
 
   return (
     <>
-      <CategoriesTable />
+      <BudgetOverview data={data} />
     </>
   )
 }

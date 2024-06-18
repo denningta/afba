@@ -5,10 +5,10 @@ import { Badge, Icon } from '@tremor/react';
 import { ForwardedRef, forwardRef } from 'react';
 import { unstable_useForkRef as useForkRef } from '@mui/utils';
 
-const AutoComplete = forwardRef((
+function AutoComplete(
   props: UseAutocompleteProps<Category, false, false, false>,
   ref: ForwardedRef<HTMLDivElement>
-) => {
+) {
   const {
     disableClearable = false,
     disabled = false,
@@ -59,7 +59,7 @@ const AutoComplete = forwardRef((
           {...getListboxProps()}
           className='absolute w-fit my-1 min-w-[220px] max-h-[300px] overflow-auto drop-shadow-md rounded-lg border border-dark-tremor-border bg-dark-tremor-background z-50'
         >
-          {groupedOptions.map((option, index) => (
+          {(groupedOptions as Category[]).map((option, index) => (
             <li {...getOptionProps({ option, index })}
               key={index}
               className='p-2 cursor-pointer dark:hover:bg-dark-tremor-background-subtle'
@@ -77,6 +77,6 @@ const AutoComplete = forwardRef((
     </div>
   )
 
-})
+}
 
-export default AutoComplete
+export default forwardRef(AutoComplete)

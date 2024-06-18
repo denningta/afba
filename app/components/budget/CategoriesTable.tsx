@@ -8,15 +8,17 @@ import { useConfirmationDialog } from "../common/Dialog";
 import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
 import TableActions from "../common/TableActions";
-import { getFirstDayOfMonth } from "@/app/helpers/csvtojson";
+import { Category } from "@/app/interfaces/categories";
 
+interface CategoriesTableProps {
+  data: Category[]
+}
 
-export default function CategoriesTable() {
+export default function CategoriesTable({ data }: CategoriesTableProps) {
   const dialog = useConfirmationDialog()
 
   const {
     upsertRecord,
-    data
   } = useCategories()
 
   const handleDeleteCategories = async () => {
@@ -42,8 +44,7 @@ export default function CategoriesTable() {
   }
 
   return (
-    <Card>
-
+    <Card className="h-dvh">
       <TableActions
         onAdd={handleAddCategory}
         onDelete={handleDeleteCategories}

@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb"
 import { Category } from "./categories"
 
 type Transaction = {
-  _id?: ObjectId
+  _id?: string
   date?: Date
   description?: string
   originalDescription?: string

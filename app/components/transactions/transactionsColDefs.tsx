@@ -2,12 +2,10 @@ import Transaction from "@/app/interfaces/transaction"
 import { createColumnHelper } from "@tanstack/react-table"
 import Checkbox from "../common/Checkbox"
 import TransactionActions from "./TransacrionActions"
-import SelectCategory from "./SelectCategory"
 import AutoComplete from "../common/AutoComplete"
 import { Category } from "@/app/interfaces/categories"
 import useCategories from "@/app/hooks/useCategories"
-import { SyntheticEvent } from "react"
-import { DBRef, ObjectId } from "mongodb"
+import { SyntheticEvent, useState } from "react"
 import useTransactions from "@/app/hooks/useTransactions"
 
 const columnHelper = createColumnHelper<Transaction>()
@@ -30,10 +28,7 @@ const columns = [
   }),
   columnHelper.accessor('date', {
     header: 'Date',
-    cell: info => {
-      const value = info.getValue()
-      return value ? new Date(value).toLocaleString('default', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
-    },
+    cell: info => info.getValue(),
     size: 100
   }),
   columnHelper.accessor('description', {
@@ -59,20 +54,20 @@ const columns = [
         event: SyntheticEvent<Element, Event>,
         category: Category | null
       ) => {
-
         const transaction: Transaction = {
           ...info.row.original,
           userCategory: category ?? undefined
         }
 
-        upsertRecord(transaction)
+        await upsertRecord(transaction)
+
         mutate()
       }
 
       return (
         <AutoComplete
           options={categories ?? []}
-          value={info.row.original.userCategory}
+          value={info.row.original.userCategory ?? null}
           isOptionEqualToValue={(option, value) => (option?._id === value?._id)}
           getOptionLabel={(option) => option.name ?? ''}
           onChange={(event, value) => updateTransaction(event, value)}

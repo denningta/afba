@@ -5,8 +5,6 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
 
-    console.log(searchParams)
-
     const filter: Category = {
       name: searchParams.get('name') ?? undefined,
       date: (() => {
@@ -39,6 +37,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
+
     let res: any
 
     if (!body._id) {
