@@ -6,8 +6,8 @@ import fetcher from "@/app/lib/fetcher";
 
 export interface DataHook<T> {
   listRecords: () => T[] | undefined
-  upsertRecord: (value: T) => Promise<void | T>
-  deleteRecord: (value: T) => Promise<boolean | T>
+  upsertRecord: (value: T) => Promise<void | T[]>
+  deleteRecord: (value: T) => Promise<boolean | undefined>
   data: T[] | undefined
   error: Error | undefined
   isLoading: boolean
@@ -16,13 +16,13 @@ export interface DataHook<T> {
 
 export interface DataHookProps {
   endpoint: {
-    listRecords: string
-    upsertRecord: string
-    deleteRecord: string
+    listRecords?: string
+    upsertRecord?: string
+    deleteRecord?: string
   }
 }
 
-export default function useData<T extends { _id?: ObjectId }>({
+export default function useData<T extends { _id?: ObjectId | string }>({
   endpoint
 }: DataHookProps): DataHook<T> {
   const { data, error, isLoading, mutate } = useSWR<T[], Error>(
@@ -35,24 +35,27 @@ export default function useData<T extends { _id?: ObjectId }>({
   }
 
   const upsertRecord = async (value: T) => {
+    if (!endpoint.upsertRecord) return
     try {
-      const res = await axios.post(endpoint.upsertRecord, value)
+      await axios.post(endpoint.upsertRecord, value)
       if (data) {
         const index = data?.findIndex((el) => el._id === value._id)
         data[index] = value
-        mutate(data, { rollbackOnError: true })
+
+        mutate(data, { rollbackOnError: true, revalidate: true })
       }
-      return res.data
+      return data
     } catch (error: any) {
       enqueueSnackbar('Something went wrong, please try again.', { variant: 'error' })
     }
   }
 
   const deleteRecord = async (value: T) => {
+    if (!endpoint.deleteRecord) return
     const { _id } = value
 
     try {
-      const res = await axios.delete(endpoint.deleteRecord, { data: { _id: _id } })
+      await axios.delete(endpoint.deleteRecord, { data: { _id: _id } })
       if (data) mutate(
         data.filter(d => d._id !== _id),
         { rollbackOnError: true }

@@ -48,7 +48,7 @@ export default function BaseTable<T>({
 
 
   return (
-    <div style={{ height: '80dvh' }}>
+    <div style={{ maxHeight: '80dvh', minHeight: '300px' }}>
       <div className="flex items-center">
         <Button
           variant="secondary"
@@ -59,7 +59,7 @@ export default function BaseTable<T>({
         </Button>
       </div>
 
-      <div style={{ height: '100%', overflow: 'auto', scrollbarGutter: 'stable' }}>
+      <div style={{ maxHeight: '80dvh', overflow: 'auto', scrollbarGutter: 'stable' }}>
         <table className="w-full">
           <thead className="sticky top-0 dark:bg-dark-tremor-background dark:text-dark-tremor-content-muted uppercase mb-5">
             {table.getHeaderGroups().map(headerGroup => (

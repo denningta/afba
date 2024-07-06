@@ -12,11 +12,11 @@ import Transaction from "@/app/interfaces/transaction"
 
 
 interface TransactionsTableProps {
-  data: Transaction[]
 }
 
-export default function TransactionsTable({ data }: TransactionsTableProps) {
+export default function TransactionsTable({ }: TransactionsTableProps) {
   const {
+    data,
     upsertRecord,
   } = useTransactions()
   const dialog = useConfirmationDialog()

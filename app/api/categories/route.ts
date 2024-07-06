@@ -5,7 +5,6 @@ import { listCategories } from "@/app/queries/categories";
 export async function GET() {
   try {
     const categories = await listCategories({})
-    debugger
 
     return Response.json(categories)
 

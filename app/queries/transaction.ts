@@ -8,7 +8,7 @@ export async function listTransaction(filter: Transaction) {
 }
 
 export async function replaceTransaction(filter: Transaction, replacement: Transaction) {
-  filter._id = filter._id
+  filter._id = new ObjectId(filter._id)
 
   const {
     _id,

@@ -4,44 +4,33 @@ import Transaction from "../interfaces/transaction";
 export async function listTransactions() {
   const res = await transactions.aggregate<Transaction>([
     {
-      $lookup: {
-        from: "categories",
-        localField: "userCategory",
-        foreignField: "_id",
-        as: "userCategoryArray",
-      },
-    },
-    {
       $set: {
-        userCategory: {
-          $first: "$userCategoryArray",
-        },
-      },
-    },
-    {
-      $unset: ["userCategoryArray"],
+        _id: {
+          $toString: "$_id"
+        }
+      }
     },
     {
       $addFields:
       {
-        date: {
+        isoDate: {
           $dateFromString: {
-            dateString: "$date",
-          },
-        },
-      },
+            dateString: "$date"
+          }
+        }
+      }
     },
     {
-      $addFields:
+      $set:
       {
         date: {
           $dateToString: {
-            date: "$date",
-            format: "%m/%d/%Y",
-          },
-        },
-      },
-    },
+            date: "$isoDate",
+            format: "%m/%d/%Y"
+          }
+        }
+      }
+    }
   ]).toArray()
 
 

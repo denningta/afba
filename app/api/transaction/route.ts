@@ -6,10 +6,6 @@ export async function POST(req: Request) {
     const body = await req.json()
     let res: any
 
-    if (body.userCategory && body.userCategory._id) {
-      body.userCategory = new ObjectId(body.userCategory._id)
-    }
-
     if (!body._id) {
       res = await insertTransaction(body)
     } else {
@@ -17,7 +13,6 @@ export async function POST(req: Request) {
     }
 
     return Response.json(res)
-
 
   } catch (error: any) {
     throw new Error(error)

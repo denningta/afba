@@ -4,23 +4,21 @@ import { Category } from "@/app/interfaces/categories"
 import { Card } from "@tremor/react"
 import { ParentSize } from "@visx/responsive"
 import BudgetOverviewChart from "./BudgetOverviewChart"
+import useBudgetOverview from "@/app/hooks/useBudgetOverview"
 
 export interface BudgetOverviewProps {
-  data: BudgetOverview[]
 }
 
 export interface BudgetOverview {
-  _id: {
-    year: number
-    month: number
-  }
+  _id: string
   date: string
   totalBudget: number
   totalSpent: number
   categories: Category[]
 }
 
-const BudgetOverview = ({ data }: BudgetOverviewProps) => {
+const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
+  const { data } = useBudgetOverview()
   console.log(data)
 
   return (
@@ -28,7 +26,7 @@ const BudgetOverview = ({ data }: BudgetOverviewProps) => {
       <Card style={{ height: 600 }}>
         <ParentSize>
           {({ width, height }) =>
-            <BudgetOverviewChart data={data} width={width} height={height} />
+            <BudgetOverviewChart data={data ?? []} width={width} height={height} />
           }
         </ParentSize>
       </Card>
@@ -37,4 +35,4 @@ const BudgetOverview = ({ data }: BudgetOverviewProps) => {
 
 }
 
-export default BudgetOverview
+export default BudgetOverviewComponent

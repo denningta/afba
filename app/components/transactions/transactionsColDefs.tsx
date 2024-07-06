@@ -47,7 +47,7 @@ const columns = [
     header: 'User Category',
     cell: info => {
       const { listRecords } = useCategories()
-      const { upsertRecord, mutate } = useTransactions()
+      const { upsertRecord } = useTransactions()
       const categories = listRecords()
 
       const updateTransaction = async (
@@ -60,8 +60,6 @@ const columns = [
         }
 
         await upsertRecord(transaction)
-
-        mutate()
       }
 
       return (

@@ -1,4 +1,4 @@
-import BudgetOverview from "../components/budget/BudgetOverview";
+import BudgetOverviewComponent from "../components/budget/BudgetOverview";
 import { getBudgetOverview } from "../queries/categories";
 
 export default async function Budget() {
@@ -7,7 +7,7 @@ export default async function Budget() {
 
   return (
     <>
-      <BudgetOverview data={data} />
+      <BudgetOverviewComponent />
     </>
   )
 }
