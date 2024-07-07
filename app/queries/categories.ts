@@ -2,7 +2,7 @@ import { categories } from "@/app/lib/mongodb"
 import { Document } from "mongodb"
 import { BudgetOverview } from "../components/budget/BudgetOverview"
 
-interface CategoriesQuery {
+export interface CategoriesQuery {
   date?: string
 }
 

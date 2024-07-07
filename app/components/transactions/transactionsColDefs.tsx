@@ -7,6 +7,7 @@ import { Category } from "@/app/interfaces/categories"
 import useCategories from "@/app/hooks/useCategories"
 import { SyntheticEvent, useState } from "react"
 import useTransactions from "@/app/hooks/useTransactions"
+import { dateToYYYYMM } from "@/app/helpers/helperFunctions"
 
 const columnHelper = createColumnHelper<Transaction>()
 
@@ -46,9 +47,9 @@ const columns = [
   columnHelper.accessor('userCategory', {
     header: 'User Category',
     cell: info => {
-      const { listRecords } = useCategories()
+      const date = dateToYYYYMM(new Date(info.row.getValue('date')))
+      const { data } = useCategories({ date: date })
       const { upsertRecord } = useTransactions()
-      const categories = listRecords()
 
       const updateTransaction = async (
         event: SyntheticEvent<Element, Event>,
@@ -62,9 +63,10 @@ const columns = [
         await upsertRecord(transaction)
       }
 
+
       return (
         <AutoComplete
-          options={categories ?? []}
+          options={data ?? []}
           value={info.row.original.userCategory ?? null}
           isOptionEqualToValue={(option, value) => (option?._id === value?._id)}
           getOptionLabel={(option) => option.name ?? ''}

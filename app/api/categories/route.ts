@@ -2,9 +2,10 @@ import { Category } from "@/app/interfaces/categories";
 import { database } from "@/app/lib/mongodb";
 import { listCategories } from "@/app/queries/categories";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const categories = await listCategories({})
+    const { searchParams } = new URL(request.url)
+    const categories = await listCategories({ date: searchParams.get('date') ?? undefined })
 
     return Response.json(categories)
 

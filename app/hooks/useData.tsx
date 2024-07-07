@@ -2,7 +2,7 @@ import useSWR, { KeyedMutator } from "swr";
 import { enqueueSnackbar } from "notistack";
 import axios from "axios";
 import { ObjectId } from "mongodb";
-import fetcher from "@/app/lib/fetcher";
+import defaultFetcher from "@/app/lib/fetcher";
 
 export interface DataHook<T> {
   listRecords: () => T[] | undefined
@@ -19,15 +19,17 @@ export interface DataHookProps {
     listRecords?: string
     upsertRecord?: string
     deleteRecord?: string
-  }
+  },
+  fetcher?: (url: string) => Promise<any>
 }
 
 export default function useData<T extends { _id?: ObjectId | string }>({
-  endpoint
+  endpoint,
+  fetcher
 }: DataHookProps): DataHook<T> {
   const { data, error, isLoading, mutate } = useSWR<T[], Error>(
     endpoint.listRecords,
-    fetcher
+    fetcher ?? defaultFetcher
   )
 
   const listRecords = () => {
