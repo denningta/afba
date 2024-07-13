@@ -5,7 +5,7 @@ import TransactionActions from "./TransacrionActions"
 import AutoComplete from "../common/AutoComplete"
 import { Category } from "@/app/interfaces/categories"
 import useCategories from "@/app/hooks/useCategories"
-import { SyntheticEvent, useState } from "react"
+import { SyntheticEvent, useEffect, useState } from "react"
 import useTransactions from "@/app/hooks/useTransactions"
 import { dateToYYYYMM } from "@/app/helpers/helperFunctions"
 
@@ -19,12 +19,14 @@ const columns = [
         checked={row.getIsSelected()}
         disabled={!row.getCanSelect()}
         onChange={row.getToggleSelectedHandler()}
+        tabIndex={-1}
       />,
     header: ({ table }) =>
       <Checkbox
         checked={table.getIsAllRowsSelected()}
         indeterminate={table.getIsSomeRowsSelected()}
         onChange={table.getToggleAllRowsSelectedHandler()}
+        tabIndex={-1}
       />,
   }),
   columnHelper.accessor('date', {
@@ -71,6 +73,7 @@ const columns = [
           isOptionEqualToValue={(option, value) => (option?._id === value?._id)}
           getOptionLabel={(option) => option.name ?? ''}
           onChange={(event, value) => updateTransaction(event, value)}
+          autoHighlight={true}
         />
       )
 
@@ -88,17 +91,6 @@ const columns = [
     id: 'acitions',
     cell: ({ row }) => <TransactionActions transaction={row.original} />
   })
-]
-
-const options: Category[] = [
-  {
-    name: 'Rent',
-    budget: 2200
-  },
-  {
-    name: 'Groceries',
-    budget: 1500
-  }
 ]
 
 export default columns

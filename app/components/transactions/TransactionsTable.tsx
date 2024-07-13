@@ -9,16 +9,19 @@ import TransactionForm from "./TransactionForm"
 import useTransactions from "@/app/hooks/useTransactions"
 import { Row } from "@tanstack/react-table"
 import Transaction from "@/app/interfaces/transaction"
+import { TransactionsFilter } from "@/app/queries/transactions"
 
 
 interface TransactionsTableProps {
+  searchParams: TransactionsFilter
 }
 
-export default function TransactionsTable({ }: TransactionsTableProps) {
+export default function TransactionsTable({ searchParams }: TransactionsTableProps) {
+
   const {
     data,
     upsertRecord,
-  } = useTransactions()
+  } = useTransactions(searchParams)
   const dialog = useConfirmationDialog()
 
   const handleAddTransaction = async () => {

@@ -22,3 +22,7 @@ export function deleteUndefinedKeys(object: Object) {
 export function isValidDate(d: any) {
   return d instanceof Date && !isNaN(d as any);
 }
+
+export function searchParamsToObject(searchParams: URLSearchParams) {
+  return Object.fromEntries(searchParams)
+}

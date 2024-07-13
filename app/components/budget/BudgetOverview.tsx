@@ -19,7 +19,6 @@ export interface BudgetOverview {
 
 const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
   const { data } = useBudgetOverview()
-  console.log(data)
 
   return (
     <>

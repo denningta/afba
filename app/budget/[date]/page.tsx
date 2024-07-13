@@ -8,9 +8,7 @@ export interface BudgetByDateProps {
 }
 
 export default async function BudgetByDate({ params }: BudgetByDateProps) {
-  console.log("params: ", params)
   const data = await listCategories({ date: params.date })
-  console.log(data)
 
   return (
     <div>

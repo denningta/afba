@@ -8,6 +8,7 @@ export interface CheckboxProps {
   checked?: boolean
   indeterminate?: boolean
   disabled?: boolean
+  tabIndex?: number
 }
 
 export default function Checkbox({
@@ -15,7 +16,8 @@ export default function Checkbox({
   onChange,
   checked = false,
   indeterminate = false,
-  disabled = false
+  disabled = false,
+  tabIndex = 0
 }: CheckboxProps) {
   const checkbox = useRef<HTMLInputElement>(null)
 
@@ -32,6 +34,7 @@ export default function Checkbox({
         checked={checked}
         onChange={onChange}
         className="w-4 h-4 text-tremor-brand bg-gray-100 border-gray-300 rounded  dark:bg-gray-700 dark:border-gray-600"
+        tabIndex={tabIndex}
       />
       <label
         htmlFor="default-checkbox"

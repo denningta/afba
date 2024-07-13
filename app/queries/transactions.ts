@@ -1,8 +1,16 @@
 import { transactions } from "@/app/lib/mongodb";
 import Transaction from "../interfaces/transaction";
 
-export async function listTransactions() {
-  const res = await transactions.aggregate<Transaction>([
+export interface TransactionsFilter {
+  userCategoryId?: string
+}
+
+export async function listTransactions(searchParams: URLSearchParams) {
+  const {
+    userCategoryId
+  }: TransactionsFilter = Object.fromEntries(searchParams)
+
+  const query: any[] = [
     {
       $set: {
         _id: {
@@ -31,8 +39,19 @@ export async function listTransactions() {
         }
       }
     }
-  ]).toArray()
+  ]
 
+  if (userCategoryId) query.unshift(
+    {
+      $match: {
+        "userCategory._id": userCategoryId
+      }
+    },
+  )
+
+
+  const res = await transactions
+    .aggregate<Transaction>(query).toArray()
 
   return res
 }

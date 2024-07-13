@@ -1,11 +1,12 @@
 import Transaction from '@/app/interfaces/transaction'
 import { database } from '@/app/lib/mongodb'
 import { listTransactions } from '@/app/queries/transactions'
-import { v5 as uuidv5 } from 'uuid'
 
 export async function GET(request: Request) {
   try {
-    const transactions = await listTransactions(1, 50)
+    const { searchParams } = new URL(request.url)
+
+    const transactions = await listTransactions(searchParams)
 
     return Response.json(transactions)
 
@@ -27,21 +28,3 @@ export async function POST(request: Request) {
 }
 
 
-
-
-const namespace = 'bb800b08-e351-4bb3-bff6-450e7cc44fcb'
-
-function assignIds(data: Transaction[]) {
-  return data.map((transaction) => {
-    const {
-      originalDescription,
-      date,
-      amount
-    } = transaction
-    if (!originalDescription || !date || !amount) return transaction
-    const str = originalDescription + date + amount?.toString()
-    transaction._id = uuidv5(str, namespace)
-    return transaction
-  })
-
-}

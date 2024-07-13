@@ -14,21 +14,26 @@ export interface DataHook<T> {
   mutate: KeyedMutator<T[]>
 }
 
-export interface DataHookProps {
+export interface DataHookProps<R = void> {
   endpoint: {
     listRecords?: string
     upsertRecord?: string
     deleteRecord?: string
   },
+  query?: R
   fetcher?: (url: string) => Promise<any>
 }
 
-export default function useData<T extends { _id?: ObjectId | string }>({
+export default function useData<T extends { _id?: ObjectId | string }, R = void>({
   endpoint,
+  query,
   fetcher
-}: DataHookProps): DataHook<T> {
+}: DataHookProps<R>): DataHook<T> {
+
+  const url = query ? endpoint.listRecords + '?' + new URLSearchParams(query).toString() : endpoint.listRecords
+
   const { data, error, isLoading, mutate } = useSWR<T[], Error>(
-    endpoint.listRecords,
+    url,
     fetcher ?? defaultFetcher
   )
 

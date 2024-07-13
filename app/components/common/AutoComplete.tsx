@@ -1,5 +1,7 @@
 import { Category } from '@/app/interfaces/categories';
 import { useAutocomplete, UseAutocompleteProps } from '@mui/base/useAutocomplete';
+import { Popper } from '@mui/base/Popper'
+import { styled } from '@mui/system'
 import { RiCloseFill } from '@remixicon/react';
 import { Badge, Icon } from '@tremor/react';
 import { ForwardedRef, forwardRef } from 'react';
@@ -9,12 +11,14 @@ function AutoComplete(
   props: UseAutocompleteProps<Category, false, false, false>,
   ref: ForwardedRef<HTMLDivElement>
 ) {
+
   const {
     disableClearable = false,
     disabled = false,
     readOnly = false,
     isOptionEqualToValue,
     getOptionLabel,
+    autoHighlight,
     ...other
   } = props
 
@@ -26,7 +30,9 @@ function AutoComplete(
     getClearProps,
     groupedOptions,
     dirty,
-    setAnchorEl
+    popupOpen,
+    anchorEl,
+    setAnchorEl,
   } = useAutocomplete({
     ...props
   })
@@ -35,7 +41,7 @@ function AutoComplete(
   const rootRef = useForkRef(ref, setAnchorEl)
 
   return (
-    <div className='w-[220px]'>
+    <div className='min-w-[220px]'>
       <div {...getRootProps(other)} ref={rootRef}>
         {hasClearIcon &&
           <div className='flex items-center'>
@@ -54,29 +60,97 @@ function AutoComplete(
         />
 
       </div>
+
       {groupedOptions.length > 0 &&
-        <ul
-          {...getListboxProps()}
-          className='absolute w-fit my-1 min-w-[220px] max-h-[300px] overflow-auto drop-shadow-md rounded-lg border border-dark-tremor-border bg-dark-tremor-background z-50'
+        <Popper
+          open={popupOpen}
+          anchorEl={anchorEl}
+          placement='bottom-start'
         >
-          {(groupedOptions as Category[]).map((option, index) => (
-            <li {...getOptionProps({ option, index })}
-              key={index}
-              className='p-2 cursor-pointer dark:hover:bg-dark-tremor-background-subtle'
-            >
-              <div className='grid grid-cols-3 gap-x-4'>
-                <div>{option.name}</div>
-                <div>{option.date}</div>
-                <div>{option.budget}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
+          <ul
+            {...getListboxProps()}
+            className='my-1 w-[520px] max-h-[300px] overflow-auto drop-shadow-md rounded-lg border border-dark-tremor-border bg-dark-tremor-background z-50'
+          >
+            {(groupedOptions as Category[]).map((option, index) => (
+              <StyledOption {...getOptionProps({ option, index })}
+                key={index}
+                className='p-2 cursor-pointer dark:hover:bg-dark-tremor-background-subtle'
+              >
+                <div className='grid grid-cols-3 gap-x-4'>
+                  <div>{option.name}</div>
+                  <div>{option.date}</div>
+                  <div>{option.budget}</div>
+                </div>
+              </StyledOption>
+            ))}
+          </ul>
+        </Popper>
       }
 
     </div>
   )
 
 }
+
+const blue = {
+  100: '#DAECFF',
+  200: '#99CCF3',
+  400: '#3399FF',
+  500: '#007FFF',
+  600: '#0072E5',
+  700: '#0059B2',
+  900: '#003A75',
+};
+
+const grey = {
+  50: '#F3F6F9',
+  100: '#E5EAF2',
+  200: '#DAE2ED',
+  300: '#C7D0DD',
+  400: '#B0B8C4',
+  500: '#9DA8B7',
+  600: '#6B7A90',
+  700: '#434D5B',
+  800: '#303740',
+  900: '#1C2025',
+};
+
+const StyledOption = styled('li')(
+  ({ theme }) => `
+  list-style: none;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: default;
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+
+  &:hover {
+    cursor: pointer;
+  }
+
+  &[aria-selected=true] {
+    background-color: ${theme.palette.mode === 'dark' ? blue[900] : blue[100]};
+    color: ${theme.palette.mode === 'dark' ? blue[100] : blue[900]};
+  }
+
+  &.Mui-focused,
+  &.Mui-focusVisible {
+    background-color: ${theme.palette.mode === 'dark' ? grey[500] : grey[500]};
+    color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
+  }
+
+  &.Mui-focusVisible {
+    box-shadow: 0 0 0 3px ${theme.palette.mode === 'dark' ? blue[500] : blue[200]};
+  }
+
+  &[aria-selected=true].Mui-focused,
+  &[aria-selected=true].Mui-focusVisible {
+    background-color: ${theme.palette.mode === 'dark' ? blue[900] : blue[100]};
+    color: ${theme.palette.mode === 'dark' ? blue[100] : blue[900]};
+  }
+  `,
+);
 
 export default forwardRef(AutoComplete)

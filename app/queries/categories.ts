@@ -105,11 +105,6 @@ const budgetOverviewStages: Document[] = [
 ]
 
 export async function listCategories({ date }: CategoriesQuery) {
-  console.log("Date: ", date)
-  if (date) {
-    categoryCalculationStages.unshift({
-    })
-  }
 
   const res = await categories.aggregate([
     {
@@ -118,16 +113,23 @@ export async function listCategories({ date }: CategoriesQuery) {
       }
     },
     {
+      $addFields: {
+        id: {
+          $toString: "$_id"
+        }
+      }
+    },
+    {
       $lookup: {
         from: "transactions",
-        localField: "_id",
-        foreignField: "userCategory",
+        localField: "id",
+        foreignField: "userCategory._id",
         pipeline: [
           {
             $project: {
-              date: '$date',
-              description: '$description',
-              amount: '$amount'
+              date: "$date",
+              description: "$description",
+              amount: "$amount"
             }
           }
         ],
@@ -137,31 +139,38 @@ export async function listCategories({ date }: CategoriesQuery) {
     {
       $lookup: {
         from: "transactions",
-        localField: "_id",
-        foreignField: "userCategory",
+        localField: "id",
+        foreignField: "userCategory._id",
         pipeline: [
           {
             $group: {
               _id: null,
               spent: {
-                $sum: { $abs: "$amount" },
-              },
-            },
-          },
+                $sum: {
+                  $abs: "$amount"
+                }
+              }
+            }
+          }
         ],
-        as: "spent",
-      },
+        as: "spent"
+      }
     },
     {
       $addFields: {
         spent: {
-          $round: [{ $first: "$spent.spent" }, 2],
+          $round: [
+            {
+              $first: "$spent.spent"
+            },
+            2
+          ]
         },
         _id: {
           $toString: "$_id"
         }
-      },
-    },
+      }
+    }
   ]).toArray()
   return res
 }
