@@ -1,44 +1,57 @@
 'use client'
 
-import { ColumnDef, InitialTableState, Row, flexRender, getCoreRowModel, getPaginationRowModel, useReactTable } from "@tanstack/react-table"
+import { ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { isOdd } from "../helpers/helperFunctions"
 import Checkbox from "./common/Checkbox"
-import { Button, Dialog, DialogPanel, Divider, Icon, Select, SelectItem } from "@tremor/react"
+import { Button, Dialog, DialogPanel, Divider, Select, SelectItem } from "@tremor/react"
 import { RiArrowLeftDoubleLine, RiArrowLeftSLine, RiArrowRightDoubleLine, RiArrowRightSLine, RiSettings2Fill } from "@remixicon/react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Label from "./common/Label"
 import DialogClose from "./common/DialogClose"
+import TableFilter from "./TableFilter"
 
 interface TableProps<T> {
   data: T[]
   columns: ColumnDef<T, any>[]
   initialState?: InitialTableState
   onRowClick?: (row: Row<T>) => void
+  onLoad?: (table: Table<T>) => void
 }
 
 export default function BaseTable<T>({
   data,
   columns,
   initialState,
-  onRowClick
+  onRowClick,
+  onLoad,
 }: TableProps<T>) {
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 25,
   });
 
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+
   const table = useReactTable({
     columns,
     data,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
     initialState: initialState,
     state: {
+      columnFilters,
       pagination
     },
     autoResetPageIndex: false
   })
+
+  useEffect(() => {
+    onLoad && onLoad(table)
+  }, [table])
 
   const rowStart = (pagination.pageIndex * pagination.pageSize) + 1
   const rowEnd = ((pagination.pageIndex + 1) * pagination.pageSize)
@@ -47,15 +60,21 @@ export default function BaseTable<T>({
   const [showCustomize, setShowCustomize] = useState(false)
 
 
+
   return (
-    <div style={{ maxHeight: '80dvh', minHeight: '300px' }}>
-      <div className="flex items-center">
+    <div style={{ maxHeight: '80dvh', minHeight: '600px' }}>
+      <div className="flex items-center space-x-4">
+
+        <TableFilter
+          columns={table.getAllColumns()}
+          filterFns={columnFilters}
+        />
+
         <Button
           variant="secondary"
           icon={RiSettings2Fill}
           onClick={() => setShowCustomize(true)}
         >
-          Customize
         </Button>
       </div>
 

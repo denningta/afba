@@ -7,8 +7,6 @@ import TableActions from "../common/TableActions"
 import { useConfirmationDialog } from "../common/Dialog"
 import TransactionForm from "./TransactionForm"
 import useTransactions from "@/app/hooks/useTransactions"
-import { Row } from "@tanstack/react-table"
-import Transaction from "@/app/interfaces/transaction"
 import { TransactionsFilter } from "@/app/queries/transactions"
 
 
@@ -34,26 +32,6 @@ export default function TransactionsTable({ searchParams }: TransactionsTablePro
         }}
       />,
       showActionButtons: false
-    })
-  }
-
-  const handleUpdateTransaction = async (row: Row<Transaction>) => {
-    await dialog.getConfirmation({
-      title: <div>
-        <div>{row.original.description}</div>
-        <div className={row.original.amount && row.original.amount < 0 ? 'text-rose-500' : 'text-emerald-500'}>
-          ${row.original.amount}
-        </div>
-      </div>,
-      showActionButtons: false,
-      content: <TransactionForm
-        initialValues={row.original}
-        onSubmit={async (values) => {
-          await upsertRecord(values)
-          dialog.closeDialog()
-        }}
-        onClose={() => dialog.closeDialog()}
-      />
     })
   }
 
