@@ -1,3 +1,4 @@
+import Transaction from "../interfaces/transaction"
 
 export function isOdd(input: number) {
   return input % 2 === 1 ? true : false
@@ -25,4 +26,44 @@ export function isValidDate(d: any) {
 
 export function searchParamsToObject(searchParams: URLSearchParams) {
   return Object.fromEntries(searchParams)
+}
+
+export const monthStrings = [
+  { id: 1, name: 'January' },
+  { id: 2, name: 'February' },
+  { id: 3, name: 'March' },
+  { id: 4, name: 'April' },
+  { id: 5, name: 'May' },
+  { id: 6, name: 'June' },
+  { id: 7, name: 'July' },
+  { id: 8, name: 'August' },
+  { id: 9, name: 'September' },
+  { id: 10, name: 'October' },
+  { id: 11, name: 'November' },
+  { id: 12, name: 'December' },
+]
+
+export function getMonthString(id: number) {
+  return monthStrings.find(el => el.id === id)?.name
+}
+
+export function aggregateByMonth(data: Transaction[]) {
+  const monthYearCount = data.reduce((acc: Record<string, number> | undefined, item) => {
+    if (!item.date) return
+    const date = new Date(item.date)
+    const month = date.toLocaleString('en-US', { month: 'long' })
+    const year = date.getFullYear().toString()
+    const key = month + ' ' + year
+
+    if (!acc) return
+    if (!acc[key]) acc[key] = 0
+    acc[key]++
+    return acc
+  }, {})
+
+  if (!monthYearCount) return
+  return Object.keys(monthYearCount).map(key => ({
+    month: key,
+    records: monthYearCount
+  }))
 }

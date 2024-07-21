@@ -38,6 +38,16 @@ export async function listTransactions(searchParams: URLSearchParams) {
           }
         }
       }
+    },
+    {
+      $addFields: {
+        month: {
+          $dateToString: {
+            date: "$isoDate",
+            format: "%m-%Y"
+          }
+        },
+      }
     }
   ]
 

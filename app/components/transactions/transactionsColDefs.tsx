@@ -5,9 +5,9 @@ import TransactionActions from "./TransacrionActions"
 import AutoComplete from "../common/AutoComplete"
 import { Category } from "@/app/interfaces/categories"
 import useCategories from "@/app/hooks/useCategories"
-import { SyntheticEvent, useEffect, useState } from "react"
+import { SyntheticEvent } from "react"
 import useTransactions from "@/app/hooks/useTransactions"
-import { dateToYYYYMM } from "@/app/helpers/helperFunctions"
+import { dateToYYYYMM, getMonthString } from "@/app/helpers/helperFunctions"
 
 const columnHelper = createColumnHelper<Transaction>()
 
@@ -33,6 +33,10 @@ const columns = [
     header: 'Date',
     cell: info => info.getValue(),
     size: 100
+  }),
+  columnHelper.accessor('month', {
+    header: 'Month',
+    cell: info => info.getValue()
   }),
   columnHelper.accessor('description', {
     header: 'Description',

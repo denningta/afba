@@ -1,6 +1,6 @@
 'use client'
 
-import { ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
+import { BuiltInFilterFn, ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { isOdd } from "../helpers/helperFunctions"
 import Checkbox from "./common/Checkbox"
 import { Button, Dialog, DialogPanel, Divider, Select, SelectItem } from "@tremor/react"
@@ -16,7 +16,21 @@ interface TableProps<T> {
   initialState?: InitialTableState
   onRowClick?: (row: Row<T>) => void
   onLoad?: (table: Table<T>) => void
+  customFilters?: React.ReactNode[]
 }
+
+const builtInFilterFns: BuiltInFilterFn[] = [
+  'includesString',
+  'includesStringSensitive',
+  'equalsString',
+  'arrIncludes',
+  'arrIncludesAll',
+  'arrIncludesSome',
+  'equals',
+  'weakEquals',
+  'inNumberRange'
+]
+
 
 export default function BaseTable<T>({
   data,
@@ -24,6 +38,7 @@ export default function BaseTable<T>({
   initialState,
   onRowClick,
   onLoad,
+  customFilters
 }: TableProps<T>) {
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -60,14 +75,13 @@ export default function BaseTable<T>({
   const [showCustomize, setShowCustomize] = useState(false)
 
 
-
   return (
     <div style={{ maxHeight: '80dvh', minHeight: '600px' }}>
       <div className="flex items-center space-x-4">
 
         <TableFilter
           columns={table.getAllColumns()}
-          filterFns={columnFilters}
+          filterFns={builtInFilterFns}
         />
 
         <Button

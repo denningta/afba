@@ -9,7 +9,6 @@ import TransactionForm from "./TransactionForm"
 import useTransactions from "@/app/hooks/useTransactions"
 import { TransactionsFilter } from "@/app/queries/transactions"
 
-
 interface TransactionsTableProps {
   searchParams: TransactionsFilter
 }
@@ -34,6 +33,7 @@ export default function TransactionsTable({ searchParams }: TransactionsTablePro
       showActionButtons: false
     })
   }
+
 
 
   return (
