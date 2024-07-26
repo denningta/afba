@@ -1,9 +1,10 @@
 import { scaleBand, scaleLinear, scaleOrdinal } from "@visx/scale"
 import { AxisBottom } from "@visx/axis"
 import { Group } from "@visx/group"
-import { BarGroup } from "@visx/shape"
+import { Area, BarGroup } from "@visx/shape"
 import { BudgetOverview } from "./BudgetOverview";
 import { useRouter } from "next/navigation"
+import { dateToYYYYMM } from "@/app/helpers/helperFunctions";
 
 export interface BudgetOverviewProps {
   data: BudgetOverview[]
@@ -29,10 +30,7 @@ const getPlaceholderData = (data: BudgetOverview[]) => {
     const year = date.getFullYear()
 
     placeholderData.unshift({
-      _id: {
-        year: year,
-        month: month,
-      },
+      _id: dateToYYYYMM(date),
       date: `${year}-${month < 10 ? '0' + month : month}`,
       totalSpent: 0,
       totalBudget: 0,
@@ -107,26 +105,45 @@ const BudgetOverviewChart = ({
           yScale={dollarScale}
         >
           {(barGroups) => {
-            return barGroups.map(barGroup => (
-              <Group
-                key={`bar-group-${barGroup.index}-${barGroup.x0}`}
-                left={barGroup.x0}
-                onClick={() => handleGroupClick(placeholderData[barGroup.index])}
-                className="cursor-pointer"
-              >
-                {barGroup.bars.map((bar) => (
-                  <rect
-                    key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}`}
-                    x={bar.x}
-                    y={bar.y}
-                    width={bar.width}
-                    height={bar.height >= 0 ? bar.height : 0}
-                    fill={bar.color}
-                    rx={4}
-                  />
-                ))}
-              </Group>
-            ))
+            return barGroups.map((barGroup, dateIndex) => {
+              const groupWidth = barGroup.bars.reduce(((prev, curr) => prev + curr.width), 0)
+              return (
+                <Group
+                  key={`bar-group-${barGroup.index}-${barGroup.x0}`}
+                  left={barGroup.x0}
+                  className="cursor-pointer"
+                  onClick={() => handleGroupClick(placeholderData[barGroup.index])}
+                >
+                  {barGroup.bars.map((bar, stackIndex) => {
+                    const barData = data[dateIndex]
+                    const stackData = barData && barData.categories
+
+                    // TODO: Create Stacked bar chart: use barData.key = "totalSpent" | "totalBudget"
+
+                    return (
+                      bar.height > 0 ? <rect
+                        key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}`}
+                        x={bar.x}
+                        y={bar.y}
+                        width={bar.width}
+                        height={bar.height >= 0 ? bar.height : 0}
+                        fill={bar.color}
+                        rx={4}
+                      />
+                        : <rect
+                          key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}`}
+                          x={bar.x}
+                          y={-19}
+                          width={bar.width}
+                          height={491}
+                          fill={background}
+                          rx={4}
+                        />
+                    )
+                  })}
+                </Group>
+              )
+            })
           }}
         </BarGroup>
       </Group>

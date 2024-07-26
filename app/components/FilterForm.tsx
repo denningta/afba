@@ -18,7 +18,6 @@ const FilterForm = <T,>({
 }: FilterFormProps<T>) => {
   const [selectedCol, setSelectedCol] = useState<string | undefined>(undefined)
 
-  console.log(filterFns)
 
   const handleChange = (data: TableFilterData<T>) => {
     setSelectedCol(data.id)

@@ -8,6 +8,7 @@ import useCategories from "@/app/hooks/useCategories"
 import { SyntheticEvent } from "react"
 import useTransactions from "@/app/hooks/useTransactions"
 import { dateToYYYYMM, getMonthString } from "@/app/helpers/helperFunctions"
+import { ObjectId } from "mongodb"
 
 const columnHelper = createColumnHelper<Transaction>()
 
@@ -68,7 +69,6 @@ const columns = [
 
         await upsertRecord(transaction)
       }
-
 
       return (
         <AutoComplete

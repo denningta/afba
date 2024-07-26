@@ -1,6 +1,6 @@
 'use client'
 
-import { Card } from "@tremor/react";
+import { Button, Card, Divider, Select, SelectItem } from "@tremor/react";
 import Table from "../Table";
 import { SnackbarProvider } from "notistack"
 import categoryColumns from "./CategoriesColDefs";
@@ -9,6 +9,10 @@ import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
 import TableActions from "../common/TableActions";
 import { Category } from "@/app/interfaces/categories";
+import { FormEventHandler, useState } from "react";
+import CopyBudgetForm from "./CopyBudgetForm";
+import axios from "axios";
+import { usePathname } from "next/navigation";
 
 interface CategoriesTableProps {
   data: Category[]
@@ -17,8 +21,12 @@ interface CategoriesTableProps {
 export default function CategoriesTable({ data }: CategoriesTableProps) {
   const dialog = useConfirmationDialog()
 
+  const pathname = usePathname()
+  const currentDate = pathname.split('/').pop()
+
   const {
     upsertRecord,
+    mutate
   } = useCategories()
 
   const handleDeleteCategories = async () => {
@@ -43,11 +51,31 @@ export default function CategoriesTable({ data }: CategoriesTableProps) {
     })
   }
 
+  const handleCopyPrevMonth = async () => {
+
+
+    await dialog.getConfirmation({
+      title: 'Copy Budget',
+      content: <CopyBudgetForm
+        onSubmit={async (month) => {
+          const res = await axios.post(`/api/copyCategories/${month}`, {
+            currentDate: currentDate
+          })
+          mutate()
+          dialog.closeDialog()
+        }}
+      />,
+      showActionButtons: false
+    })
+  }
+
   return (
     <Card className="h-dvh">
       <TableActions
         onAdd={handleAddCategory}
         onDelete={handleDeleteCategories}
+        onCopyPrevMonth={handleCopyPrevMonth}
+        showCopyPrevMonth={true}
       />
 
       <Table
@@ -60,3 +88,5 @@ export default function CategoriesTable({ data }: CategoriesTableProps) {
   )
 
 }
+
+

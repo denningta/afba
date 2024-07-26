@@ -178,10 +178,22 @@ export async function listCategories({ date }: CategoriesQuery) {
 export async function getBudgetOverview() {
   const res = await categories.aggregate<BudgetOverview>([
     {
+      $addFields:
+      /**
+       * newField: The new field name.
+       * expression: The new field expression.
+       */
+      {
+        id: {
+          $toString: "$_id"
+        }
+      }
+    },
+    {
       $lookup: {
         from: "transactions",
-        localField: "_id",
-        foreignField: "userCategory",
+        localField: "id",
+        foreignField: "userCategory._id",
         pipeline: [
           {
             $project: {
@@ -197,8 +209,8 @@ export async function getBudgetOverview() {
     {
       $lookup: {
         from: "transactions",
-        localField: "_id",
-        foreignField: "userCategory",
+        localField: "id",
+        foreignField: "userCategory._id",
         pipeline: [
           {
             $group: {
@@ -254,7 +266,8 @@ export async function getBudgetOverview() {
         categories: {
           $push: {
             name: "$name",
-            budget: "$budget"
+            budget: "$budget",
+            spent: "$spent"
           }
         },
         transactions: {
@@ -279,3 +292,5 @@ export async function getBudgetOverview() {
 
   return res
 }
+
+

@@ -61,15 +61,22 @@ export default function ConfirmationDialog({
 interface ConfirmationDialogContextProps {
   openDialog: (config: DialogConfig) => void
   closeDialog: () => void
+  state?: any
+  setState?: React.Dispatch<React.SetStateAction<any>>
 }
 
 const ConfirmationDialogContext = createContext<ConfirmationDialogContextProps>({
   openDialog: () => { },
-  closeDialog: () => { }
+  closeDialog: () => { },
 });
 
 interface ConfirmationDialogProviderProps {
   children: ReactNode
+}
+
+interface ActionCallbackArgs {
+  result: boolean
+  state?: any | null
 }
 
 interface DialogConfig {
@@ -80,12 +87,13 @@ interface DialogConfig {
   dismissButton?: ReactNode
   onConfirm?: (...args: any) => Promise<any>
   onDismiss?: (...args: any) => Promise<any>
-  actionCallback?: (...args: any) => void
+  actionCallback?: (args: ActionCallbackArgs) => void
 }
 
 export function ConfirmationDialogProvider({ children }: ConfirmationDialogProviderProps) {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [dialogConfig, setDialogConfig] = React.useState<DialogConfig>({});
+  const [state, setState] = React.useState(null)
 
   const openDialog = (config: DialogConfig) => {
     setDialogOpen(true);
@@ -101,20 +109,24 @@ export function ConfirmationDialogProvider({ children }: ConfirmationDialogProvi
     resetDialog();
     const res = dialogConfig.onConfirm ? await dialogConfig.onConfirm() : true
 
-    if (dialogConfig.actionCallback) dialogConfig.actionCallback(res);
+    if (dialogConfig.actionCallback) dialogConfig.actionCallback({ result: res, state: state });
+    setState(null)
   };
 
   const onDismiss = async () => {
     resetDialog();
     const res = dialogConfig.onDismiss ? await dialogConfig.onDismiss() : false
-    if (dialogConfig.actionCallback) dialogConfig.actionCallback(res);
+    if (dialogConfig.actionCallback) dialogConfig.actionCallback({ result: res });
+    setState(null)
   };
 
   return (
     <ConfirmationDialogContext.Provider
       value={{
         openDialog,
-        closeDialog: resetDialog
+        closeDialog: resetDialog,
+        state: state,
+        setState: setState
       }}
     >
       <ConfirmationDialog
@@ -132,7 +144,9 @@ export function ConfirmationDialogProvider({ children }: ConfirmationDialogProvi
 export function useConfirmationDialog(defaultConfig?: DialogConfig) {
   const {
     openDialog,
-    closeDialog
+    closeDialog,
+    state,
+    setState
   } = useContext(ConfirmationDialogContext)
 
   const getConfirmation = (config?: DialogConfig) => {
@@ -141,7 +155,7 @@ export function useConfirmationDialog(defaultConfig?: DialogConfig) {
     })
   }
 
-  return { getConfirmation, closeDialog }
+  return { getConfirmation, closeDialog, state, setState }
 }
 
 
