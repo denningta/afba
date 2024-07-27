@@ -1,16 +1,18 @@
 import { scaleBand, scaleLinear, scaleOrdinal } from "@visx/scale"
 import { AxisBottom } from "@visx/axis"
 import { Group } from "@visx/group"
-import { Area, BarGroup } from "@visx/shape"
+import { BarGroup } from "@visx/shape"
 import { BudgetOverview } from "./BudgetOverview";
 import { useRouter } from "next/navigation"
-import { dateToYYYYMM } from "@/app/helpers/helperFunctions";
+import { dateToYYYYMM, getPrevMonth, monthDiff } from "@/app/helpers/helperFunctions";
 
 export interface BudgetOverviewProps {
   data: BudgetOverview[]
-  width: number;
-  height: number;
-  margin?: { top: number; right: number; bottom: number; left: number };
+  start: string
+  end: string
+  width: number
+  height: number
+  margin?: { top: number; right: number; bottom: number; left: number }
 }
 
 const getDate = (budget: BudgetOverview) => budget.date
@@ -20,38 +22,46 @@ const keys = ['totalBudget', 'totalSpent']
 const background = '#612efb'
 const colors = ['#aeeef8', '#e5fd3d']
 
-const getPlaceholderData = (data: BudgetOverview[]) => {
+const getPlaceholderData = (
+  data: BudgetOverview[],
+  start: string,
+  end: string
+) => {
   let placeholderData: BudgetOverview[] = []
 
-  for (let index = 0; index < 12; index++) {
-    const date = new Date()
-    date.setMonth(date.getMonth() - index)
-    const month = date.getMonth() + 1
-    const year = date.getFullYear()
+  const monthsDiff = monthDiff(new Date(start), new Date(end))
+
+  for (let index = 0; index <= monthsDiff; index++) {
+    const dateStr = getPrevMonth(end, index)
+
 
     placeholderData.unshift({
-      _id: dateToYYYYMM(date),
-      date: `${year}-${month < 10 ? '0' + month : month}`,
+      _id: dateStr,
+      date: dateStr,
       totalSpent: 0,
       totalBudget: 0,
       categories: []
     })
   }
 
-  return placeholderData.map(placeholder =>
+  const pData = placeholderData.map(placeholder =>
     data.find(el => el.date === placeholder.date) ?? placeholder
   )
+
+  return pData
 }
 
 const BudgetOverviewChart = ({
   data,
+  start,
+  end,
   width,
   height,
   margin = defaultMargin
 }: BudgetOverviewProps) => {
   const router = useRouter()
 
-  const placeholderData = getPlaceholderData(data)
+  const placeholderData = getPlaceholderData(data, start, end)
 
   const dateScale = scaleBand<string>({
     domain: placeholderData.map(getDate),

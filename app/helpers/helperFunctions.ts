@@ -11,6 +11,31 @@ export function dateToYYYYMM(input: Date) {
   return `${year}-${month}`
 }
 
+export function getPrevMonthString(date: string, months: number) {
+  if (!date.match(/[0-9]{4}-[0-1]{1}[0-9]{1}/)) throw new Error('Not a valid date. Must be in format YYYY-MM')
+  let [year, month] = date.split('-').map(el => +el)
+
+  const diff = month - months
+
+  const newYear = diff <= 0 ? (year + Math.floor((diff ?? 12) / 12)) : year
+  const newMonth = diff <= 0 ? 12 + diff : diff
+
+  const formattedMonth = month < 10 ? `0${newMonth}` : `${newMonth}`
+
+  const dateString = `${newYear}-${formattedMonth}`
+
+  debugger
+  return dateString
+}
+
+export function getPrevMonth(date: string, months: number) {
+  if (!date.match(/[0-9]{4}-[0-1]{1}[0-9]{1}/)) throw new Error('Not a valid date. Must be in format YYYY-MM')
+  let [year, month] = date.split('-').map(el => +el)
+  const newDate = new Date(year, month - 1 - months, 1)
+
+  return dateToYYYYMM(newDate)
+}
+
 
 export function deleteUndefinedKeys(object: Object) {
   const keys = Object.keys(object) as Array<keyof typeof object>
@@ -66,4 +91,12 @@ export function aggregateByMonth(data: Transaction[]) {
     month: key,
     records: monthYearCount
   }))
+}
+
+export function monthDiff(d1: Date, d2: Date) {
+  var months;
+  months = (d2.getFullYear() - d1.getFullYear()) * 12;
+  months -= d1.getMonth();
+  months += d2.getMonth();
+  return months <= 0 ? 0 : months;
 }
