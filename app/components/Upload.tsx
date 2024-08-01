@@ -6,12 +6,15 @@ import Table from "./Table"
 import csvtojson from "../helpers/csvtojson"
 import axios from "axios"
 import transactionCols from "./transactions/transactionsColDefs"
+import { SnackbarProvider, enqueueSnackbar } from "notistack"
 
 
 const columns = transactionCols
 
 export default function Upload() {
   const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+
   const fileReader = new FileReader()
 
   const handleOnChange: FormEventHandler<HTMLInputElement> = (e) => {
@@ -32,11 +35,18 @@ export default function Upload() {
   }
 
   const handleAddRecords = async () => {
+    setLoading(true)
     if (!data.length) return
 
-    const res = await axios.post('/api/transactions', data)
+    try {
+      const res = await axios.post('/api/transactions', data)
+      enqueueSnackbar(`Success: ${data.length} records uploaded`, { variant: "success" })
+      setData([])
 
-
+    } catch (error) {
+      enqueueSnackbar("Something went wrong", { variant: "error" })
+    }
+    setLoading(false)
 
   }
 
@@ -55,6 +65,7 @@ export default function Upload() {
         <Button
           onClick={handleAddRecords}
           disabled={!data.length}
+          loading={loading}
         >
           Add Records
         </Button>
@@ -63,6 +74,7 @@ export default function Upload() {
       <div className="mx-auto max-h-[400px] overflow-y-auto">
         <Table columns={columns} data={data} />
       </div>
+      <SnackbarProvider />
     </Card>
   )
 

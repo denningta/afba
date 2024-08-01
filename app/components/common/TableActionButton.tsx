@@ -1,42 +1,43 @@
-import { RiMoreFill } from "@remixicon/react"
-import { Icon } from "@tremor/react"
-import { useState } from "react"
-import Menu from "./Menu"
 import { ClickAwayListener } from '@mui/base/ClickAwayListener';
+import { RiMoreLine } from '@remixicon/react';
+import { Popper } from '@mui/base/Popper'
+import { useState } from 'react';
 
 interface TableActionButtonProps {
   children: JSX.Element | JSX.Element[]
-
 }
 
 const TableActionButton = ({
-  children
+  children,
 }: TableActionButtonProps) => {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
+  const id = open ? 'table-action-popper' : undefined
 
-  const toggleMenuOpen = () => {
-    setMenuOpen(!menuOpen)
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(anchorEl ? null : event?.currentTarget)
   }
 
   return (
-    <ClickAwayListener onClickAway={() => setMenuOpen(false)}>
+    <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
       <div>
-        <Icon
-          icon={RiMoreFill}
-          className="cursor-pointer"
-          color="slate"
-          onClick={toggleMenuOpen}
-        />
-
-        <Menu
-          open={menuOpen}
-          onClick={() => setMenuOpen(false)}
+        <button
+          onClick={handleClick}
+        >
+          <RiMoreLine />
+        </button>
+        <Popper
+          id={id}
+          open={open}
+          anchorEl={anchorEl}
+          className='bg-slate-800 text-white rounded border border-slate-700'
+          placement='bottom-end'
+          onClick={() => { setAnchorEl(null) }}
         >
           {children}
-        </Menu>
+        </Popper>
       </div>
     </ClickAwayListener>
-
   )
 
 }

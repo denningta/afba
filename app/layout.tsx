@@ -4,6 +4,7 @@ import "./globals.css";
 import Sidebar from "./components/Sidebar";
 import DialogProvider from "./components/common/DialogProvider";
 import { CategoryProvider } from "./context/CategoryProvider";
+import { SnackbarProvider } from "notistack";
 
 const inter = Inter({ subsets: ["latin"] });
 

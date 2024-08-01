@@ -8,6 +8,7 @@ import { useConfirmationDialog } from "../common/Dialog"
 import TransactionForm from "./TransactionForm"
 import useTransactions from "@/app/hooks/useTransactions"
 import { TransactionsFilter } from "@/app/queries/transactions"
+import { SnackbarProvider } from "notistack"
 
 interface TransactionsTableProps {
   searchParams: TransactionsFilter
@@ -19,6 +20,8 @@ export default function TransactionsTable({ searchParams }: TransactionsTablePro
     data,
     upsertRecord,
   } = useTransactions(searchParams)
+
+
   const dialog = useConfirmationDialog()
 
   const handleAddTransaction = async () => {
@@ -51,11 +54,15 @@ export default function TransactionsTable({ searchParams }: TransactionsTablePro
             status: false
           },
           pagination: {
-            pageSize: 25,
+            pageSize: 100,
             pageIndex: 0
-          }
+          },
+          sorting: [
+            { id: 'date', desc: false }
+          ]
         }}
       />
+      <SnackbarProvider />
     </Card>
   )
 }

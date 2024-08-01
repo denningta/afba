@@ -4,7 +4,7 @@ import csv from 'csvtojson'
 export default async function csvtojson(input: string): Promise<any[] | null> {
   const array = await csv({
     colParser: {
-      'date': (item) => new Date(item),
+      'date': (item) => new Date(item).toLocaleDateString(),
       'amount': (item) => parseFloat(item)
     }
   }).fromString(headersToCamelCase(input))

@@ -33,7 +33,7 @@ export async function insertTransaction(transaction: Transaction) {
 
 export async function deleteTransaction(query: Transaction) {
   if (query._id) {
-    query._id = query._id
+    query._id = new ObjectId(query._id)
   }
 
   const res = await transactions

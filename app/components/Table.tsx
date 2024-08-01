@@ -42,7 +42,7 @@ export default function BaseTable<T>({
 }: TableProps<T>) {
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 25,
+    pageSize: 100,
   });
 
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -160,11 +160,9 @@ export default function BaseTable<T>({
               pageSize: +value
             })}
           >
-            <SelectItem value="10">10</SelectItem>
-            <SelectItem value="25">25</SelectItem>
-            <SelectItem value="35">35</SelectItem>
-            <SelectItem value="45">45</SelectItem>
             <SelectItem value="50">50</SelectItem>
+            <SelectItem value="100">100</SelectItem>
+            <SelectItem value="200">200</SelectItem>
           </Select>
         </div>
         <div className="grow flex justify-center select-none">

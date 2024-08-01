@@ -1,7 +1,7 @@
 import Transaction from "@/app/interfaces/transaction"
 import { createColumnHelper } from "@tanstack/react-table"
 import Checkbox from "../common/Checkbox"
-import TransactionActions from "./TransacrionActions"
+import TransactionActions from "./TransactionActions"
 import AutoComplete from "../common/AutoComplete"
 import { Category } from "@/app/interfaces/categories"
 import useCategories from "@/app/hooks/useCategories"
