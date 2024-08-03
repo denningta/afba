@@ -1,6 +1,4 @@
-import MenuItem from '@mui/joy/MenuItem'
 import { RiDeleteBinFill, RiEditFill } from "@remixicon/react";
-import { Icon } from "@tremor/react";
 import { useConfirmationDialog } from "../common/Dialog";
 import TableActionButton from "../common/TableActionButton";
 import Transaction from "@/app/interfaces/transaction";
@@ -14,10 +12,10 @@ interface EditTransactionProps {
 export default function TransactionActions({
   transaction
 }: EditTransactionProps) {
-  const { upsertRecord, deleteRecord, mutate } = useTransactions()
+  const { upsertRecord, deleteRecord } = useTransactions()
   const dialog = useConfirmationDialog()
 
-  const handleUpdateCategory = async () => {
+  const handleUpdateTransaction = async () => {
     await dialog.getConfirmation({
       title: 'Update Category',
       showActionButtons: false,
@@ -32,7 +30,7 @@ export default function TransactionActions({
     })
   }
 
-  const handleDeleteCategory = async () => {
+  const handleDeleteTransaction = async () => {
     await deleteRecord(transaction)
   }
 
@@ -41,14 +39,14 @@ export default function TransactionActions({
       <TableActionButton>
         <div
           className="flex items-center space-x-2 cursor-pointer p-3 hover:bg-white hover:bg-opacity-10"
-          onClick={handleUpdateCategory}
+          onClick={handleUpdateTransaction}
         >
           <RiEditFill />
           Edit
         </div>
         <div
           className="flex items-center space-x-2 cursor-pointer p-3 hover:bg-white hover:bg-opacity-10"
-          onClick={handleDeleteCategory}
+          onClick={handleDeleteTransaction}
         >
           <RiDeleteBinFill />
           Delete

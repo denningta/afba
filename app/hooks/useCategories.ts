@@ -5,14 +5,14 @@ import { CategoriesQuery } from "../queries/categories";
 
 
 export default function useCategories(query?: CategoriesQuery) {
-  const { date } = query ?? {}
 
-  const fns = useData<Category>({
+  const fns = useData<Category, CategoriesQuery>({
     endpoint: {
-      listRecords: `/api/categories${'?' + 'date=' + date}`,
+      listRecords: '/api/categories',
       upsertRecord: '/api/category',
       deleteRecord: '/api/category'
     },
+    query: query
   })
 
 

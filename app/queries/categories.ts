@@ -107,11 +107,11 @@ const budgetOverviewStages: Document[] = [
 export async function listCategories({ date }: CategoriesQuery) {
 
   const res = await categories.aggregate([
-    {
+    ... !!date ? [{
       $match: {
         date: date
       }
-    },
+    }] : [],
     {
       $addFields: {
         id: {

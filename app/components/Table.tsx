@@ -76,7 +76,7 @@ export default function BaseTable<T>({
 
 
   return (
-    <div style={{ maxHeight: '80dvh', minHeight: '600px' }}>
+    <div>
       <div className="flex items-center space-x-4">
 
         <TableFilter
@@ -92,7 +92,7 @@ export default function BaseTable<T>({
         </Button>
       </div>
 
-      <div style={{ maxHeight: '80dvh', overflow: 'auto', scrollbarGutter: 'stable' }}>
+      <div>
         <table className="w-full">
           <thead className="sticky top-0 dark:bg-dark-tremor-background dark:text-dark-tremor-content-muted uppercase mb-5">
             {table.getHeaderGroups().map(headerGroup => (

@@ -37,10 +37,8 @@ export default function TransactionsTable({ searchParams }: TransactionsTablePro
     })
   }
 
-
-
   return (
-    <Card className="h-dvh">
+    <Card>
       <TableActions
         onAdd={handleAddTransaction}
       />

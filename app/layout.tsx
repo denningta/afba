@@ -26,7 +26,7 @@ export default function RootLayout({
             <aside className="fixed top-0 left-0 h-screen w-20 z-40 flex flex-col space-y-4 bg-tremor-brand dark:bg-dark-tremor-brand">
               <Sidebar />
             </aside>
-            <div className="ml-20">
+            <div className="ml-20 p-5 space-x-3 space-y-3">
               {children}
             </div>
           </CategoryProvider>

@@ -15,16 +15,16 @@ import axios from "axios";
 import { usePathname } from "next/navigation";
 
 interface CategoriesTableProps {
-  data: Category[]
 }
 
-export default function CategoriesTable({ data }: CategoriesTableProps) {
+export default function CategoriesTable({ }: CategoriesTableProps) {
   const dialog = useConfirmationDialog()
 
   const pathname = usePathname()
   const currentDate = pathname.split('/').pop()
 
   const {
+    data,
     upsertRecord,
     mutate
   } = useCategories()

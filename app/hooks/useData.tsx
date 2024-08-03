@@ -33,7 +33,7 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
 
   const url = query && !_.isEmpty(query) ? endpoint.listRecords + '?' + new URLSearchParams(query).toString() : endpoint.listRecords
 
-  const { mutate } = useSWRConfig()
+  const { cache, mutate } = useSWRConfig()
   const { data, error, isLoading } = useSWR<T[], Error>(
     url,
     fetcher ?? defaultFetcher
@@ -49,7 +49,7 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
     const optimisticData = (data: T[] | undefined) => {
       if (!data) return []
       const index = data?.findIndex((el) => el._id === value._id)
-      data[index] = value
+      if (index >= 0) data[index] = value
       return data
     }
 
@@ -79,7 +79,7 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
         options
       )
 
-      enqueueSnackbar('Updated Transaction', { variant: 'success' })
+      enqueueSnackbar('Update successful', { variant: 'success' })
 
     } catch (error: any) {
       enqueueSnackbar('Something went wrong, please try again.', { variant: 'error' })
@@ -120,7 +120,7 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
         options
       )
 
-      enqueueSnackbar('Deleted Transaction', { variant: 'success' })
+      enqueueSnackbar('Delete successful', { variant: 'success' })
 
     } catch (error: any) {
       enqueueSnackbar('Something went wrong, please try again.', { variant: 'error' })

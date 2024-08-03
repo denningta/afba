@@ -24,7 +24,6 @@ export function getPrevMonthString(date: string, months: number) {
 
   const dateString = `${newYear}-${formattedMonth}`
 
-  debugger
   return dateString
 }
 
