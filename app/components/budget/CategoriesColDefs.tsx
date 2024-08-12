@@ -4,6 +4,8 @@ import { Category } from "@/app/interfaces/categories"
 import { Icon, ProgressBar } from "@tremor/react"
 import { RiDeleteBinFill, RiPencilFill } from "@remixicon/react"
 import CategoryActions from "./CategoryActions"
+import { CSSProperties } from "react"
+import { toCurrency } from "@/app/helpers/helperFunctions"
 
 const columnHelper = createColumnHelper<Category>()
 
@@ -29,11 +31,23 @@ const categoryColumns = [
   }),
   columnHelper.accessor('budget', {
     header: 'Budget',
-    cell: info => '$' + info.getValue()?.toLocaleString()
+    cell: info => {
+      const row = info.row.original as Category
+      const budget = info.getValue() ?? 0
+
+      const style: CSSProperties = {
+        color: row.type === 'income' ? '#00d062' : 'inherit'
+      }
+      return <span style={style}>{toCurrency(budget)}</span>
+    }
   }),
   columnHelper.accessor('spent', {
-    header: 'Spent',
-    cell: (info) => info.getValue()
+    cell: info => {
+      const spent = info.getValue() ?? 0
+      const style: CSSProperties = {
+      }
+      return <span style={style}>{toCurrency(spent)}</span>
+    }
   }),
   columnHelper.display({
     id: 'progress',

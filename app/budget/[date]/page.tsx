@@ -1,5 +1,4 @@
 import CategoriesTable from "@/app/components/budget/CategoriesTable"
-import { listCategories } from "@/app/queries/categories"
 
 export interface BudgetByDateProps {
   params: {
@@ -7,12 +6,11 @@ export interface BudgetByDateProps {
   }
 }
 
-export default async function BudgetByDate({ params }: BudgetByDateProps) {
-  const data = await listCategories({ date: params.date })
+export default async function BudgetByDate() {
 
   return (
     <div>
-      <CategoriesTable data={data} />
+      <CategoriesTable />
     </div>
 
   )

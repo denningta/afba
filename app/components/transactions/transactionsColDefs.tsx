@@ -5,9 +5,9 @@ import TransactionActions from "./TransactionActions"
 import AutoComplete from "../common/AutoComplete"
 import { Category } from "@/app/interfaces/categories"
 import useCategories from "@/app/hooks/useCategories"
-import { SyntheticEvent } from "react"
+import { CSSProperties, SyntheticEvent } from "react"
 import useTransactions from "@/app/hooks/useTransactions"
-import { dateToYYYYMM, getMonthString } from "@/app/helpers/helperFunctions"
+import { dateToYYYYMM, getMonthString, toCurrency } from "@/app/helpers/helperFunctions"
 import { ObjectId } from "mongodb"
 
 const columnHelper = createColumnHelper<Transaction>()
@@ -89,7 +89,13 @@ const columns = [
   }),
   columnHelper.accessor('amount', {
     header: 'Amount',
-    cell: info => info.getValue()
+    cell: info => {
+      const amount = info.getValue() ?? 0
+      const style: CSSProperties = {
+        color: amount > 0 ? '	#00d062' : 'inherit'
+      }
+      return <span style={style}>{toCurrency(amount)}</span>
+    }
   }),
   columnHelper.display({
     id: 'acitions',

@@ -27,11 +27,10 @@ export interface DataHookProps<R = void> {
 
 export default function useData<T extends { _id?: ObjectId | string }, R = void>({
   endpoint,
-  query,
   fetcher
 }: DataHookProps<R>): DataHook<T> {
 
-  const url = query && !_.isEmpty(query) ? endpoint.listRecords + '?' + new URLSearchParams(query).toString() : endpoint.listRecords
+  const url = endpoint.listRecords
 
   const { cache, mutate } = useSWRConfig()
   const { data, error, isLoading } = useSWR<T[], Error>(
@@ -78,8 +77,6 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
         handleUpsert,
         options
       )
-
-      enqueueSnackbar('Update successful', { variant: 'success' })
 
     } catch (error: any) {
       enqueueSnackbar('Something went wrong, please try again.', { variant: 'error' })

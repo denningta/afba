@@ -179,14 +179,15 @@ export async function getBudgetOverview() {
   const res = await categories.aggregate<BudgetOverview>([
     {
       $addFields:
-      /**
-       * newField: The new field name.
-       * expression: The new field expression.
-       */
       {
         id: {
           $toString: "$_id"
         }
+      }
+    },
+    {
+      $match: {
+        type: { $ne: "income" }
       }
     },
     {
@@ -201,7 +202,7 @@ export async function getBudgetOverview() {
               description: "$description",
               amount: "$amount"
             }
-          }
+          },
         ],
         as: "transactions"
       }
@@ -267,7 +268,8 @@ export async function getBudgetOverview() {
           $push: {
             name: "$name",
             budget: "$budget",
-            spent: "$spent"
+            spent: "$spent",
+            type: "$type"
           }
         },
         transactions: {

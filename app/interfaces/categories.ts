@@ -7,5 +7,6 @@ export interface Category {
   name?: string
   transactions?: Transaction[] | undefined
   budget?: number
+  type?: "deduction" | "income"
   spent?: number
 }

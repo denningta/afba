@@ -1,5 +1,5 @@
 import { Category } from "@/app/interfaces/categories"
-import { Button, Divider, TextInput } from "@tremor/react"
+import { Button, Divider, Select, SelectItem, TextInput } from "@tremor/react"
 import CurrencyInput from "react-currency-input-field"
 import { Controller, useForm } from "react-hook-form"
 import Label from "../common/Label"
@@ -75,6 +75,29 @@ export default function CategoryForm({
             )}
           />
           <InputError error={errors.budget} />
+        </div>
+
+        <div>
+          <Label>Type</Label>
+          <Controller
+            name="type"
+            control={control}
+            render={({ field }) => (
+              <Select
+                className="mt-2"
+                defaultValue="deduction"
+                name={field.name}
+                value={field.value}
+                onValueChange={(value) => {
+                  field.onChange(value ?? null)
+                }}
+              >
+                <SelectItem value="deduction">Deduction</SelectItem>
+                <SelectItem value="income">Income</SelectItem>
+              </Select>
+            )}
+          />
+          <InputError error={errors.type} />
         </div>
 
         <Divider />

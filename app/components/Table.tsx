@@ -1,6 +1,6 @@
 'use client'
 
-import { BuiltInFilterFn, ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
+import { BuiltInFilterFn, ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { isOdd } from "../helpers/helperFunctions"
 import Checkbox from "./common/Checkbox"
 import { Button, Dialog, DialogPanel, Divider, Select, SelectItem } from "@tremor/react"
@@ -54,6 +54,8 @@ export default function BaseTable<T>({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
     initialState: initialState,
@@ -73,6 +75,7 @@ export default function BaseTable<T>({
   const totalRows = data.length
 
   const [showCustomize, setShowCustomize] = useState(false)
+
 
 
   return (
@@ -114,7 +117,7 @@ export default function BaseTable<T>({
             {table.getRowModel().rows.map((row, i) => (
               <tr
                 key={row.id}
-                className={`h-10 cursor-pointer hover:bg-tremor-brand-muted/70 ${row.getIsSelected() && 'bg-tremor-brand-muted/30'} ${isOdd(i) ? 'bg-black/5 dark:bg-white/5' : 'dark-bg-dark-tremor-background-subtle'}`}
+                className={`h-10 cursor-pointer hover:bg-tremor-brand-muted/10 ${row.getIsSelected() && 'bg-tremor-brand-muted/30'} ${isOdd(i) ? 'bg-black/5 dark:bg-white/5' : 'dark-bg-dark-tremor-background-subtle'}`}
                 onClick={() => onRowClick && onRowClick(row)}
               >
                 {row.getVisibleCells().map((cell) => (

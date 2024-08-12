@@ -9,6 +9,7 @@ import Label from "../common/Label"
 import { dateToYYYYMM } from "@/app/helpers/helperFunctions"
 import { useState } from "react"
 import MonthPicker from "../common/MonthPicker"
+import TransactionsTable from "../transactions/TransactionsTable"
 
 export interface BudgetOverviewProps {
 }
@@ -39,7 +40,7 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
   const [end, setEnd] = useState(getDefaultEnd())
 
   return (
-    <>
+    <div className="space-y-4">
       <Card>
         <div className="flex justify-end space-x-3 mb-4">
           <div>
@@ -78,7 +79,11 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
           </ParentSize>
         </div>
       </Card>
-    </>
+      <Card>
+        <TransactionsTable searchParams={{}} />
+      </Card>
+
+    </div>
   )
 
 }

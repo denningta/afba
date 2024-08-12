@@ -4,6 +4,7 @@ import { useConfirmationDialog } from "../common/Dialog";
 import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
 import TableActionButton from "../common/TableActionButton";
+import { usePathname } from "next/navigation";
 
 interface EditCategoryProps {
   category: Category
@@ -12,7 +13,10 @@ interface EditCategoryProps {
 export default function CategoryActions({
   category
 }: EditCategoryProps) {
-  const { upsertRecord, deleteRecord } = useCategories()
+  const pathname = usePathname()
+  const currentDate = pathname.split('/').pop()
+
+  const { upsertRecord, deleteRecord } = useCategories({ date: currentDate })
   const dialog = useConfirmationDialog()
 
   const handleUpdateCategory = async () => {

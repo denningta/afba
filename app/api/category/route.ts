@@ -4,6 +4,7 @@ import { deleteCategory, insertCategory, listCategory, replaceCategory } from "@
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
+    console.log(searchParams)
 
     const filter: Category = {
       name: searchParams.get('name') ?? undefined,

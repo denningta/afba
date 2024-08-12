@@ -4,7 +4,12 @@ import { Group } from "@visx/group"
 import { BarGroup } from "@visx/shape"
 import { BudgetOverview } from "./BudgetOverview";
 import { useRouter } from "next/navigation"
-import { dateToYYYYMM, getPrevMonth, monthDiff } from "@/app/helpers/helperFunctions";
+import { getPrevMonth, monthDiff, toCurrency } from "@/app/helpers/helperFunctions";
+import { schemePaired } from "d3"
+import { useTooltip, useTooltipInPortal, defaultStyles } from "@visx/tooltip"
+import { PatternLines } from "@visx/pattern"
+import { localPoint } from "@visx/event"
+import { Category } from "@/app/interfaces/categories";
 
 export interface BudgetOverviewProps {
   data: BudgetOverview[]
@@ -15,12 +20,27 @@ export interface BudgetOverviewProps {
   margin?: { top: number; right: number; bottom: number; left: number }
 }
 
+interface BarStackData extends Category {
+  name: string
+  budget: number
+  spent: number
+  height: number
+  y: number
+}
+
+
 const getDate = (budget: BudgetOverview) => budget.date
 
 const defaultMargin = { top: 40, right: 0, bottom: 40, left: 0 };
 const keys = ['totalBudget', 'totalSpent']
-const background = '#612efb'
+const background = '#232c4f'
 const colors = ['#aeeef8', '#e5fd3d']
+const tooltipStyles = {
+  ...defaultStyles,
+  minWidth: 60,
+  backgroundColor: 'rgba(0,0,0,0.9)',
+  color: 'white',
+};
 
 const getPlaceholderData = (
   data: BudgetOverview[],
@@ -60,6 +80,18 @@ const BudgetOverviewChart = ({
   margin = defaultMargin
 }: BudgetOverviewProps) => {
   const router = useRouter()
+  const {
+    tooltipOpen,
+    tooltipLeft,
+    tooltipTop,
+    tooltipData,
+    hideTooltip,
+    showTooltip,
+  } = useTooltip<any>()
+  const { containerRef, TooltipInPortal } = useTooltipInPortal({
+    scroll: true,
+  });
+  let tooltipTimeout: number
 
   const placeholderData = getPlaceholderData(data, start, end)
 
@@ -73,13 +105,29 @@ const BudgetOverviewChart = ({
     padding: 0.1
   })
 
+  const dollarScaleMax = Math.max(...data.map(el => Math.max(...[el.totalSpent, el.totalBudget])))
   const dollarScale = scaleLinear<number>({
-    domain: [0, 8000]
+    domain: [0, dollarScaleMax]
   })
 
   const colorScale = scaleOrdinal<string, string>({
     domain: keys,
     range: colors
+  })
+
+  const categoryKeys = data.map(el => el.categories).flat()
+    .map(el => el.name).filter(el => el !== null) as string[]
+
+
+
+  const budgetColorScale = scaleOrdinal<string, string>({
+    domain: categoryKeys,
+    range: schemePaired as string[]
+  })
+
+  const spentColorScale = scaleOrdinal<string, string>({
+    domain: categoryKeys,
+    range: schemePaired as string[]
   })
 
   const xMax = width - margin.left - margin.right;
@@ -95,80 +143,148 @@ const BudgetOverviewChart = ({
   }
 
   return (
-    <svg
-      width={width}
-      height={height}
-    >
-      <rect x={0} y={0} width={width} height={height} fill={background} rx={14} />
-      <Group
-        top={margin.top}
-        left={margin.left}
+    <div>
+      <svg
+        ref={containerRef}
+        width={width}
+        height={height}
       >
-        <BarGroup
-          data={placeholderData}
-          keys={keys}
-          color={colorScale}
-          height={yMax}
-          x0={getDate}
-          x0Scale={dateScale}
-          x1Scale={groupScale}
-          yScale={dollarScale}
+        <rect x={0} y={0} width={width} height={height} fill={background} rx={14} />
+        <Group
+          top={margin.top}
+          left={margin.left}
         >
-          {(barGroups) => {
-            return barGroups.map((barGroup, dateIndex) => {
-              const groupWidth = barGroup.bars.reduce(((prev, curr) => prev + curr.width), 0)
-              return (
-                <Group
-                  key={`bar-group-${barGroup.index}-${barGroup.x0}`}
-                  left={barGroup.x0}
-                  className="cursor-pointer"
-                  onClick={() => handleGroupClick(placeholderData[barGroup.index])}
-                >
-                  {barGroup.bars.map((bar, stackIndex) => {
-                    const barData = data[dateIndex]
-                    const stackData = barData && barData.categories
+          <BarGroup
+            data={placeholderData}
+            keys={keys}
+            color={colorScale}
+            height={yMax}
+            x0={getDate}
+            x0Scale={dateScale}
+            x1Scale={groupScale}
+            yScale={dollarScale}
+          >
+            {(barGroups) => {
+              return barGroups.map((barGroup, dateIndex) => {
+                return (
+                  <Group
+                    key={`bar-group-${barGroup.index}-${barGroup.x0}`}
+                    left={barGroup.x0}
+                    className="cursor-pointer"
+                    onClick={() => handleGroupClick(placeholderData[barGroup.index])}
+                  >
+                    {barGroup.bars.map((bar, i) => {
+                      if (bar.height <= 0) {
+                        return (
+                          <Group
+                            key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}-${i}`}
+                          >
+                            <PatternLines
+                              id={"lines"}
+                              width={10}
+                              height={10}
+                              stroke="white"
+                              strokeWidth={3}
+                              orientation={['diagonalRightToLeft']}
+                            />
+                            <rect
+                              x={bar.x}
+                              y={bar.y - yMax}
+                              width={bar.width}
+                              height={yMax}
+                              fill={`url(#lines)`}
+                              fillOpacity={0.05}
+                              rx={4}
+                            />
+                          </Group>
+                        )
 
-                    // TODO: Create Stacked bar chart: use barData.key = "totalSpent" | "totalBudget"
+                      }
+                      const barData = placeholderData[dateIndex]
+                      return barData && barData.categories
+                        .sort((a, b) => (a.budget ?? 0) - (b.budget ?? 0))
+                        .map(
+                          function(this: { heightAcc: number }, category: any, i) {
+                            const { spent, budget } = category
 
-                    return (
-                      bar.height > 0 ? <rect
-                        key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}`}
-                        x={bar.x}
-                        y={bar.y}
-                        width={bar.width}
-                        height={bar.height >= 0 ? bar.height : 0}
-                        fill={bar.color}
-                        rx={4}
-                      />
-                        : <rect
-                          key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}`}
-                          x={bar.x}
-                          y={-19}
-                          width={bar.width}
-                          height={491}
-                          fill={background}
-                          rx={4}
-                        />
-                    )
-                  })}
-                </Group>
-              )
-            })
+                            if (bar.key === 'totalBudget') {
+                              category.height = bar.height * budget / barData.totalBudget
+                            }
+                            if (bar.key === 'totalSpent') {
+                              category.height = bar.height * spent / barData.totalSpent
+                            }
+
+                            category.y = this.heightAcc
+
+                            this.heightAcc = category.y + category.height
+
+                            return (
+                              <rect
+                                key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}-${i}`}
+                                x={bar.x}
+                                y={category.y}
+                                height={category.height}
+                                width={bar.width}
+                                fill={bar.key === 'totalBudget' ? budgetColorScale(category.name) : spentColorScale(category.name)}
+                                rx={4}
+                                onMouseLeave={() => {
+                                  tooltipTimeout = window.setTimeout(() => {
+                                    hideTooltip()
+                                  }, 100)
+                                }}
+                                onMouseMove={(event) => {
+                                  if (tooltipTimeout) clearTimeout(tooltipTimeout)
+                                  showTooltip({
+                                    tooltipData: {
+                                      ...category,
+                                      key: bar.key
+                                    },
+                                    tooltipTop: localPoint(event)?.y,
+                                    tooltipLeft: localPoint(event)?.x
+                                  })
+                                }}
+                              />
+                            )
+
+
+                          }, { heightAcc: bar.y })
+                    })}
+                  </Group>
+                )
+              })
+            }}
+          </BarGroup>
+        </Group>
+        <AxisBottom
+          top={yMax + margin.top}
+          scale={dateScale}
+          hideAxisLine
+          tickStroke="#ffffff"
+          tickLabelProps={{
+            fill: '#ffffff',
+            fontSize: 11,
+            textAnchor: "middle",
           }}
-        </BarGroup>
-      </Group>
-      <AxisBottom
-        top={yMax + margin.top}
-        scale={dateScale}
-        hideAxisLine
-        tickStroke="#ffffff"
-        tickLabelProps={{
-          fill: '#ffffff',
-          fontSize: 11,
-          textAnchor: "middle",
-        }}
-      />
-    </svg>
+        />
+      </svg>
+      {tooltipOpen && tooltipData && (
+        <TooltipInPortal top={tooltipTop} left={tooltipLeft} style={tooltipStyles}>
+          <div className="p-2 space-y-3">
+            <div style={{ color: colorScale(tooltipData.key) }}>
+              <strong>{tooltipData.key === 'totalBudget' ? 'Budget' : 'Spent'}</strong>
+            </div>
+            <div>
+              <span style={{ color: budgetColorScale(tooltipData.name) }} className="font-bold">{tooltipData.name}: </span>
+              {tooltipData.key === 'totalBudget' ?
+                <span> {toCurrency(tooltipData.budget)}</span>
+                : <span>{toCurrency(tooltipData.spent)}</span>
+              }
+            </div>
+          </div>
+        </TooltipInPortal>
+      )}
+
+    </div>
   )
 }
 

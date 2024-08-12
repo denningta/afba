@@ -99,3 +99,38 @@ export function monthDiff(d1: Date, d2: Date) {
   months += d2.getMonth();
   return months <= 0 ? 0 : months;
 }
+
+
+function hslToHex(h: number, s: number, l: number) {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0'); // convert to Hex and pad with 0
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+export function generateHexColors(
+  numColors: number,
+  hueStart: number,
+  hueEnd: number,
+  saturation?: number,
+  lightness?: number
+) {
+  const colors = [];
+  const hueStep = (hueEnd - hueStart) / numColors;
+
+  for (let i = 0; i < numColors; i++) {
+    const hue = hueStart + i * hueStep;
+    colors.push(hslToHex(hue, saturation ?? 70, lightness ?? 50));
+  }
+
+  return colors;
+}
+
+
+export function toCurrency(number: number) {
+  return number.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+}

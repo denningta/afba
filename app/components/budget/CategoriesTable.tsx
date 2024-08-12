@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Card, Divider, Select, SelectItem } from "@tremor/react";
+import { Card } from "@tremor/react";
 import Table from "../Table";
 import { SnackbarProvider } from "notistack"
 import categoryColumns from "./CategoriesColDefs";
@@ -8,11 +8,11 @@ import { useConfirmationDialog } from "../common/Dialog";
 import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
 import TableActions from "../common/TableActions";
-import { Category } from "@/app/interfaces/categories";
-import { FormEventHandler, useState } from "react";
 import CopyBudgetForm from "./CopyBudgetForm";
 import axios from "axios";
 import { usePathname } from "next/navigation";
+import getBudgetKpis from "./kpis";
+import { toCurrency } from "@/app/helpers/helperFunctions";
 
 interface CategoriesTableProps {
 }
@@ -27,7 +27,8 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
     data,
     upsertRecord,
     mutate
-  } = useCategories()
+  } = useCategories({ date: currentDate })
+
 
   const handleDeleteCategories = async () => {
     const res = await dialog.getConfirmation({
@@ -46,14 +47,15 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
             dialog.closeDialog()
           }}
           onClose={() => dialog.closeDialog()}
+          initialValues={{
+            date: currentDate
+          }}
         />,
       showActionButtons: false
     })
   }
 
   const handleCopyPrevMonth = async () => {
-
-
     await dialog.getConfirmation({
       title: 'Copy Budget',
       content: <CopyBudgetForm
@@ -69,22 +71,101 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
     })
   }
 
+  const {
+    actualSpent,
+    actualIncome,
+    actualDiff,
+    plannedBudget,
+    plannedDiff,
+    plannedIncome
+  } = getBudgetKpis(data)
+
+
   return (
-    <Card className="h-dvh">
-      <TableActions
-        onAdd={handleAddCategory}
-        onDelete={handleDeleteCategories}
-        onCopyPrevMonth={handleCopyPrevMonth}
-        showCopyPrevMonth={true}
-      />
+    <div className="grid grid-cols-2 gap-4">
+      <Card
+      >
+        <div
+          className="flex space-x-5"
+        >
+          <div>
+            <div className="uppercase">{plannedIncome.name}</div>
+            <div className="font-bold text-3xl text-white">
+              {toCurrency(plannedIncome.value)}
+            </div>
+          </div>
+          <div className="font-bold text-gray-600 text-3xl pt-5"> - </div>
+          <div>
+            <div className="uppercase">{plannedBudget.name}</div>
+            <div className="font-bold text-3xl text-white">
+              {toCurrency(plannedBudget.value)}
+            </div>
+          </div>
+          <div className="font-bold text-gray-600 text-3xl pt-5"> = </div>
+          <div>
+            <div className="uppercase">DIFFERENCE</div>
+            <div
+              style={{
+                color: plannedDiff.value > 0 ? '#00d062' : 'red'
+              }}
+              className={`font-bold text-3xl`}
+            >
+              {toCurrency(plannedDiff.value)}
+            </div>
+          </div>
+        </div>
+      </Card>
 
-      <Table
-        data={data ?? []}
-        columns={categoryColumns}
-      />
+      <Card
+      >
+        <div
+          className="flex space-x-5"
+        >
+          <div>
+            <div className="uppercase">{actualIncome.name}</div>
+            <div className="font-bold text-3xl text-white">
+              {toCurrency(actualIncome.value)}
+            </div>
+          </div>
+          <div className="font-bold text-gray-600 text-3xl pt-5"> - </div>
+          <div>
+            <div className="uppercase">{actualSpent.name}</div>
+            <div className="font-bold text-3xl text-white">
+              {toCurrency(actualSpent.value)}
+            </div>
+          </div>
+          <div className="font-bold text-gray-600 text-3xl pt-5"> = </div>
+          <div>
+            <div className="uppercase">DIFFERENCE</div>
+            <div
+              style={{
+                color: actualDiff.value > 0 ? '#00d062' : 'red'
+              }}
+              className={`font-bold text-3xl`}
+            >
+              {toCurrency(actualDiff.value)}
+            </div>
+          </div>
+        </div>
+      </Card>
 
-      <SnackbarProvider />
-    </Card>
+
+      <Card className="col-span-2">
+        <TableActions
+          onAdd={handleAddCategory}
+          onDelete={handleDeleteCategories}
+          onCopyPrevMonth={handleCopyPrevMonth}
+          showCopyPrevMonth={true}
+        />
+
+        <Table
+          data={data ?? []}
+          columns={categoryColumns}
+        />
+
+        <SnackbarProvider />
+      </Card>
+    </div>
   )
 
 }
