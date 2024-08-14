@@ -10,6 +10,7 @@ import { useTooltip, useTooltipInPortal, defaultStyles } from "@visx/tooltip"
 import { PatternLines } from "@visx/pattern"
 import { localPoint } from "@visx/event"
 import { Category } from "@/app/interfaces/categories";
+import { useEffect, useState } from "react";
 
 export interface BudgetOverviewProps {
   data: BudgetOverview[]
@@ -18,9 +19,11 @@ export interface BudgetOverviewProps {
   width: number
   height: number
   margin?: { top: number; right: number; bottom: number; left: number }
+  onFilterChange?: (data: BarStackData | null) => void
 }
 
-interface BarStackData extends Category {
+export interface BarStackData extends Category {
+  key: string
   name: string
   budget: number
   spent: number
@@ -77,7 +80,8 @@ const BudgetOverviewChart = ({
   end,
   width,
   height,
-  margin = defaultMargin
+  margin = defaultMargin,
+  onFilterChange = () => { }
 }: BudgetOverviewProps) => {
   const router = useRouter()
   const {
@@ -94,6 +98,12 @@ const BudgetOverviewChart = ({
   let tooltipTimeout: number
 
   const placeholderData = getPlaceholderData(data, start, end)
+
+  const [barSelected, setBarSelected] = useState<BarStackData | null>(null)
+
+  useEffect(() => {
+    onFilterChange(barSelected)
+  }, [barSelected])
 
   const dateScale = scaleBand<string>({
     domain: placeholderData.map(getDate),
@@ -142,14 +152,22 @@ const BudgetOverviewChart = ({
     router.push(`budget/${budget.date}`)
   }
 
+  const handleBarClick = (data: BarStackData) => {
+    setBarSelected(data)
+  }
+
   return (
-    <div>
+    <div
+
+    >
       <svg
         ref={containerRef}
         width={width}
         height={height}
       >
-        <rect x={0} y={0} width={width} height={height} fill={background} rx={14} />
+        <rect x={0} y={0} width={width} height={height} fill={background} rx={14}
+          onClick={() => setBarSelected(null)}
+        />
         <Group
           top={margin.top}
           left={margin.left}
@@ -171,7 +189,6 @@ const BudgetOverviewChart = ({
                     key={`bar-group-${barGroup.index}-${barGroup.x0}`}
                     left={barGroup.x0}
                     className="cursor-pointer"
-                    onClick={() => handleGroupClick(placeholderData[barGroup.index])}
                   >
                     {barGroup.bars.map((bar, i) => {
                       if (bar.height <= 0) {
@@ -194,7 +211,6 @@ const BudgetOverviewChart = ({
                               height={yMax}
                               fill={`url(#lines)`}
                               fillOpacity={0.05}
-                              rx={4}
                             />
                           </Group>
                         )
@@ -207,26 +223,33 @@ const BudgetOverviewChart = ({
                           function(this: { heightAcc: number }, category: any, i) {
                             const { spent, budget } = category
 
+                            let barStackData: BarStackData = { ...category }
+
                             if (bar.key === 'totalBudget') {
-                              category.height = bar.height * budget / barData.totalBudget
+                              barStackData.height = bar.height * budget / barData.totalBudget
                             }
                             if (bar.key === 'totalSpent') {
-                              category.height = bar.height * spent / barData.totalSpent
+                              barStackData.height = bar.height * spent / barData.totalSpent
                             }
 
-                            category.y = this.heightAcc
+                            barStackData.y = this.heightAcc
+                            barStackData.key = `bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}-${i}`
 
-                            this.heightAcc = category.y + category.height
+                            this.heightAcc = barStackData.y + barStackData.height
 
                             return (
                               <rect
-                                key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}-${i}`}
+                                key={barStackData.key}
                                 x={bar.x}
-                                y={category.y}
-                                height={category.height}
+                                y={barStackData.y}
+                                height={barStackData.height}
                                 width={bar.width}
-                                fill={bar.key === 'totalBudget' ? budgetColorScale(category.name) : spentColorScale(category.name)}
-                                rx={4}
+                                fill={bar.key === 'totalBudget' ? budgetColorScale(barStackData.name) : spentColorScale(barStackData.name)}
+                                fillOpacity={!barSelected || barSelected?.key === barStackData.key ? 1 : 0.5}
+                                style={{
+                                  strokeWidth: barSelected?.key === barStackData.key ? 1 : 0,
+                                  stroke: 'white'
+                                }}
                                 onMouseLeave={() => {
                                   tooltipTimeout = window.setTimeout(() => {
                                     hideTooltip()
@@ -236,17 +259,16 @@ const BudgetOverviewChart = ({
                                   if (tooltipTimeout) clearTimeout(tooltipTimeout)
                                   showTooltip({
                                     tooltipData: {
-                                      ...category,
+                                      ...barStackData,
                                       key: bar.key
                                     },
                                     tooltipTop: localPoint(event)?.y,
                                     tooltipLeft: localPoint(event)?.x
                                   })
                                 }}
+                                onClick={() => handleBarClick(barStackData)}
                               />
                             )
-
-
                           }, { heightAcc: bar.y })
                     })}
                   </Group>

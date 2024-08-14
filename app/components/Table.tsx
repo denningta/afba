@@ -17,6 +17,8 @@ interface TableProps<T> {
   onRowClick?: (row: Row<T>) => void
   onLoad?: (table: Table<T>) => void
   customFilters?: React.ReactNode[]
+  showFilter?: boolean
+  showCustomizeButton?: boolean
 }
 
 const builtInFilterFns: BuiltInFilterFn[] = [
@@ -38,7 +40,8 @@ export default function BaseTable<T>({
   initialState,
   onRowClick,
   onLoad,
-  customFilters
+  showFilter = true,
+  showCustomizeButton = true
 }: TableProps<T>) {
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -46,6 +49,7 @@ export default function BaseTable<T>({
   });
 
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [showCustomize, setShowCustomize] = useState(false)
 
   const table = useReactTable({
     columns,
@@ -74,25 +78,25 @@ export default function BaseTable<T>({
   const rowEnd = ((pagination.pageIndex + 1) * pagination.pageSize)
   const totalRows = data.length
 
-  const [showCustomize, setShowCustomize] = useState(false)
-
-
 
   return (
     <div>
       <div className="flex items-center space-x-4">
+        {showFilter &&
+          <TableFilter
+            columns={table.getAllColumns()}
+            filterFns={builtInFilterFns}
+          />
+        }
 
-        <TableFilter
-          columns={table.getAllColumns()}
-          filterFns={builtInFilterFns}
-        />
-
-        <Button
-          variant="secondary"
-          icon={RiSettings2Fill}
-          onClick={() => setShowCustomize(true)}
-        >
-        </Button>
+        {showCustomizeButton &&
+          <Button
+            variant="secondary"
+            icon={RiSettings2Fill}
+            onClick={() => setShowCustomize(true)}
+          >
+          </Button>
+        }
       </div>
 
       <div>
@@ -152,54 +156,56 @@ export default function BaseTable<T>({
         </table>
       </div>
 
-      <div className="space-x-3 flex justify-center items-center p-3">
-        <div className="flex items-center space-x-3">
-          <span>Rows</span>
-          <Select
-            value={pagination.pageSize.toString()}
-            className="max-w-[80px] min-w-0"
-            onValueChange={(value) => setPagination({
-              ...pagination,
-              pageSize: +value
-            })}
-          >
-            <SelectItem value="50">50</SelectItem>
-            <SelectItem value="100">100</SelectItem>
-            <SelectItem value="200">200</SelectItem>
-          </Select>
+      {totalRows > pagination.pageSize &&
+        <div className="space-x-3 flex justify-center items-center p-3">
+          <div className="flex items-center space-x-3">
+            <span>Rows</span>
+            <Select
+              value={pagination.pageSize.toString()}
+              className="max-w-[80px] min-w-0"
+              onValueChange={(value) => setPagination({
+                ...pagination,
+                pageSize: +value
+              })}
+            >
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+              <SelectItem value="200">200</SelectItem>
+            </Select>
+          </div>
+          <div className="grow flex justify-center select-none">
+            {`${rowStart} - ${rowEnd} of ${totalRows}`}
+          </div>
+          <Button
+            icon={RiArrowLeftDoubleLine}
+            color="stone"
+            className="cursor-pointer"
+            onClick={() => table.firstPage()}
+            disabled={!table.getCanPreviousPage()}
+          />
+          <Button
+            icon={RiArrowLeftSLine}
+            color="stone"
+            className="cursor-pointer"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          />
+          <Button
+            icon={RiArrowRightSLine}
+            color="stone"
+            className="cursor-pointer"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          />
+          <Button
+            icon={RiArrowRightDoubleLine}
+            color="stone"
+            className="cursor-pointer"
+            onClick={() => table.lastPage()}
+            disabled={!table.getCanNextPage()}
+          />
         </div>
-        <div className="grow flex justify-center select-none">
-          {`${rowStart} - ${rowEnd} of ${totalRows}`}
-        </div>
-        <Button
-          icon={RiArrowLeftDoubleLine}
-          color="stone"
-          className="cursor-pointer"
-          onClick={() => table.firstPage()}
-          disabled={!table.getCanPreviousPage()}
-        />
-        <Button
-          icon={RiArrowLeftSLine}
-          color="stone"
-          className="cursor-pointer"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        />
-        <Button
-          icon={RiArrowRightSLine}
-          color="stone"
-          className="cursor-pointer"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        />
-        <Button
-          icon={RiArrowRightDoubleLine}
-          color="stone"
-          className="cursor-pointer"
-          onClick={() => table.lastPage()}
-          disabled={!table.getCanNextPage()}
-        />
-      </div>
+      }
 
       <Dialog
         open={showCustomize}

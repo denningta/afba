@@ -4,22 +4,26 @@ import Table from "../Table"
 import columns from "./transactionsColDefs"
 import { Card } from "@tremor/react"
 import TableActions from "../common/TableActions"
+import { Table as TanstackTable } from "@tanstack/react-table"
 import { useConfirmationDialog } from "../common/Dialog"
 import TransactionForm from "./TransactionForm"
 import useTransactions from "@/app/hooks/useTransactions"
 import { TransactionsFilter } from "@/app/queries/transactions"
 import { SnackbarProvider } from "notistack"
+import Transaction from "@/app/interfaces/transaction"
 
 interface TransactionsTableProps {
-  searchParams: TransactionsFilter
+  searchParams?: TransactionsFilter
 }
 
-export default function TransactionsTable({ searchParams }: TransactionsTableProps) {
+export default function TransactionsTable({
+  searchParams,
+}: TransactionsTableProps) {
 
   const {
     data,
     upsertRecord,
-  } = useTransactions(searchParams)
+  } = useTransactions(searchParams ?? {})
 
 
   const dialog = useConfirmationDialog()
@@ -37,6 +41,10 @@ export default function TransactionsTable({ searchParams }: TransactionsTablePro
     })
   }
 
+  const handleLoad = (table: TanstackTable<Transaction>) => {
+    return table
+  }
+
   return (
     <Card>
       <TableActions
@@ -46,6 +54,7 @@ export default function TransactionsTable({ searchParams }: TransactionsTablePro
       <Table
         data={data ?? []}
         columns={columns}
+        onLoad={handleLoad}
         initialState={{
           columnVisibility: {
             originalDescription: false,

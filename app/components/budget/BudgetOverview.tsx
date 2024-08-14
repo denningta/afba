@@ -3,13 +3,16 @@
 import { Category } from "@/app/interfaces/categories"
 import { Card, DateRangePicker } from "@tremor/react"
 import { ParentSize } from "@visx/responsive"
-import BudgetOverviewChart from "./BudgetOverviewChart"
+import BudgetOverviewChart, { BarStackData } from "./BudgetOverviewChart"
 import useBudgetOverview from "@/app/hooks/useBudgetOverview"
 import Label from "../common/Label"
 import { dateToYYYYMM } from "@/app/helpers/helperFunctions"
 import { useState } from "react"
 import MonthPicker from "../common/MonthPicker"
 import TransactionsTable from "../transactions/TransactionsTable"
+import Table from "../Table"
+import columns from "../transactions/transactionsColDefs"
+import Transaction from "@/app/interfaces/transaction"
 
 export interface BudgetOverviewProps {
 }
@@ -38,6 +41,15 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
   const { data } = useBudgetOverview()
   const [start, setStart] = useState(getDefaultStart())
   const [end, setEnd] = useState(getDefaultEnd())
+  const [transactionData, setTransactionData] = useState<Transaction[]>([])
+
+  const handleFilterChange = (data: BarStackData | null) => {
+    console.log(data)
+    setTransactionData(data?.transactions ?? [])
+
+
+  }
+
 
   return (
     <div className="space-y-4">
@@ -65,7 +77,7 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
         </div>
 
 
-        <div style={{ height: 600 }}>
+        <div style={{ height: 600 }} className="mb-6">
           <ParentSize>
             {({ width, height }) =>
               <BudgetOverviewChart
@@ -74,14 +86,22 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
                 end={end}
                 width={width}
                 height={height}
+                onFilterChange={handleFilterChange}
               />
             }
           </ParentSize>
         </div>
+
+        <Table
+          columns={columns}
+          data={transactionData}
+          showFilter={false}
+          showCustomizeButton={false}
+        />
+
       </Card>
-      <Card>
-        <TransactionsTable searchParams={{}} />
-      </Card>
+
+
 
     </div>
   )

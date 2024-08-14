@@ -200,7 +200,8 @@ export async function getBudgetOverview() {
             $project: {
               date: "$date",
               description: "$description",
-              amount: "$amount"
+              amount: "$amount",
+              userCategory: "$userCategory"
             }
           },
         ],
@@ -269,7 +270,8 @@ export async function getBudgetOverview() {
             name: "$name",
             budget: "$budget",
             spent: "$spent",
-            type: "$type"
+            type: "$type",
+            transactions: "$transactions"
           }
         },
         transactions: {
