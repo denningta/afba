@@ -1,7 +1,7 @@
 'use client'
 
 import { Category } from "@/app/interfaces/categories"
-import { Card, DateRangePicker } from "@tremor/react"
+import { Button, Card, DateRangePicker } from "@tremor/react"
 import { ParentSize } from "@visx/responsive"
 import BudgetOverviewChart, { BarStackData } from "./BudgetOverviewChart"
 import useBudgetOverview from "@/app/hooks/useBudgetOverview"
@@ -9,10 +9,10 @@ import Label from "../common/Label"
 import { dateToYYYYMM } from "@/app/helpers/helperFunctions"
 import { useState } from "react"
 import MonthPicker from "../common/MonthPicker"
-import TransactionsTable from "../transactions/TransactionsTable"
 import Table from "../Table"
 import columns from "../transactions/transactionsColDefs"
 import Transaction from "@/app/interfaces/transaction"
+import Link from "next/link"
 
 export interface BudgetOverviewProps {
 }
@@ -23,7 +23,9 @@ export interface BudgetOverview {
   totalBudget: number
   totalSpent: number
   categories: Category[]
+  transactions: Transaction[]
 }
+
 
 const getDefaultStart = () => {
   const start = new Date()
@@ -42,12 +44,11 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
   const [start, setStart] = useState(getDefaultStart())
   const [end, setEnd] = useState(getDefaultEnd())
   const [transactionData, setTransactionData] = useState<Transaction[]>([])
+  const [budgetNav, setBudgetNav] = useState<string | null>(null)
 
   const handleFilterChange = (data: BarStackData | null) => {
-    console.log(data)
     setTransactionData(data?.transactions ?? [])
-
-
+    setBudgetNav(data?.date ?? null)
   }
 
 
@@ -91,6 +92,13 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
             }
           </ParentSize>
         </div>
+
+        {budgetNav &&
+          <Link href={`/budget/${budgetNav}`}>
+            <Button>Go To Budget</Button>
+          </Link>
+
+        }
 
         <Table
           columns={columns}

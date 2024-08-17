@@ -1,5 +1,5 @@
 import { scaleBand, scaleLinear, scaleOrdinal } from "@visx/scale"
-import { AxisBottom } from "@visx/axis"
+import { AxisBottom, AxisLeft } from "@visx/axis"
 import { Group } from "@visx/group"
 import { BarGroup } from "@visx/shape"
 import { BudgetOverview } from "./BudgetOverview";
@@ -10,7 +10,8 @@ import { useTooltip, useTooltipInPortal, defaultStyles } from "@visx/tooltip"
 import { PatternLines } from "@visx/pattern"
 import { localPoint } from "@visx/event"
 import { Category } from "@/app/interfaces/categories";
-import { useEffect, useState } from "react";
+import { CSSProperties, useEffect, useState } from "react";
+import Transaction from "@/app/interfaces/transaction";
 
 export interface BudgetOverviewProps {
   data: BudgetOverview[]
@@ -23,12 +24,14 @@ export interface BudgetOverviewProps {
 }
 
 export interface BarStackData extends Category {
-  key: string
-  name: string
-  budget: number
-  spent: number
-  height: number
-  y: number
+  key?: string
+  name?: string
+  budget?: number
+  spent?: number
+  height?: number
+  y?: number
+  transactions?: Transaction[]
+  date?: string
 }
 
 
@@ -63,7 +66,8 @@ const getPlaceholderData = (
       date: dateStr,
       totalSpent: 0,
       totalBudget: 0,
-      categories: []
+      categories: [],
+      transactions: []
     })
   }
 
@@ -148,12 +152,47 @@ const BudgetOverviewChart = ({
   groupScale.rangeRound([0, dateScale.bandwidth()]);
   dollarScale.range([yMax, 0]);
 
-  const handleGroupClick = (budget: BudgetOverview) => {
-    router.push(`budget/${budget.date}`)
+  const handleGoToBudget = (date: string) => {
+    // router.push(`budget/${date}`)
+    const transactions = placeholderData.find(el => el.date === date)?.transactions
+    setBarSelected({
+      key: date,
+      date: date,
+      transactions: transactions || undefined
+    })
+
   }
 
   const handleBarClick = (data: BarStackData) => {
     setBarSelected(data)
+  }
+
+  const getBarSelectedStyle = (barStackData: BarStackData): CSSProperties => {
+    if (!barSelected) {
+      return {
+        fillOpacity: 1
+      }
+    }
+
+    if (barSelected.key === barStackData.date) {
+      return {
+        fillOpacity: 1,
+        strokeWidth: 1
+      }
+    }
+
+    if (barSelected.key === barStackData.key) {
+      return {
+        fillOpacity: 1,
+        strokeWidth: 1,
+        stroke: 'white'
+      }
+    }
+
+    return {
+      fillOpacity: 0.5,
+      strokeWidth: 0
+    }
   }
 
   return (
@@ -184,6 +223,8 @@ const BudgetOverviewChart = ({
           >
             {(barGroups) => {
               return barGroups.map((barGroup, dateIndex) => {
+                const groupWidth = (barGroup.bars[1].x + barGroup.bars[1].width) - barGroup.bars[0].x
+
                 return (
                   <Group
                     key={`bar-group-${barGroup.index}-${barGroup.x0}`}
@@ -212,6 +253,7 @@ const BudgetOverviewChart = ({
                               fill={`url(#lines)`}
                               fillOpacity={0.05}
                             />
+
                           </Group>
                         )
 
@@ -234,8 +276,9 @@ const BudgetOverviewChart = ({
 
                             barStackData.y = this.heightAcc
                             barStackData.key = `bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}-${i}`
+                            barStackData.date = barData.date
 
-                            this.heightAcc = barStackData.y + barStackData.height
+                            this.heightAcc = barStackData.y + (barStackData?.height ?? 0)
 
                             return (
                               <rect
@@ -244,12 +287,8 @@ const BudgetOverviewChart = ({
                                 y={barStackData.y}
                                 height={barStackData.height}
                                 width={bar.width}
-                                fill={bar.key === 'totalBudget' ? budgetColorScale(barStackData.name) : spentColorScale(barStackData.name)}
-                                fillOpacity={!barSelected || barSelected?.key === barStackData.key ? 1 : 0.5}
-                                style={{
-                                  strokeWidth: barSelected?.key === barStackData.key ? 1 : 0,
-                                  stroke: 'white'
-                                }}
+                                fill={bar.key === 'totalBudget' ? budgetColorScale(barStackData?.name ?? '') : spentColorScale(barStackData?.name ?? '')}
+                                style={getBarSelectedStyle(barStackData)}
                                 onMouseLeave={() => {
                                   tooltipTimeout = window.setTimeout(() => {
                                     hideTooltip()
@@ -276,6 +315,7 @@ const BudgetOverviewChart = ({
               })
             }}
           </BarGroup>
+
         </Group>
         <AxisBottom
           top={yMax + margin.top}
@@ -286,6 +326,8 @@ const BudgetOverviewChart = ({
             fill: '#ffffff',
             fontSize: 11,
             textAnchor: "middle",
+            cursor: "pointer",
+            onClick: (e) => { e.currentTarget.textContent && handleGoToBudget(e.currentTarget.textContent) }
           }}
         />
       </svg>
