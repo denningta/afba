@@ -1,75 +1,20 @@
 'use client'
 
-import { Button, Card } from "@tremor/react"
-import { FormEventHandler, useState } from "react"
+import { Card } from "@tremor/react"
+import { useState } from "react"
 import Table from "./Table"
-import csvtojson from "../helpers/csvtojson"
-import axios from "axios"
 import transactionCols from "./transactions/transactionsColDefs"
-import { SnackbarProvider, enqueueSnackbar } from "notistack"
-
+import { SnackbarProvider } from "notistack"
+import UploadWidget from "./UploadWidget"
 
 const columns = transactionCols
 
 export default function Upload() {
   const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-
-  const fileReader = new FileReader()
-
-  const handleOnChange: FormEventHandler<HTMLInputElement> = (e) => {
-    const files = (e.target as HTMLInputElement).files
-
-    if (files === null) {
-      return
-    }
-
-    fileReader.onload = async (event) => {
-      if (!event.target) return
-      const csvOutput = event.target.result as string
-      const array = await csvtojson(csvOutput)
-      if (array) setData(array)
-    }
-
-    fileReader.readAsText(files[0])
-  }
-
-  const handleAddRecords = async () => {
-    setLoading(true)
-    if (!data.length) return
-
-    try {
-      const res = await axios.post('/api/transactions', data)
-      enqueueSnackbar(`Success: ${data.length} records uploaded`, { variant: "success" })
-      setData([])
-
-    } catch (error) {
-      enqueueSnackbar("Something went wrong", { variant: "error" })
-    }
-    setLoading(false)
-
-  }
 
   return (
     <Card className="mx-auto space-y-4">
-
-      <div className="max-w-md">
-        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white" htmlFor="file_input">Upload file</label>
-        <input
-          onChange={handleOnChange}
-          className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="file_input" type="file"
-        />
-      </div>
-
-      <div>
-        <Button
-          onClick={handleAddRecords}
-          disabled={!data.length}
-          loading={loading}
-        >
-          Add Records
-        </Button>
-      </div>
+      <UploadWidget data={data} onChange={setData} />
 
       <div className="mx-auto max-h-[400px] overflow-y-auto">
         <Table columns={columns} data={data} />

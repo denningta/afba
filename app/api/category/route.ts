@@ -10,7 +10,7 @@ export async function GET(request: Request) {
       date: (() => {
         const date = searchParams.get('date')
         if (!date) return undefined
-        return new Date(date)
+        return new Date(date).toString()
       })(),
       budget: (() => {
         const budget = searchParams.get('budget')

@@ -9,6 +9,7 @@ import { CSSProperties, SyntheticEvent } from "react"
 import useTransactions from "@/app/hooks/useTransactions"
 import { dateToYYYYMM, getMonthString, toCurrency } from "@/app/helpers/helperFunctions"
 import { ObjectId } from "mongodb"
+import UserCategoryCell from "./UserCategoryCell"
 
 const columnHelper = createColumnHelper<Transaction>()
 
@@ -53,35 +54,7 @@ const columns = [
   }),
   columnHelper.accessor('userCategory', {
     header: 'User Category',
-    cell: info => {
-      const date = dateToYYYYMM(new Date(info.row.getValue('date')))
-      const { data } = useCategories({ date: date })
-      const { upsertRecord } = useTransactions()
-
-      const updateTransaction = async (
-        event: SyntheticEvent<Element, Event>,
-        category: Category | null
-      ) => {
-        const transaction: Transaction = {
-          ...info.row.original,
-          userCategory: category ?? undefined
-        }
-
-        await upsertRecord(transaction)
-      }
-
-      return (
-        <AutoComplete
-          options={data ?? []}
-          value={info.row.original.userCategory ?? null}
-          isOptionEqualToValue={(option, value) => (option?._id === value?._id)}
-          getOptionLabel={(option) => option.name ?? ''}
-          onChange={(event, value) => updateTransaction(event, value)}
-          autoHighlight={true}
-        />
-      )
-
-    }
+    cell: UserCategoryCell
   }),
   columnHelper.accessor('status', {
     header: 'Status',
