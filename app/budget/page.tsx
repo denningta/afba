@@ -3,8 +3,6 @@ import { getBudgetOverview } from "../queries/categories";
 
 export default async function Budget() {
 
-  const data = await getBudgetOverview()
-
   return (
     <>
       <BudgetOverviewComponent />
