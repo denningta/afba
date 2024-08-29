@@ -1,6 +1,7 @@
 services:
   afba:
     container_name: afba
+    image: afba-dev
     build:
       context: .
       dockerfile: dev.Dockerfile
