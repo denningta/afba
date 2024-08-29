@@ -3,7 +3,7 @@ services:
     container_name: afba
     build:
       context: .
-      dockerfile: prod.Dockerfile
+      dockerfile: dev.Dockerfile
     depends_on:
       - afba-database
 
@@ -18,8 +18,8 @@ services:
     restart: always
     ports:
       - 3000:3000
-      - 9229:9229
-      - 9230:9230
+      - 9231:9229
+      - 9230:9231
     networks:
       - afba_network
  
@@ -36,3 +36,4 @@ services:
 networks:
   afba_network:
     external: false
+
