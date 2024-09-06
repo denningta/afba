@@ -4,6 +4,7 @@ import CurrencyInput from "react-currency-input-field"
 import { Controller, useForm } from "react-hook-form"
 import Label from "../common/Label"
 import InputError from "../common/InputError"
+import { useEffect, useRef } from "react"
 
 
 export interface CategoryFormProps {
@@ -22,10 +23,15 @@ export default function CategoryForm({
     register,
     control,
     handleSubmit,
+    setFocus,
     formState: { errors },
   } = useForm<Category>({
     defaultValues: initialValues
   })
+
+  useEffect(() => {
+    setFocus("name")
+  }, [])
 
   return (
     <form
@@ -39,6 +45,7 @@ export default function CategoryForm({
           <Label>Month</Label>
           <input
             {...register('date', { required: 'Month is requred' })}
+            tabIndex={-1}
             type="month"
             className="tremor-TextInput-input w-full focus:outline-none focus:ring-0 border-none bg-transparent text-tremor-default rounded-tremor-default transition duration-100 py-2 text-tremor-content-emphasis dark:text-dark-tremor-content-emphasis [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-3 pr-4 placeholder:text-tremor-content dark:placeholder:text-dark-tremor-content"
           />
@@ -50,6 +57,7 @@ export default function CategoryForm({
           <TextInput
             {...register('name', { required: 'Name is required' })}
             placeholder=""
+            tabIndex={0}
           />
           <InputError error={errors.name} />
         </div>
@@ -106,11 +114,13 @@ export default function CategoryForm({
             type="button"
             variant="secondary"
             onClick={onClose}
+            className="focus:outline focus:outline-white"
           >
             Cancel
           </Button>
           <Button
             type="submit"
+            className="focus:outline focus:outline-white"
           >
             Save
           </Button>

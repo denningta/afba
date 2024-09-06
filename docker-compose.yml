@@ -1,7 +1,7 @@
 services:
   afba:
     container_name: afba
-    image: afba
+    image: denningta/afba
     build:
       context: .
       dockerfile: prod.Dockerfile

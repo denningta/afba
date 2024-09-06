@@ -1,10 +1,12 @@
 services:
   afba:
     container_name: afba
-    image: afba-dev
     build:
       context: .
       dockerfile: dev.Dockerfile
+    volumes:
+      - .:/app
+      - /app/node_modules
     depends_on:
       - afba-database
 
