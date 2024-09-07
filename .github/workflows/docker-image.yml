@@ -6,16 +6,17 @@ on:
   pull_request:
     branches: [ "main" ]
 
-env:
-  DOCKER_USER: ${{vars.DOCKER_USER}}
-  DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-  REPO_NAME: ${{vars.REPO_NAME}}
-
 jobs:
 
   build:
 
     runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      DOCKER_USER: ${{vars.DOCKER_USER}}
+      DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      REPO_NAME: ${{vars.REPO_NAME}}
 
     steps:
 
