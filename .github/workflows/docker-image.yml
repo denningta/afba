@@ -7,9 +7,9 @@ on:
     branches: [ "main" ]
 
 env:
-  DOCKER_USER: ${{secrets.DOCKER_USER}}
+  DOCKER_USER: ${{vars.DOCKER_USER}}
   DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
-  REPO_NAME: ${{secrets.REPO_NAME}}
+  REPO_NAME: ${{vars.REPO_NAME}}
 
 jobs:
 
