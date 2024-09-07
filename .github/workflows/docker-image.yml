@@ -28,7 +28,7 @@ jobs:
       run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
     
     - name: Build the Docker Image
-      run: docker compose build -tag latest
+      run: docker compose build
 
     - name: Push Docker Image
       run: docker push $DOCKER_USER/$REPO_NAME:latest
