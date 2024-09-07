@@ -34,7 +34,7 @@ export const categoryCalculationStages: Document[] = [
           $group: {
             _id: null,
             spent: {
-              $sum: { $abs: "$amount" },
+              $sum: "$amount",
             },
           },
         },
@@ -146,9 +146,7 @@ export async function listCategories({ date }: CategoriesQuery) {
             $group: {
               _id: null,
               spent: {
-                $sum: {
-                  $abs: "$amount"
-                }
+                $sum: "$amount"
               }
             }
           }
@@ -218,9 +216,7 @@ export async function getBudgetOverview() {
             $group: {
               _id: null,
               spent: {
-                $sum: {
-                  $abs: "$amount"
-                }
+                $sum: "$amount"
               }
             }
           }

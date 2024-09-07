@@ -65,7 +65,7 @@ export default function TransactionsTable({
             pageIndex: 0
           },
           sorting: [
-            { id: 'date', desc: false }
+            { id: 'date', desc: true }
           ]
         }}
       />

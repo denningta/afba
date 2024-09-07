@@ -44,3 +44,20 @@ When changes are made to `/afba/dev.Dockerfile`` run `docker compose -f docker-c
 # Run Docker Development Container Locally
 
 Run the image using the command `docker compose -f docker-compose.dev.yml up`
+
+# Production Workflow
+
+Run `docker compose build` to build the production image
+
+Run `docker push denningta/afba:latest` to push production image
+
+On the production server pull the latest image and run:
+
+```
+docker compose down
+docker-compose pull
+docker compose up -d
+```
+
+
+
