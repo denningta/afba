@@ -19,6 +19,9 @@ jobs:
 
     steps:
 
+    - name: log env variables
+      run: echo "${{env.DOCKER_USER}}"
+
     - uses: actions/checkout@v4
     - name: Docker Login
       run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
