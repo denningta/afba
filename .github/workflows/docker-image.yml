@@ -19,6 +19,7 @@ jobs:
 
     steps:
 
+    - uses: actions/checkout@v4
     - name: Docker Login
       run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
     
@@ -26,4 +27,4 @@ jobs:
       run: docker compose build -tag latest
 
     - name: Push Docker Image
-    - run: docker push $DOCKER_USER/$REPO_NAME:latest
+      run: docker push $DOCKER_USER/$REPO_NAME:latest
