@@ -59,5 +59,40 @@ docker-compose pull
 docker compose up -d
 ```
 
+# Backup and Restore Docker Volume
 
+[Source] (https://www.augmentedmind.de/2023/08/20/backup-docker-volumes/)
+
+## Backup
+
+Define the name of the volume:
+```
+VOLUME="afba_data"
+```
+
+Run the following command.  
+
+```
+docker run --rm -v "${VOLUME}:/data" -v "${PWD}:/backup-dir" ubuntu tar cvzf /backup-dir/${VOLUME}.tar.gz /data
+```
+Creates a temporary docker container, connects to the volume data and uses ubuntu tar to create a compressed .tar.gz of the volume directory.  Saves the file to the current working directory.
+
+
+## Restore
+
+Ensure volume is named on the local machine
+```
+VOLUME="afba_data"
+```
+
+Use `rsync` to copy the file from the remote server
+
+```
+rsync -a denningta@192.168.1.240:/home/denningta/afba/backup .
+```
+
+Run a docker container to restore the volume data
+```
+docker run --rm -v "${VOLUME}:/data" -v "${PWD}:/backup" ubuntu bash -c "rm -rf /data/{*,.*}; cd /data && tar xvzf /backup/${VOLUME}.tar.gz --strip 1"
+```
 

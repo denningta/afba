@@ -63,7 +63,7 @@ export default function getBudgetKpis(data: Category[] | undefined) {
     },
     actualDiff: {
       name: 'Spending Difference',
-      value: actualIncome - totalSpent
+      value: actualIncome + totalSpent
     }
   }
 }

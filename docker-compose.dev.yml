@@ -29,6 +29,8 @@ services:
   afba-database:
     container_name: mongodb
     image: mongo
+    volumes:
+      - afba_data:/data/db
     ports:
       - 27017:27017
     networks:
@@ -40,3 +42,6 @@ networks:
   afba_network:
     external: false
 
+volumes:
+  afba_data:
+    external: true
