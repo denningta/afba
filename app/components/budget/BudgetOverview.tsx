@@ -1,7 +1,8 @@
 'use client'
 
 import { Category } from "@/app/interfaces/categories"
-import { Button, Card, DateRangePicker } from "@tremor/react"
+import { Card, DateRangePicker } from "@tremor/react"
+import { Button } from "components/ui/button"
 import { ParentSize } from "@visx/responsive"
 import BudgetOverviewChart, { BarStackData } from "./BudgetOverviewChart"
 import useBudgetOverview from "@/app/hooks/useBudgetOverview"
@@ -13,6 +14,7 @@ import Table from "../Table"
 import columns from "../transactions/transactionsColDefs"
 import Transaction from "@/app/interfaces/transaction"
 import Link from "next/link"
+import MonthRangePicker from "@/components/ui/month-range-picker"
 
 export interface BudgetOverviewProps {
 }
@@ -56,25 +58,32 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
     <div className="space-y-4">
       <Card>
         <div className="flex justify-end space-x-3 mb-4">
-          <div>
-            <Label >
-              Start
-            </Label>
-            <MonthPicker
-              value={start}
-              onChange={(e) => setStart(e.currentTarget.value)}
-            />
-          </div>
-
-          <div>
-            <Label>
-              End
-            </Label>
-            <MonthPicker
-              value={end}
-              onChange={(e) => setEnd(e.currentTarget.value)}
-            />
-          </div>
+          <MonthRangePicker
+            onRangeChange={(range) => {
+              if (!range) return
+              setStart(dateToYYYYMM(range.from))
+              setEnd(dateToYYYYMM(range.to))
+            }}
+          />
+          {/* <div> */}
+          {/*   <Label > */}
+          {/*     Start */}
+          {/*   </Label> */}
+          {/*   <MonthPicker */}
+          {/*     value={start} */}
+          {/*     onChange={(e) => setStart(e.currentTarget.value)} */}
+          {/*   /> */}
+          {/* </div> */}
+          {/**/}
+          {/* <div> */}
+          {/*   <Label> */}
+          {/*     End */}
+          {/*   </Label> */}
+          {/*   <MonthPicker */}
+          {/*     value={end} */}
+          {/*     onChange={(e) => setEnd(e.currentTarget.value)} */}
+          {/*   /> */}
+          {/* </div> */}
         </div>
 
 
@@ -95,7 +104,7 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
 
         {budgetNav &&
           <Link href={`/budget/${budgetNav}`}>
-            <Button>Go To Budget</Button>
+            <Button>Go to budget</Button>
           </Link>
 
         }

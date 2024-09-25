@@ -41,6 +41,8 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 
 When changes are made to `/afba/dev.Dockerfile`` run `docker compose -f docker-compose.dev.yml build`
 
+Turns out any config changes need to re-build the image.  E.g. updating Nextjs in `package.json`.
+
 # Run Docker Development Container Locally
 
 Run the image using the command `docker compose -f docker-compose.dev.yml up`

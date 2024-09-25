@@ -5,8 +5,7 @@ services:
       context: .
       dockerfile: dev.Dockerfile
     volumes:
-      - .:/app
-      - /app/node_modules
+      - ./:/app:delegated
     depends_on:
       - afba-database
 
