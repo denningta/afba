@@ -1,7 +1,16 @@
 import { BuiltInFilterFn, Column, ColumnFiltersState, FilterFn } from "@tanstack/react-table"
-import { Select, SelectItem, TextInput } from "@tremor/react"
 import { TableFilterData } from "./TableFilter"
 import { useState } from "react"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 
 export interface FilterFormProps<T> {
   columns: Column<T>[]
@@ -44,27 +53,31 @@ const FilterForm = <T,>({
   return (
     <>
       <Select
-        id="columnId"
         name="columnId"
         value={filterData?.id}
-        placeholder="Select column"
         onValueChange={(id) => handleChange({ id: id })}
       >
-        {columns.map((column, index) =>
-          <SelectItem
-            value={column.id}
-            key={index}
-          >
-            {column.id}
-          </SelectItem>
-        )}
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Column" />
+        </SelectTrigger>
+        <SelectContent>
+          {columns.map((column, index) =>
+            <SelectItem
+              value={column.id}
+              key={index}
+            >
+              {column.id}
+            </SelectItem>
+          )}
+        </SelectContent>
       </Select>
-      <>
-        <Select
-          id="filterFn"
-          name="filterFn"
-          placeholder="Select operator"
-        >
+      <Select
+        name="filterFn"
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="" />
+        </SelectTrigger>
+        <SelectContent>
           {filterFns.map((filterFn, index) =>
             <SelectItem
               key={index}
@@ -73,16 +86,15 @@ const FilterForm = <T,>({
               {filterFn as string}
             </SelectItem>
           )}
-        </Select>
-        <TextInput
-          placeholder="Enter a value"
-          value={filterData?.value?.toString() ?? ''}
-          onChange={(e) => handleChange({
-            value: e.currentTarget.value
-          })}
-        >
-        </TextInput>
-      </>
+        </SelectContent>
+      </Select>
+      <Input
+        placeholder="Enter a value"
+        value={filterData?.value?.toString() ?? ''}
+        onChange={(e) => handleChange({
+          value: e.currentTarget.value
+        })}
+      />
     </>
   )
 

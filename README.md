@@ -57,7 +57,7 @@ On the production server pull the latest image and run:
 
 ```
 docker compose down
-docker-compose pull
+docker compose pull
 docker compose up -d
 ```
 

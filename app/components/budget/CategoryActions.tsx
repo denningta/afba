@@ -5,6 +5,16 @@ import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
 import TableActionButton from "../common/TableActionButton";
 import { usePathname } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button";
+import { Ellipsis, EllipsisVertical } from "lucide-react";
 
 interface EditCategoryProps {
   category: Category
@@ -39,25 +49,53 @@ export default function CategoryActions({
   }
 
   return (
-    <div className="">
-      <TableActionButton>
-        <div
-          className="flex items-center space-x-2 cursor-pointer p-3 hover:bg-white hover:bg-opacity-10"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="sm"
+          variant="ghost"
+        >
+          <Ellipsis />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem>View transactions</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
           onClick={handleUpdateCategory}
         >
-          <RiEditFill />
           Edit
-        </div>
-        <div
-          className="flex items-center space-x-2 cursor-pointer p-3 hover:bg-white hover:bg-opacity-10"
+        </DropdownMenuItem>
+        <DropdownMenuItem
           onClick={handleDeleteCategory}
         >
-          <RiDeleteBinFill />
           Delete
-        </div>
-      </TableActionButton>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
 
-    </div>
   )
 
+  // return (
+  //   <div className="">
+  //     <TableActionButton>
+  //       <div
+  //         className="flex items-center space-x-2 cursor-pointer p-3 hover:bg-white hover:bg-opacity-10"
+  //         onClick={handleUpdateCategory}
+  //       >
+  //         <RiEditFill />
+  //         Edit
+  //       </div>
+  //       <div
+  //         className="flex items-center space-x-2 cursor-pointer p-3 hover:bg-white hover:bg-opacity-10"
+  //         onClick={handleDeleteCategory}
+  //       >
+  //         <RiDeleteBinFill />
+  //         Delete
+  //       </div>
+  //     </TableActionButton>
+  //
+  //   </div>
+  // )
+  //
 }

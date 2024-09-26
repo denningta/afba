@@ -9,6 +9,8 @@ import { useEffect, useState } from "react"
 import Label from "./common/Label"
 import DialogClose from "./common/DialogClose"
 import TableFilter from "./TableFilter"
+import TableFilterMenu from "./TableFilterMenu"
+import CustomizeColumnsDialog from "./CustomizeColumnsDialog"
 
 interface TableProps<T> {
   data: T[]
@@ -83,25 +85,22 @@ export default function BaseTable<T>({
     <div>
       <div className="flex items-center space-x-4">
         {showFilter &&
-          <TableFilter
-            columns={table.getAllColumns()}
-            filterFns={builtInFilterFns}
-          />
+          <>
+            <TableFilterMenu
+              columns={table.getAllColumns()}
+              filterFns={builtInFilterFns}
+            />
+          </>
         }
 
         {showCustomizeButton &&
-          <Button
-            variant="secondary"
-            icon={RiSettings2Fill}
-            onClick={() => setShowCustomize(true)}
-          >
-          </Button>
+          <CustomizeColumnsDialog table={table} />
         }
       </div>
 
       <div>
         <table className="w-full">
-          <thead className="sticky top-0 dark:bg-dark-tremor-background dark:text-dark-tremor-content-muted uppercase mb-5">
+          <thead className="sticky top-0 bg-background uppercase mb-5">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => (

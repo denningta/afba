@@ -13,6 +13,7 @@ import axios from "axios";
 import { usePathname } from "next/navigation";
 import getBudgetKpis from "./kpis";
 import { toCurrency } from "@/app/helpers/helperFunctions";
+import { CopyBudgetDialog } from "./CopyBudgetDialog";
 
 interface CategoriesTableProps {
 }
@@ -56,19 +57,6 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
   }
 
   const handleCopyPrevMonth = async () => {
-    await dialog.getConfirmation({
-      title: 'Copy Budget',
-      content: <CopyBudgetForm
-        onSubmit={async (month) => {
-          const res = await axios.post(`/api/copyCategories/${month}`, {
-            currentDate: currentDate
-          })
-          mutate()
-          dialog.closeDialog()
-        }}
-      />,
-      showActionButtons: false
-    })
   }
 
   const {
@@ -151,12 +139,10 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
 
 
       <Card className="col-span-2">
-        <TableActions
-          onAdd={handleAddCategory}
-          onDelete={handleDeleteCategories}
-          onCopyPrevMonth={handleCopyPrevMonth}
-          showCopyPrevMonth={true}
-        />
+
+        <div className="flex justify-end">
+          <CopyBudgetDialog />
+        </div>
 
         <Table
           data={data ?? []}
