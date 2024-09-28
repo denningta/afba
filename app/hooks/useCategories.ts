@@ -1,4 +1,3 @@
-import axios from "axios";
 import { Category } from "../interfaces/categories";
 import useData from "./useData";
 import { CategoriesQuery } from "../queries/categories";

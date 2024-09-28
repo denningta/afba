@@ -1,20 +1,19 @@
 import { Category } from "@/app/interfaces/categories";
-import { RiDeleteBinFill, RiEditFill } from "@remixicon/react";
-import { useConfirmationDialog } from "../common/Dialog";
 import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
-import TableActionButton from "../common/TableActionButton";
 import { usePathname } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { Ellipsis, EllipsisVertical } from "lucide-react";
+import { Ellipsis } from "lucide-react";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogContent } from "@/components/ui/dialog";
+import { useState } from "react";
+import { createPortal } from "react-dom";
 
 interface EditCategoryProps {
   category: Category
@@ -25,55 +24,59 @@ export default function CategoryActions({
 }: EditCategoryProps) {
   const pathname = usePathname()
   const currentDate = pathname.split('/').pop()
+  const [dialogOpen, setDialogOpen] = useState(false)
 
-  const { upsertRecord, deleteRecord } = useCategories({ date: currentDate })
-  const dialog = useConfirmationDialog()
-
-  const handleUpdateCategory = async () => {
-    await dialog.getConfirmation({
-      title: 'Update Category',
-      showActionButtons: false,
-      content: <CategoryForm
-        initialValues={category}
-        onSubmit={async (values) => {
-          await upsertRecord(values)
-          dialog.closeDialog()
-        }}
-        onClose={() => dialog.closeDialog()}
-      />
-    })
-  }
+  const { deleteRecord } = useCategories({ date: currentDate })
 
   const handleDeleteCategory = async () => {
     await deleteRecord(category)
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          size="sm"
-          variant="ghost"
-        >
-          <Ellipsis />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem>View transactions</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={handleUpdateCategory}
-        >
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={handleDeleteCategory}
-        >
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            size="sm"
+            variant="ghost"
+          >
+            <Ellipsis />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem>View transactions</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={() => setDialogOpen(true)}
+          >
+            Edit
+          </DropdownMenuItem>
 
+          <DropdownMenuItem
+            onSelect={() => handleDeleteCategory()}
+          >
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+
+      {typeof document !== 'undefined' && createPortal(
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Category</DialogTitle>
+              <DialogDescription>
+                Make changes to this budget category.
+              </DialogDescription>
+            </DialogHeader>
+            <CategoryForm category={category} onSubmitted={() => setDialogOpen(false)} />
+          </DialogContent>
+        </Dialog>,
+        document.body
+      )}
+
+    </>
   )
 
   // return (

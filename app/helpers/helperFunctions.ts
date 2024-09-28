@@ -11,6 +11,15 @@ export function dateToYYYYMM(input: Date) {
   return `${year}-${month}`
 }
 
+export function YYYYMMToDate(input: string) {
+  if (!input.match(/[0-9]{4}-[0-1]{1}[0-9]{1}/)) throw new Error('Not a valid date. Must be in format YYYY-MM')
+  const [year, month] = input.split('-')
+  let monthIndex = +month - 1
+  let yearIndex = +year
+
+  return new Date(yearIndex, monthIndex)
+}
+
 export function getPrevMonthString(date: string, months: number) {
   if (!date.match(/[0-9]{4}-[0-1]{1}[0-9]{1}/)) throw new Error('Not a valid date. Must be in format YYYY-MM')
   let [year, month] = date.split('-').map(el => +el)

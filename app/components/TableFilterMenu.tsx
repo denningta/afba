@@ -38,8 +38,8 @@ const TableFilterMenu = <T,>({ columns, filterFns }: TableFilterProps<T>) => {
           <DropdownMenuSeparator />
           <div className="space-y-3">
             {filters && filters.length > 0 && filters.map((filter, index) =>
-              <DropdownMenuItem onClick={(e) => e.preventDefault()}>
-                <div className="flex items-center space-x-3" key={index}>
+              <DropdownMenuItem onClick={(e) => e.preventDefault()} key={index}>
+                <div className="flex items-center space-x-3">
                   <FilterForm
                     columns={columns}
                     filterFns={filterFns}

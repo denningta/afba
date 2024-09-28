@@ -1,132 +1,163 @@
-import { Category } from "@/app/interfaces/categories"
-import { Button, Divider, Select, SelectItem, TextInput } from "@tremor/react"
-import CurrencyInput from "react-currency-input-field"
-import { Controller, useForm } from "react-hook-form"
-import Label from "../common/Label"
-import InputError from "../common/InputError"
-import { useEffect, useRef } from "react"
+import { useEffect, useState } from "react"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
 
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import MonthPicker from "@/components/ui/month-picker"
+import { Category } from "@/app/interfaces/categories"
+import useCategories from "@/app/hooks/useCategories"
+import { dateToYYYYMM, YYYYMMToDate } from "@/app/helpers/helperFunctions"
+
+const formSchema = z.object({
+  date: z.string({
+    required_error: "Please select a month.",
+  }),
+  name: z.string().min(1, "Name is required."),
+  budget: z.string().refine((val) => !isNaN(Number(val)), {
+    message: "Budget must be a valid number.",
+  }),
+  type: z.enum(["deduction", "income"], {
+    required_error: "Please select a type.",
+  }),
+})
 
 export interface CategoryFormProps {
-  onSubmit: (value: Category) => void
-  onClose?: (args?: any) => void
-  onChange?: (category: Category) => void
-  initialValues?: Category
+  category?: Category,
+  onSubmitted?: () => void
 }
 
-export default function CategoryForm({
-  onSubmit,
-  onClose,
-  initialValues
+export default function BudgetCategoryForm({
+  category = {},
+  onSubmitted = () => { }
 }: CategoryFormProps) {
-  const {
-    register,
-    control,
-    handleSubmit,
-    setFocus,
-    formState: { errors },
-  } = useForm<Category>({
-    defaultValues: initialValues
+  const { upsertRecord } = useCategories({ date: category.date })
+  const [isLoading, setIsLoading] = useState(false)
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      date: category.date ?? '',
+      name: category.name ?? '',
+      budget: category.budget?.toString() ?? '',
+      type: category.type ?? 'deduction'
+    },
   })
 
-  useEffect(() => {
-    setFocus("name")
-  }, [])
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true)
+    await upsertRecord({
+      ...category,
+      ...values,
+      budget: +values.budget
+    })
+    setIsLoading(false)
+    onSubmitted()
+    form.reset()
+  }
 
   return (
-    <form
-      onSubmit={handleSubmit((value) => {
-        if (value.budget) value.budget = +value.budget
-        onSubmit(value)
-      })}
-    >
-      <div className="space-y-4">
-        <div>
-          <Label>Month</Label>
-          <input
-            {...register('date', { required: 'Month is requred' })}
-            tabIndex={-1}
-            type="month"
-            className="tremor-TextInput-input w-full focus:outline-none focus:ring-0 border-none bg-transparent text-tremor-default rounded-tremor-default transition duration-100 py-2 text-tremor-content-emphasis dark:text-dark-tremor-content-emphasis [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-3 pr-4 placeholder:text-tremor-content dark:placeholder:text-dark-tremor-content"
-          />
-          <InputError error={errors.date} />
-        </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
-        <div>
-          <Label>Name</Label>
-          <TextInput
-            {...register('name', { required: 'Name is required' })}
-            placeholder=""
-            tabIndex={0}
-          />
-          <InputError error={errors.name} />
-        </div>
-
-
-        <div>
-          <Label>Budget</Label>
-          <Controller
-            name="budget"
-            control={control}
-            render={({ field }) => (
-              <CurrencyInput
-                value={field.value}
-                name={field.name}
-                onValueChange={(value) => {
-                  field.onChange(value ?? null);
-                }}
-                className='mt-2 tremor-TextInput-root relative w-full flex items-center min-w-[10rem] outline-none rounded-tremor-default transition duration-100 border shadow-tremor-input dark:shadow-dark-tremor-input bg-tremor-background dark:bg-dark-tremor-background hover:bg-tremor-background-muted dark:hover:bg-dark-tremor-background-muted text-tremor-content dark:text-dark-tremor-content border-tremor-border dark:border-dark-tremor-border'
-                prefix='$'
-                decimalsLimit={2}
-                allowNegativeValue={false}
-              />
-            )}
-          />
-          <InputError error={errors.budget} />
-        </div>
-
-        <div>
-          <Label>Type</Label>
-          <Controller
-            name="type"
-            control={control}
-            render={({ field }) => (
-              <Select
-                className="mt-2"
-                defaultValue="deduction"
-                name={field.name}
-                value={field.value}
-                onValueChange={(value) => {
-                  field.onChange(value ?? null)
-                }}
-              >
-                <SelectItem value="deduction">Deduction</SelectItem>
-                <SelectItem value="income">Income</SelectItem>
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Month</FormLabel>
+              <div>
+                <FormControl>
+                  <MonthPicker
+                    value={field.value ? YYYYMMToDate(field.value) : new Date()}
+                    onValueChange={(date) => form.setValue("date", dateToYYYYMM(date))}
+                  />
+                </FormControl>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter category name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="budget"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Budget</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="Enter budget amount"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Type</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a type" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="deduction">Deduction</SelectItem>
+                  <SelectItem value="income">Income</SelectItem>
+                </SelectContent>
               </Select>
-            )}
-          />
-          <InputError error={errors.type} />
-        </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <Divider />
-        <div className='flex justify-end space-x-3'>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            className="focus:outline focus:outline-white"
-          >
+        <div className="flex justify-end space-x-8 ">
+          <Button variant="outline">
             Cancel
           </Button>
-          <Button
-            type="submit"
-            className="focus:outline focus:outline-white"
-          >
-            Save
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Saving..." : "Save"}
           </Button>
         </div>
-      </div>
-    </form>
-  )
 
+      </form>
+    </Form>
+
+  )
 }

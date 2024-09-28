@@ -4,6 +4,7 @@ import axios from "axios";
 import { ObjectId } from "mongodb";
 import defaultFetcher from "@/app/lib/fetcher";
 import _ from "lodash";
+import { toast } from "sonner";
 
 export interface DataHook<T> {
   listRecords: () => T[] | undefined
@@ -37,6 +38,8 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
     url,
     fetcher ?? defaultFetcher
   )
+
+  console.log(cache)
 
   const listRecords = () => {
     return data
@@ -79,7 +82,7 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
       )
 
     } catch (error: any) {
-      enqueueSnackbar('Something went wrong, please try again.', { variant: 'error' })
+      toast('Something went wrong, please try again.')
       return data
     }
 
@@ -117,10 +120,10 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
         options
       )
 
-      enqueueSnackbar('Delete successful', { variant: 'success' })
+      toast.success('Delete successful')
 
     } catch (error: any) {
-      enqueueSnackbar('Something went wrong, please try again.', { variant: 'error' })
+      toast.error('Something went wrong, please try again.')
       return data
     }
   }

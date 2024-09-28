@@ -39,7 +39,7 @@ const getDate = (budget: BudgetOverview) => budget.date
 
 const defaultMargin = { top: 40, right: 0, bottom: 40, left: 0 };
 const keys = ['totalBudget', 'totalSpent']
-const background = '#232c4f'
+const background = '#0000'
 const colors = ['#aeeef8', '#e5fd3d']
 const tooltipStyles = {
   ...defaultStyles,
@@ -196,9 +196,7 @@ const BudgetOverviewChart = ({
   }
 
   return (
-    <div
-
-    >
+    <div>
       <svg
         ref={containerRef}
         width={width}

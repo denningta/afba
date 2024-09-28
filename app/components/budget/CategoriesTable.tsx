@@ -14,6 +14,8 @@ import { usePathname } from "next/navigation";
 import getBudgetKpis from "./kpis";
 import { toCurrency } from "@/app/helpers/helperFunctions";
 import { CopyBudgetDialog } from "./CopyBudgetDialog";
+import { createPortal } from "react-dom";
+import CategoryDialog from "./CategoryDialog";
 
 interface CategoriesTableProps {
 }
@@ -38,22 +40,8 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
     })
   }
 
-  const handleAddCategory = async () => {
-    await dialog.getConfirmation({
-      title: 'Add Category',
-      content:
-        <CategoryForm
-          onSubmit={async (value) => {
-            await upsertRecord(value)
-            dialog.closeDialog()
-          }}
-          onClose={() => dialog.closeDialog()}
-          initialValues={{
-            date: currentDate
-          }}
-        />,
-      showActionButtons: false
-    })
+  const handleAddCategory = async (value: any) => {
+    await upsertRecord(value)
   }
 
   const handleCopyPrevMonth = async () => {
@@ -78,18 +66,18 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
         >
           <div>
             <div className="uppercase">{plannedIncome.name}</div>
-            <div className="font-bold text-3xl text-white">
+            <div className="font-bold text-3xl">
               {toCurrency(plannedIncome.value)}
             </div>
           </div>
-          <div className="font-bold text-gray-600 text-3xl pt-5"> - </div>
+          <div className="font-bold text-3xl pt-5"> - </div>
           <div>
             <div className="uppercase">{plannedBudget.name}</div>
-            <div className="font-bold text-3xl text-white">
+            <div className="font-bold text-3xl">
               {toCurrency(plannedBudget.value)}
             </div>
           </div>
-          <div className="font-bold text-gray-600 text-3xl pt-5"> = </div>
+          <div className="font-bold text-3xl pt-5"> = </div>
           <div>
             <div className="uppercase">DIFFERENCE</div>
             <div
@@ -111,18 +99,18 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
         >
           <div>
             <div className="uppercase">{actualIncome.name}</div>
-            <div className="font-bold text-3xl text-white">
+            <div className="font-bold text-3xl">
               {toCurrency(actualIncome.value)}
             </div>
           </div>
-          <div className="font-bold text-gray-600 text-3xl pt-5"> - </div>
+          <div className="font-bold text-3xl pt-5"> + </div>
           <div>
             <div className="uppercase">{actualSpent.name}</div>
-            <div className="font-bold text-3xl text-white">
+            <div className="font-bold text-3xl">
               {toCurrency(actualSpent.value)}
             </div>
           </div>
-          <div className="font-bold text-gray-600 text-3xl pt-5"> = </div>
+          <div className="font-bold text-3xl pt-5"> = </div>
           <div>
             <div className="uppercase">DIFFERENCE</div>
             <div
@@ -140,8 +128,11 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
 
       <Card className="col-span-2">
 
-        <div className="flex justify-end">
+        <div className="flex justify-end space-x-6">
+          <CategoryDialog />
           <CopyBudgetDialog />
+
+
         </div>
 
         <Table
@@ -151,6 +142,8 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
 
         <SnackbarProvider />
       </Card>
+
+
     </div>
   )
 

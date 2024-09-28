@@ -5,6 +5,7 @@ import Sidebar from "./components/Sidebar";
 import DialogProvider from "./components/common/DialogProvider";
 import { CategoryProvider } from "./context/CategoryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,6 +36,7 @@ export default function RootLayout({
               <div className="ml-20 p-5 space-x-3 space-y-3">
                 {children}
               </div>
+              <Toaster />
             </CategoryProvider>
           </DialogProvider>
         </ThemeProvider>

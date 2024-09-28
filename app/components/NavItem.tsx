@@ -16,7 +16,7 @@ export default function NavItem({ icon, title, href = '' }: NavItemProps) {
   return (
     <Link href={href}>
       <div className="flex items-center justify-center aspect-square has-tooltip">
-        <span className="tooltip left-24 rounded shadow-lg px-4 py-2 text-sm bg-tremor-background-emphasis bg-opacity-80 backdrop-blur">
+        <span className="tooltip left-24 rounded shadow-lg px-4 py-2 text-sm bg-opacity-80 backdrop-blur border-muted">
           {title}
         </span>
         {icon}
