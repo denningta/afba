@@ -23,6 +23,7 @@ const TableActionButton = ({
       <div>
         <button
           onClick={handleClick}
+          tabIndex={-1}
         >
           <RiMoreLine />
         </button>

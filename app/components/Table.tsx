@@ -11,6 +11,7 @@ import DialogClose from "./common/DialogClose"
 import TableFilter from "./TableFilter"
 import TableFilterMenu from "./TableFilterMenu"
 import CustomizeColumnsDialog from "./CustomizeColumnsDialog"
+import { ArrowDown, ArrowUp } from "lucide-react"
 
 interface TableProps<T> {
   data: T[]
@@ -105,12 +106,23 @@ export default function BaseTable<T>({
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map(header => (
                   <th key={header.id} className="py-3 px-3 text-left">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                    <div
+                      className={`flex items-center space-x-3 cursor-pointer select-none`}
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      <div className="w-6 text-accent ml-2">
+                        {{
+                          asc: <ArrowUp />,
+                          desc: <ArrowDown />
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
+                    </div>
                   </th>
                 ))}
               </tr>
