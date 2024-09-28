@@ -39,8 +39,6 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
     fetcher ?? defaultFetcher
   )
 
-  console.log(cache)
-
   const listRecords = () => {
     return data
   }

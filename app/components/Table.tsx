@@ -151,16 +151,20 @@ export default function BaseTable<T>({
           <tfoot>
             {table.getFooterGroups().map(footerGroup => (
               <tr key={footerGroup.id}>
-                {footerGroup.headers.map(header => (
-                  <th key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.footer,
-                        header.getContext()
-                      )}
-                  </th>
-                ))}
+                {footerGroup.headers.map(header => {
+                  console.log(footerGroup)
+                  return (
+                    <th key={header.id} className="py-3 pl-3">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.footer,
+                          header.getContext()
+                        )}
+                    </th>
+                  )
+
+                })}
               </tr>
             ))}
           </tfoot>
