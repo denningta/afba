@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { X as Close } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 function AutoComplete(
   props: UseAutocompleteProps<Category, false, false, false>,

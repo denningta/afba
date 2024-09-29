@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Table } from "@tanstack/react-table"
 import { Settings } from "lucide-react"
@@ -18,7 +17,9 @@ import { Settings } from "lucide-react"
 export interface CustomizeColumnsDialogProps<T> {
   table: Table<T>
 }
-const CustomizeColumnsDialog = <T,>({ table }: CustomizeColumnsDialogProps<T>) => {
+const CustomizeColumnsDialog = <T,>({
+  table,
+}: CustomizeColumnsDialogProps<T>) => {
 
   return (
     <Dialog>
@@ -56,10 +57,8 @@ const CustomizeColumnsDialog = <T,>({ table }: CustomizeColumnsDialogProps<T>) =
             <div key={column.id} className="flex items-center space-x-2">
               <Checkbox
                 id={column.id}
-                {...{
-                  checked: column.getIsVisible(),
-                  onChange: column.getToggleVisibilityHandler(),
-                }}
+                checked={column.getIsVisible()}
+                onCheckedChange={(e) => column.toggleVisibility(e.valueOf() as boolean)}
               />
               <label
                 htmlFor={column.id}

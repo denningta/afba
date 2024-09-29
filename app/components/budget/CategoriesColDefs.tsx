@@ -114,6 +114,7 @@ const categoryColumns = [
   }),
   columnHelper.accessor('type', {
     header: 'Type',
+    enableHiding: true,
     cell: info => info.getValue()
   }),
   columnHelper.display({

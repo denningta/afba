@@ -56,7 +56,6 @@ export function CopyBudgetDialog({
       const res = await axios.post(`/api/copyCategories/${month}`, {
         currentDate: currentDate
       })
-      console.log(res)
 
     } catch (e: any) {
       console.error(e)

@@ -1,6 +1,6 @@
 'use client'
 
-import { BuiltInFilterFn, ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
+import { BuiltInFilterFn, ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, VisibilityState, flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { isOdd } from "../helpers/helperFunctions"
 import Checkbox from "./common/Checkbox"
 import { Button, Dialog, DialogPanel, Divider, Select, SelectItem } from "@tremor/react"
@@ -54,6 +54,14 @@ export default function BaseTable<T>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [showCustomize, setShowCustomize] = useState(false)
 
+  // let colVis = JSON.parse(localStorage.getItem('categoryColumnVisibility') || '{}')
+
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+
+  useEffect(() => {
+    localStorage.setItem('categoryColumnVisibility', JSON.stringify(columnVisibility))
+  }, [columnVisibility])
+
   const table = useReactTable({
     columns,
     data,
@@ -68,9 +76,11 @@ export default function BaseTable<T>({
     initialState: initialState,
     state: {
       columnFilters,
-      pagination
+      pagination,
+      columnVisibility
     },
-    autoResetPageIndex: false
+    autoResetPageIndex: false,
+    onColumnVisibilityChange: setColumnVisibility
   })
 
   useEffect(() => {
@@ -152,7 +162,6 @@ export default function BaseTable<T>({
             {table.getFooterGroups().map(footerGroup => (
               <tr key={footerGroup.id}>
                 {footerGroup.headers.map(header => {
-                  console.log(footerGroup)
                   return (
                     <th key={header.id} className="py-3 pl-3">
                       {header.isPlaceholder

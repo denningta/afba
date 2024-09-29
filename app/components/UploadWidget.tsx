@@ -22,7 +22,6 @@ export default function UploadWidget<T>({
 
   const handleOnChange: FormEventHandler<HTMLInputElement> = (e) => {
     const files = (e.target as HTMLInputElement).files
-    console.log(files)
 
     if (files === null) {
       return
