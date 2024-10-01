@@ -1,6 +1,6 @@
 'use client'
 
-import { BuiltInFilterFn, ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, VisibilityState, flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
+import { BuiltInFilterFn, ColumnDef, ColumnFiltersState, InitialTableState, Row, Table, Updater, VisibilityState, flexRender, getCoreRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from "@tanstack/react-table"
 import { isOdd } from "../helpers/helperFunctions"
 import Checkbox from "./common/Checkbox"
 import { Button, Dialog, DialogPanel, Divider, Select, SelectItem } from "@tremor/react"
@@ -54,13 +54,20 @@ export default function BaseTable<T>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [showCustomize, setShowCustomize] = useState(false)
 
-  // let colVis = JSON.parse(localStorage.getItem('categoryColumnVisibility') || '{}')
 
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
 
+
   useEffect(() => {
-    localStorage.setItem('categoryColumnVisibility', JSON.stringify(columnVisibility))
-  }, [columnVisibility])
+    if (typeof window !== undefined) {
+      let colVis = JSON.parse(localStorage.getItem('categoryColumnVisibility') || '{}')
+      setColumnVisibility(colVis)
+    }
+  }, [])
+
+  const saveColumnVisibility = (e: Updater<VisibilityState>) => {
+    localStorage.setItem('categoryColumnVisibility', JSON.stringify(e))
+  }
 
   const table = useReactTable({
     columns,
