@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Roboto } from "next/font/google"
 import "./globals.css";
 import Sidebar from "./components/Sidebar";
 import DialogProvider from "./components/common/DialogProvider";
@@ -7,7 +7,11 @@ import { CategoryProvider } from "./context/CategoryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const roboto = Roboto({
+  weight: '300',
+  subsets: ['latin'],
+  display: 'swap'
+})
 
 export const metadata: Metadata = {
   title: "Budget",
@@ -21,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content`}>
+      <body className={`${roboto.className} bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

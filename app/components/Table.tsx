@@ -60,7 +60,9 @@ export default function BaseTable<T>({
 
   useEffect(() => {
     if (typeof window !== undefined) {
-      let colVis = JSON.parse(localStorage.getItem('categoryColumnVisibility') || '{}')
+      let str = localStorage.getItem('categoryColumnVisibility')
+      const string = (str !== "undefined") ? str : '{}'
+      let colVis = JSON.parse(string as string)
       setColumnVisibility(colVis)
     }
   }, [])

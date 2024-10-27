@@ -12,7 +12,7 @@
 }
 /* width */
 ::-webkit-scrollbar {
-  @apply bg-slate-800 w-[10px] rounded-full;
+  @apply bg-background w-[5px] rounded-full;
 }
 
 /* Track */

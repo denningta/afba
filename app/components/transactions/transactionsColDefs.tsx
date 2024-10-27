@@ -1,19 +1,14 @@
 import Transaction from "@/app/interfaces/transaction"
-import { createColumnHelper } from "@tanstack/react-table"
+import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
 import Checkbox from "../common/Checkbox"
 import TransactionActions from "./TransactionActions"
-import AutoComplete from "../common/AutoComplete"
-import { Category } from "@/app/interfaces/categories"
-import useCategories from "@/app/hooks/useCategories"
-import { CSSProperties, SyntheticEvent } from "react"
-import useTransactions from "@/app/hooks/useTransactions"
-import { dateToYYYYMM, getMonthString, toCurrency } from "@/app/helpers/helperFunctions"
-import { ObjectId } from "mongodb"
+import { CSSProperties } from "react"
+import { toCurrency } from "@/app/helpers/helperFunctions"
 import UserCategoryCell from "./UserCategoryCell"
 
 const columnHelper = createColumnHelper<Transaction>()
 
-const columns = [
+const columns: ColumnDef<Transaction, any>[] = [
   columnHelper.display({
     id: 'select',
     cell: ({ row }) =>
@@ -33,14 +28,17 @@ const columns = [
   }),
   columnHelper.accessor('date', {
     header: 'Date',
-    cell: info => info.getValue(),
-    size: 100
+    cell: info => info.getValue()
   }),
   columnHelper.accessor('month', {
     header: 'Month',
-    cell: info => info.getValue()
+    cell: info => info.getValue(),
+    meta: {
+      filterVariant: 'select'
+    }
   }),
   columnHelper.accessor('description', {
+
     header: 'Description',
     cell: info => info.getValue()
   }),
@@ -49,12 +47,23 @@ const columns = [
     cell: info => info.getValue()
   }),
   columnHelper.accessor('category', {
+
     header: 'Category',
     cell: info => info.getValue()
   }),
   columnHelper.accessor('userCategory', {
     header: 'User Category',
-    cell: UserCategoryCell
+    cell: UserCategoryCell,
+    filterFn: (row, columnId, filterValue) => {
+      const data = row.getValue(columnId) as any
+      if (!filterValue) return true
+      if (!data && filterValue === 'unassigned') return true
+      if (data && data.name === filterValue) return true
+      return false
+    },
+    meta: {
+      filterVariant: 'select',
+    }
   }),
   columnHelper.accessor('status', {
     header: 'Status',

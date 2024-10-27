@@ -53,7 +53,7 @@ function AutoComplete(
               variant="ghost"
               size="icon"
             >
-              <Close />
+              <Close size={15} className="text-muted" />
             </Button>
           </div>
         }
