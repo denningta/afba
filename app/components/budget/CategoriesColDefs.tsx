@@ -1,15 +1,14 @@
-import { createColumnHelper } from "@tanstack/react-table"
+import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
 import Checkbox from "../common/Checkbox"
 import { Category } from "@/app/interfaces/categories"
 import CategoryActions from "./CategoryActions"
-import { CSSProperties, useMemo } from "react"
+import { CSSProperties } from "react"
 import { toCurrency } from "@/app/helpers/helperFunctions"
 import { Progress } from "@/components/ui/progress"
-import { cn } from "@/lib/utils"
 
 const columnHelper = createColumnHelper<Category>()
 
-const categoryColumns = [
+const categoryColumns: ColumnDef<Category, any>[] = [
   columnHelper.display({
     id: 'select',
     cell: ({ row }) =>

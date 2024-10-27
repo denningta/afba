@@ -24,6 +24,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -266,6 +267,24 @@ export function DataTable<TData, TValue>({
               </TableRow>
             )}
           </TableBody>
+          <TableFooter>
+            {table.getFooterGroups().map(footerGroup => (
+              <TableRow key={footerGroup.id}>
+                {footerGroup.headers.map(header => {
+                  return (
+                    <TableCell key={header.id} className="py-3 pl-3">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.footer,
+                          header.getContext()
+                        )}
+                    </TableCell>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableFooter>
         </Table>
       </div >
 

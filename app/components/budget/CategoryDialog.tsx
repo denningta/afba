@@ -17,7 +17,7 @@ const CategoryDialog = ({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <SquarePlus />
+          <SquarePlus size={18} />
         </Button>
       </DialogTrigger>
       <DialogContent>

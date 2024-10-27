@@ -16,6 +16,7 @@ import { toCurrency } from "@/app/helpers/helperFunctions";
 import { CopyBudgetDialog } from "./CopyBudgetDialog";
 import { createPortal } from "react-dom";
 import CategoryDialog from "./CategoryDialog";
+import { DataTable } from "../common/DataTable";
 
 interface CategoriesTableProps {
 }
@@ -110,7 +111,7 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
               {toCurrency(actualSpent.value)}
             </div>
           </div>
-          <div className="font-bold text-3xl pt-5"> = </div>
+          <div className="font-bold text-gray-600 text-3xl pt-5"> = </div>
           <div>
             <div className="uppercase">DIFFERENCE</div>
             <div
@@ -128,18 +129,20 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
 
       <Card className="col-span-2">
 
-        <div className="flex justify-end space-x-6">
+        <div className="flex justify-end space-x-6 mb-4">
           <CategoryDialog />
           <CopyBudgetDialog />
-
-
         </div>
 
-        <Table
+        <DataTable
           data={data ?? []}
           columns={categoryColumns}
         />
-
+        {/* <Table */}
+        {/*   data={data ?? []} */}
+        {/*   columns={categoryColumns} */}
+        {/* /> */}
+        {/**/}
         <SnackbarProvider />
       </Card>
 

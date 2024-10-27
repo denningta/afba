@@ -77,6 +77,19 @@ const columns: ColumnDef<Transaction, any>[] = [
         color: amount > 0 ? '	#00d062' : 'inherit'
       }
       return <span style={style}>{toCurrency(amount)}</span>
+    },
+    footer: (props) => {
+      const total = props.table.getRowModel().rows.reduce((sum, row) => {
+        const value: number = row.getValue('amount')
+        return sum + value
+      }, 0)
+
+      return (
+        <div className="flex space-x-2 pr-3">
+          <div>Total: </div>
+          <div className="font-bold">{total.toFixed(2)}</div>
+        </div>
+      )
     }
   }),
   columnHelper.display({

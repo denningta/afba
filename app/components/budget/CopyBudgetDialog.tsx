@@ -66,7 +66,7 @@ export function CopyBudgetDialog({
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <Copy />
+          <Copy size={18} />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
