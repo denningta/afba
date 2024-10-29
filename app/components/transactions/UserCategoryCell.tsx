@@ -24,14 +24,16 @@ const UserCategoryCell = (info: CellContext<Transaction, Category | undefined>) 
   }
 
   return (
-    <AutoComplete
-      options={data ?? []}
-      value={info.row.original.userCategory ?? null}
-      isOptionEqualToValue={(option, value) => (option?._id === value?._id)}
-      getOptionLabel={(option) => option.name ?? ''}
-      onChange={(event, value) => updateTransaction(event, value)}
-      autoHighlight={true}
-    />
+    <div>
+      <AutoComplete
+        options={data ?? []}
+        value={info.row.original.userCategory ?? null}
+        isOptionEqualToValue={(option, value) => (option?._id === value?._id)}
+        getOptionLabel={(option) => option.name ?? ''}
+        onChange={(event, value) => updateTransaction(event, value)}
+        autoHighlight={true}
+      />
+    </div>
   )
 
 }

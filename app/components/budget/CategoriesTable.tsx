@@ -1,20 +1,14 @@
 'use client'
 
 import { Card } from "@tremor/react";
-import Table from "../Table";
 import { SnackbarProvider } from "notistack"
 import categoryColumns from "./CategoriesColDefs";
 import { useConfirmationDialog } from "../common/Dialog";
-import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
-import TableActions from "../common/TableActions";
-import CopyBudgetForm from "./CopyBudgetForm";
-import axios from "axios";
 import { usePathname } from "next/navigation";
 import getBudgetKpis from "./kpis";
 import { toCurrency } from "@/app/helpers/helperFunctions";
 import { CopyBudgetDialog } from "./CopyBudgetDialog";
-import { createPortal } from "react-dom";
 import CategoryDialog from "./CategoryDialog";
 import { DataTable } from "../common/DataTable";
 
@@ -32,6 +26,8 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
     upsertRecord,
     mutate
   } = useCategories({ date: currentDate })
+
+  console.log(data)
 
 
   const handleDeleteCategories = async () => {

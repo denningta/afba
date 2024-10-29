@@ -2,10 +2,10 @@
 
 import { Card } from "@tremor/react"
 import { useState } from "react"
-import Table from "./Table"
 import transactionCols from "./transactions/transactionsColDefs"
 import { SnackbarProvider } from "notistack"
 import UploadWidget from "./UploadWidget"
+import { DataTable } from "./common/DataTable"
 
 const columns = transactionCols
 
@@ -17,7 +17,7 @@ export default function Upload() {
       <UploadWidget data={data} onChange={setData} />
 
       <div className="mx-auto max-h-[400px] overflow-y-auto">
-        <Table columns={columns} data={data} />
+        <DataTable columns={columns} data={data} />
       </div>
       <SnackbarProvider />
     </Card>

@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { X as Close } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
 
 function AutoComplete(
   props: UseAutocompleteProps<Category, false, false, false>,
@@ -73,7 +75,7 @@ function AutoComplete(
         >
           <ul
             {...getListboxProps()}
-            className='my-1 w-[520px] max-h-[300px] overflow-auto drop-shadow-md rounded-lg border z-50 bg-background'
+            className='mt-4 w-[520px] max-h-[300px] overflow-auto border drop-shadow-md rounded-lg z-50 bg-background'
           >
             {(groupedOptions as Category[]).map((option, index) => (
               <li {...getOptionProps({ option, index })}

@@ -18,6 +18,8 @@ import {
   getFacetedUniqueValues,
   getFacetedMinMaxValues,
   ColumnFiltersState,
+  VisibilityState,
+  RowSelectionState,
 } from "@tanstack/react-table"
 
 import {
@@ -91,12 +93,22 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState({})
+  const initialVisibility = JSON.parse(localStorage.getItem('colVis') || '{}')
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialVisibility)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 100
   })
+
+  useEffect(() => {
+    if (!columnVisibility) return
+    localStorage.setItem('colVis', JSON.stringify(columnVisibility))
+
+  }, [columnVisibility])
+
+  console.log()
 
   const table = useReactTable({
     data,
@@ -106,7 +118,8 @@ export function DataTable<TData, TValue>({
       columnFilters,
       globalFilter,
       sorting,
-      pagination
+      pagination,
+      rowSelection
     },
     filterFns: {
       fuzzy: fuzzyFilter
@@ -123,6 +136,7 @@ export function DataTable<TData, TValue>({
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
+    onRowSelectionChange: setRowSelection,
     globalFilterFn: 'fuzzy',
   })
 
@@ -230,7 +244,7 @@ export function DataTable<TData, TValue>({
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                        <div className="grow" />
+                        <div className="grow" ></div>
 
                         <div className="w-6 text-accent ml-2">
                           {{
@@ -289,7 +303,7 @@ export function DataTable<TData, TValue>({
       </div >
 
       <div className="flex items-center text-sm mt-4 mx-4 space-x-10">
-        <div>0 of 4 rows(s) selected</div>
+        <div> {Object.keys(rowSelection).length} of {data.length} rows(s) selected</div>
 
         <div className="grow" />
 
@@ -297,7 +311,10 @@ export function DataTable<TData, TValue>({
           <div className="min-w-fit">
             Rows per page
           </div>
-          <Select>
+          <Select
+            value={table.getState().pagination.pageSize.toLocaleString()}
+            onValueChange={value => table.setPageSize(Number(value))}
+          >
             <SelectTrigger className="w-[100px]">
               <SelectValue />
             </SelectTrigger>
@@ -310,7 +327,7 @@ export function DataTable<TData, TValue>({
 
         </div>
         <div>
-          Page 1 of 1
+          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount().toLocaleString()}
         </div>
         <div>
 
