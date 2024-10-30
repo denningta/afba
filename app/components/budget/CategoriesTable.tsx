@@ -27,8 +27,6 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
     mutate
   } = useCategories({ date: currentDate })
 
-  console.log(data)
-
 
   const handleDeleteCategories = async () => {
     const res = await dialog.getConfirmation({

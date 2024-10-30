@@ -93,8 +93,8 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
-  const initialVisibility = JSON.parse(localStorage.getItem('colVis') || '{}')
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialVisibility)
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [firstRender, setFirstRender] = useState(true)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [pagination, setPagination] = useState<PaginationState>({
@@ -103,12 +103,21 @@ export function DataTable<TData, TValue>({
   })
 
   useEffect(() => {
-    if (!columnVisibility) return
-    localStorage.setItem('colVis', JSON.stringify(columnVisibility))
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const colVis = JSON.parse(localStorage.getItem('colVis') || 'undefined')
+      console.log('initial colVis: ', colVis)
+      setColumnVisibility(colVis)
+      setFirstRender(false)
+    }
+  }, [])
 
+  useEffect(() => {
+    if (firstRender) return
+    localStorage.setItem('colVis', JSON.stringify(columnVisibility))
+    console.log('set colVis: ', columnVisibility)
   }, [columnVisibility])
 
-  console.log()
+  console.log('current state: ', columnVisibility)
 
   const table = useReactTable({
     data,
