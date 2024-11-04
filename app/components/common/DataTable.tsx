@@ -104,8 +104,7 @@ export function DataTable<TData, TValue>({
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
-      const colVis = JSON.parse(localStorage.getItem('colVis') || 'undefined')
-      console.log('initial colVis: ', colVis)
+      const colVis = JSON.parse(localStorage.getItem('colVis') || '{}')
       setColumnVisibility(colVis)
       setFirstRender(false)
     }
@@ -114,10 +113,8 @@ export function DataTable<TData, TValue>({
   useEffect(() => {
     if (firstRender) return
     localStorage.setItem('colVis', JSON.stringify(columnVisibility))
-    console.log('set colVis: ', columnVisibility)
   }, [columnVisibility])
 
-  console.log('current state: ', columnVisibility)
 
   const table = useReactTable({
     data,

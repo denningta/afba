@@ -7,9 +7,7 @@ import { unstable_useForkRef as useForkRef } from '@mui/utils';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { X as Close } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { Calendar, X as Close } from 'lucide-react';
 
 function AutoComplete(
   props: UseAutocompleteProps<Category, false, false, false>,
@@ -63,7 +61,6 @@ function AutoComplete(
         <Input {...getInputProps()}
           className={`${hasClearIcon ? 'hidden' : 'flex'} tremor-TextInput-root w-full items-center min-w-[10rem] outline-none rounded-tremor-default transition duration-100 border shadow-tremor-input dark:shadow-dark-tremor-input bg-tremor-background dark:bg-dark-tremor-background hover:bg-tremor-background-muted dark:hover:bg-dark-tremor-background-muted text-tremor-content dark:text-dark-tremor-content border-tremor-border dark:border-dark-tremor-border`}
         />
-
       </div>
 
 
@@ -90,6 +87,14 @@ function AutoComplete(
               </li>
             ))}
           </ul>
+          <div className='mt-3'>
+            <Button onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            }}>
+              <Calendar />
+            </Button>
+          </div>
         </Popper>
       }
 

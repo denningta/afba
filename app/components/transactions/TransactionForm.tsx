@@ -27,12 +27,20 @@ export default function TransactionForm({
   onSubmit,
   onClose,
   onChange,
-  initialValues
+  initialValues = {
+    date: new Date(),
+    description: '',
+    category: '',
+    status: '',
+    amount: 0
+  }
 }: TransactionFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues
   })
+
+  console.log(form.getValues())
 
   return (
     <Form {...form}>
@@ -111,7 +119,11 @@ export default function TransactionForm({
             <FormItem>
               <FormLabel>Amount</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input
+                  {...form.register('amount', {
+                    valueAsNumber: true
+                  })}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

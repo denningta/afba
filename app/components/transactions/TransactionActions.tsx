@@ -40,6 +40,7 @@ export default function TransactionActions({
           <Button
             size="sm"
             variant="ghost"
+            tabIndex={-1}
           >
             <Ellipsis />
           </Button>

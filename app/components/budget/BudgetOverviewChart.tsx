@@ -230,7 +230,7 @@ const BudgetOverviewChart = ({
                     className="cursor-pointer"
                   >
                     {barGroup.bars.map((bar, i) => {
-                      if (bar.height <= 0) {
+                      if (Math.abs(bar.height) <= 0) {
                         return (
                           <Group
                             key={`bar-group-bar-${barGroup.index}-${bar.index}-${bar.value}-${bar.key}-${i}`}
@@ -277,6 +277,7 @@ const BudgetOverviewChart = ({
                             barStackData.date = barData.date
 
                             this.heightAcc = barStackData.y + (barStackData?.height ?? 0)
+                            barStackData.name === 'Rent' && console.log(barStackData)
 
                             return (
                               <rect
