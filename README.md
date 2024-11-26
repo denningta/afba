@@ -75,7 +75,7 @@ VOLUME="afba_data"
 Run the following command.  
 
 ```
-docker run --rm -v "${VOLUME}:/data" -v "${PWD}:/backup-dir" ubuntu tar cvzf /backup-dir/${VOLUME}.tar.gz /data
+docker run --rm -v "${VOLUME}:/data" -v "${PWD}:/backup-dir" ubuntu tar cvzf /backup-dir/backup/${VOLUME}.tar.gz /data
 ```
 Creates a temporary docker container, connects to the volume data and uses ubuntu tar to create a compressed .tar.gz of the volume directory.  Saves the file to the current working directory.
 
@@ -93,7 +93,7 @@ Use `rsync` to copy the file from the remote server
 rsync -a denningta@192.168.1.240:/home/denningta/afba/backup .
 ```
 
-Run a docker container to restore the volume data
+Run a docker container to restore the volume data.  (Run with PWD inside the `backup` directory)
 ```
 docker run --rm -v "${VOLUME}:/data" -v "${PWD}:/backup" ubuntu bash -c "rm -rf /data/{*,.*}; cd /data && tar xvzf /backup/${VOLUME}.tar.gz --strip 1"
 ```

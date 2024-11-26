@@ -129,7 +129,11 @@ export async function listCategories({ date }: CategoriesQuery) {
             $project: {
               date: "$date",
               description: "$description",
-              amount: "$amount"
+              amount: "$amount",
+              category: "$category",
+              originalDescription: "$originalDescription",
+              status: "$status",
+              userCategory: "$userCategory"
             }
           }
         ],

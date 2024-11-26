@@ -22,18 +22,15 @@ export function YYYYMMToDate(input: string) {
 
 export function getPrevMonthString(date: string, months: number) {
   if (!date.match(/[0-9]{4}-[0-1]{1}[0-9]{1}/)) throw new Error('Not a valid date. Must be in format YYYY-MM')
-  let [year, month] = date.split('-').map(el => +el)
+  let [year, month] = date.split('-').map(el => parseInt(el))
 
-  const diff = month - months
+  const totalMonths = year * 12 + (month - 1) - months
+  const newYear = Math.floor(totalMonths / 12)
+  const newMonth = (totalMonths % 12) + 1
+  const formattedMonth = newMonth < 10 ? `0${newMonth}` : `${newMonth}`
 
-  const newYear = diff <= 0 ? (year + Math.floor((diff ?? 12) / 12)) : year
-  const newMonth = diff <= 0 ? 12 + diff : diff
+  return `${newYear}-${formattedMonth}`
 
-  const formattedMonth = month < 10 ? `0${newMonth}` : `${newMonth}`
-
-  const dateString = `${newYear}-${formattedMonth}`
-
-  return dateString
 }
 
 export function getPrevMonth(date: string, months: number) {

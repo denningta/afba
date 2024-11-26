@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { format, startOfYear, eachMonthOfInterval, isBefore, isAfter, isSameMonth } from 'date-fns'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface MonthRangePickerProps {
+  value?: { from: Date, to: Date }
   onRangeChange?: (range: { from: Date; to: Date } | undefined) => void
 }
 
-export default function MonthRangePicker({ onRangeChange }: MonthRangePickerProps) {
+export default function MonthRangePicker({ value, onRangeChange }: MonthRangePickerProps) {
   const [date, setDate] = useState<{ from: Date; to: Date } | undefined>()
   const [year, setYear] = useState(new Date().getFullYear())
   const [selecting, setSelecting] = useState<'start' | 'end'>('start')

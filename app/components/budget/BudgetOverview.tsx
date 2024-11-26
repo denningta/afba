@@ -12,6 +12,7 @@ import Transaction from "@/app/interfaces/transaction"
 import Link from "next/link"
 import MonthRangePicker from "@/components/ui/month-range-picker"
 import { DataTable } from "../common/DataTable"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export interface BudgetOverviewProps {
 }
@@ -28,7 +29,7 @@ export interface BudgetOverview {
 
 const getDefaultStart = () => {
   const start = new Date()
-  start.setMonth(start.getMonth() - 11)
+  start.setMonth(start.getMonth() - 5)
   return dateToYYYYMM(start)
 }
 
@@ -45,6 +46,8 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
   const [transactionData, setTransactionData] = useState<Transaction[]>([])
   const [budgetNav, setBudgetNav] = useState<string | null>(null)
 
+  console.log(data)
+
   const handleFilterChange = (data: BarStackData | null) => {
     setTransactionData(data?.transactions ?? [])
     setBudgetNav(data?.date ?? null)
@@ -53,31 +56,43 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end space-x-3 mb-4">
-        <MonthRangePicker
-          onRangeChange={(range) => {
-            if (!range) return
-            setStart(dateToYYYYMM(range.from))
-            setEnd(dateToYYYYMM(range.to))
-          }}
-        />
-      </div>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="savings">Savings</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview">
 
-
-      <div style={{ height: 600 }} className="mb-6">
-        <ParentSize>
-          {({ width, height }) =>
-            <BudgetOverviewChart
-              data={data ?? []}
-              start={start}
-              end={end}
-              width={width}
-              height={height}
-              onFilterChange={handleFilterChange}
+          <div className="flex justify-end space-x-3 mb-4">
+            <MonthRangePicker
+              value={{ from: new Date(start), to: new Date(end) }}
+              onRangeChange={(range) => {
+                if (!range) return
+                setStart(dateToYYYYMM(range.from))
+                setEnd(dateToYYYYMM(range.to))
+              }}
             />
-          }
-        </ParentSize>
-      </div>
+          </div>
+
+
+          <div style={{ height: 600 }} className="mb-6">
+            <ParentSize>
+              {({ width, height }) =>
+                <BudgetOverviewChart
+                  data={data ?? []}
+                  start={start}
+                  end={end}
+                  width={width}
+                  height={height}
+                  onFilterChange={handleFilterChange}
+                />
+              }
+            </ParentSize>
+          </div>
+        </TabsContent>
+        <TabsContent value="savings">
+        </TabsContent>
+      </Tabs>
 
       {budgetNav &&
         <Link href={`/budget/${budgetNav}`}>

@@ -110,7 +110,7 @@ export default function CategoryActions({
               </div>
             </div>
             <DataTable
-              columns={columns.filter((colDef) => !colDef.id?.includes('userCategory'))}
+              columns={columns}
               data={category.transactions ?? []}
             />
           </DialogContent>

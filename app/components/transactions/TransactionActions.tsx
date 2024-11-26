@@ -35,7 +35,7 @@ export default function TransactionActions({
 
   return (
     <>
-      <DropdownMenu modal={false}>
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             size="sm"
@@ -46,8 +46,6 @@ export default function TransactionActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>View transactions</DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={() => setDialogOpen(true)}
           >

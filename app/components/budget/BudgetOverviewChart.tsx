@@ -1,12 +1,13 @@
 import { scaleBand, scaleLinear, scaleOrdinal } from "@visx/scale"
 import { AxisBottom, AxisLeft } from "@visx/axis"
 import { Group } from "@visx/group"
-import { BarGroup } from "@visx/shape"
+import { BarGroup, LinePath } from "@visx/shape"
 import { BudgetOverview } from "./BudgetOverview";
 import { useRouter } from "next/navigation"
 import { getPrevMonth, monthDiff, toCurrency } from "@/app/helpers/helperFunctions";
-import { schemePaired } from "d3"
+import { curveBasis, curveBumpX, curveCardinal, curveLinear, curveMonotoneX, curveNatural, curveStep, schemePaired } from "d3"
 import { useTooltip, useTooltipInPortal, defaultStyles } from "@visx/tooltip"
+import { MarkerCircle } from "@visx/marker"
 import { PatternLines } from "@visx/pattern"
 import { localPoint } from "@visx/event"
 import { Category } from "@/app/interfaces/categories";
@@ -37,7 +38,7 @@ export interface BarStackData extends Category {
 
 const getDate = (budget: BudgetOverview) => budget.date
 
-const defaultMargin = { top: 40, right: 0, bottom: 40, left: 0 };
+const defaultMargin = { top: 40, right: 30, bottom: 50, left: 40 };
 const keys = ['totalBudget', 'totalSpent']
 const background = '#0000'
 const colors = ['#aeeef8', '#e5fd3d']
@@ -119,7 +120,7 @@ const BudgetOverviewChart = ({
     padding: 0.1
   })
 
-  const dollarScaleMax = Math.max(...data.map(el => Math.max(...[el.totalSpent, el.totalBudget])))
+  const dollarScaleMax = Math.max(...data.map(el => Math.max(...[-el.totalSpent, el.totalBudget])))
   const dollarScale = scaleLinear<number>({
     domain: [0, dollarScaleMax]
   })
@@ -196,7 +197,7 @@ const BudgetOverviewChart = ({
   }
 
   return (
-    <div>
+    <div className="">
       <svg
         ref={containerRef}
         width={width}
@@ -205,10 +206,39 @@ const BudgetOverviewChart = ({
         <rect x={0} y={0} width={width} height={height} fill={background} rx={14}
           onClick={() => setBarSelected(null)}
         />
+
         <Group
           top={margin.top}
           left={margin.left}
         >
+          <AxisBottom
+            top={yMax + 1}
+            scale={dateScale}
+            tickLabelProps={{
+              fontSize: 11,
+              textAnchor: "middle",
+              cursor: "pointer",
+              onClick: (e) => { e.currentTarget.textContent && handleGoToBudget(e.currentTarget.textContent) }
+            }}
+          />
+          <AxisLeft
+            scale={dollarScale}
+            tickLabelProps={{
+              fontSize: 11,
+            }}
+          />
+          <MarkerCircle id="marker-circle" fill="#fff" size={2} refX={2} />
+          <LinePath
+            className="border-rose-500"
+            data={placeholderData}
+            curve={curveMonotoneX}
+            y={(d) => dollarScale(-d.totalSpent) ?? 0}
+            x={(d) => dateScale(d.date) ?? 0}
+            stroke="#fff"
+            strokeWidth={1.5}
+            strokeOpacity={0.8}
+            markerMid="url(#marker-circle)"
+          />
           <BarGroup
             data={placeholderData}
             keys={keys}
@@ -269,7 +299,7 @@ const BudgetOverviewChart = ({
                               barStackData.height = bar.height * budget / barData.totalBudget
                             }
                             if (bar.key === 'totalSpent') {
-                              barStackData.height = bar.height * spent / barData.totalSpent
+                              barStackData.height = -(bar.height * spent / barData.totalSpent)
                             }
 
                             barStackData.y = this.heightAcc
@@ -316,19 +346,6 @@ const BudgetOverviewChart = ({
           </BarGroup>
 
         </Group>
-        <AxisBottom
-          top={yMax + margin.top}
-          scale={dateScale}
-          hideAxisLine
-          tickStroke="#ffffff"
-          tickLabelProps={{
-            fill: '#ffffff',
-            fontSize: 11,
-            textAnchor: "middle",
-            cursor: "pointer",
-            onClick: (e) => { e.currentTarget.textContent && handleGoToBudget(e.currentTarget.textContent) }
-          }}
-        />
       </svg>
       {tooltipOpen && tooltipData && (
         <TooltipInPortal top={tooltipTop} left={tooltipLeft} style={tooltipStyles}>
