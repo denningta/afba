@@ -48,7 +48,7 @@ export default function MonthPicker({
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={setIsOpen} modal={true}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -61,7 +61,7 @@ export default function MonthPicker({
           {date ? format(date, "MMMM yyyy") : <span>Pick a month</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0 z-50" align="start">
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <Button

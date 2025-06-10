@@ -24,6 +24,7 @@ import MonthPicker from "@/components/ui/month-picker"
 import { Category } from "@/app/interfaces/categories"
 import useCategories from "@/app/hooks/useCategories"
 import { dateToYYYYMM, YYYYMMToDate } from "@/app/helpers/helperFunctions"
+import { useParams } from "next/navigation"
 
 const formSchema = z.object({
   date: z.string({
@@ -60,6 +61,8 @@ export default function BudgetCategoryForm({
     },
   })
 
+  const currentDate = YYYYMMToDate(useParams().date as string)
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true)
@@ -86,7 +89,7 @@ export default function BudgetCategoryForm({
               <div>
                 <FormControl>
                   <MonthPicker
-                    value={field.value ? YYYYMMToDate(field.value) : new Date()}
+                    value={field.value ? YYYYMMToDate(field.value) : currentDate}
                     onValueChange={(date) => form.setValue("date", dateToYYYYMM(date))}
                   />
                 </FormControl>
@@ -140,6 +143,7 @@ export default function BudgetCategoryForm({
                 <SelectContent>
                   <SelectItem value="deduction">Deduction</SelectItem>
                   <SelectItem value="income">Income</SelectItem>
+                  <SelectItem value="transfer">Transfer</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />

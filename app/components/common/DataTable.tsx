@@ -47,6 +47,7 @@ import { DebouncedInput } from "./DebouncedInput"
 import { compareItems, RankingInfo, rankItem } from "@tanstack/match-sorter-utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ColumnFilter from "./ColumnFilter"
+import { Skeleton } from "@/components/ui/skeleton"
 
 declare module '@tanstack/react-table' {
   interface FilterFns {
@@ -60,7 +61,8 @@ declare module '@tanstack/react-table' {
 interface DataTableProps<TData, TValue> {
   onLoad?: (table: TanstackTable<TData>) => void
   columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  data: TData[],
+  isLoading?: boolean
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -90,6 +92,7 @@ export function DataTable<TData, TValue>({
   onLoad = () => { },
   columns,
   data,
+  isLoading = false
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
@@ -151,6 +154,7 @@ export function DataTable<TData, TValue>({
     if (!table) return
     onLoad(table)
   }, [table])
+
 
   return (
     <>
@@ -232,80 +236,92 @@ export function DataTable<TData, TValue>({
         </DropdownMenu>
       </div>
       <div className="rounded-md border " >
+        {isLoading ?
+          <div className="flex flex-col space-y-4 p-5">
+            <Skeleton className="h-7 w-full" />
+            <Skeleton className="h-7 w-full" />
+            <Skeleton className="h-7 w-full" />
+            <Skeleton className="h-7 w-full" />
+          </div>
 
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      <div
-                        className={`flex items-center space-x-3 cursor-pointer select-none`}
-                        onClick={header.column.getToggleSortingHandler()}
-                      >
+          :
+
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        <div
+                          className={`flex items-center space-x-3 cursor-pointer select-none`}
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                          <div className="grow" ></div>
+
+                          <div className="w-6 text-accent ml-2">
+                            {{
+                              asc: <ArrowUp />,
+                              desc: <ArrowDown />
+                            }[header.column.getIsSorted() as string] ?? null}
+                          </div>
+                        </div>
+                      </TableHead>
+                    )
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody >
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+            <TableFooter>
+              {table.getFooterGroups().map(footerGroup => (
+                <TableRow key={footerGroup.id}>
+                  {footerGroup.headers.map(header => {
+                    return (
+                      <TableCell key={header.id} className="py-3 pl-3">
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                            header.column.columnDef.header,
+                            header.column.columnDef.footer,
                             header.getContext()
                           )}
-                        <div className="grow" ></div>
-
-                        <div className="w-6 text-accent ml-2">
-                          {{
-                            asc: <ArrowUp />,
-                            desc: <ArrowDown />
-                          }[header.column.getIsSorted() as string] ?? null}
-                        </div>
-                      </div>
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody >
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-          <TableFooter>
-            {table.getFooterGroups().map(footerGroup => (
-              <TableRow key={footerGroup.id}>
-                {footerGroup.headers.map(header => {
-                  return (
-                    <TableCell key={header.id} className="py-3 pl-3">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                          header.column.columnDef.footer,
-                          header.getContext()
-                        )}
-                    </TableCell>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableFooter>
-        </Table>
+              ))}
+            </TableFooter>
+          </Table>
+
+        }
+
       </div >
 
       <div className="flex items-center text-sm mt-4 mx-4 space-x-10">

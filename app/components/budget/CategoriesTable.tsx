@@ -11,36 +11,26 @@ import { toCurrency } from "@/app/helpers/helperFunctions";
 import { CopyBudgetDialog } from "./CopyBudgetDialog";
 import CategoryDialog from "./CategoryDialog";
 import { DataTable } from "../common/DataTable";
+import { useEffect, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CategoriesTableProps {
 }
 
 export default function CategoriesTable({ }: CategoriesTableProps) {
-  const dialog = useConfirmationDialog()
-
   const pathname = usePathname()
   const currentDate = pathname.split('/').pop()
 
-  const {
-    data,
-    upsertRecord,
-    mutate
-  } = useCategories({ date: currentDate })
+  const [isLoading, setIsLoading] = useState(true)
 
+  const { data } = useCategories({ date: currentDate })
 
-  const handleDeleteCategories = async () => {
-    const res = await dialog.getConfirmation({
-      title: 'Delete Category',
-      content: 'Are you sure you want to delete this category?'
-    })
-  }
+  console.log(data)
 
-  const handleAddCategory = async (value: any) => {
-    await upsertRecord(value)
-  }
+  useEffect(() => {
+    if (data) setIsLoading(false)
+  }, [data])
 
-  const handleCopyPrevMonth = async () => {
-  }
 
   const {
     actualSpent,
@@ -61,15 +51,17 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
         >
           <div>
             <div className="uppercase">{plannedIncome.name}</div>
-            <div className="font-bold text-3xl">
-              {toCurrency(plannedIncome.value)}
+
+            <div className="font-bold text-3xl h-8">
+              {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedIncome.value)}
             </div>
+
           </div>
           <div className="font-bold text-3xl pt-5"> - </div>
           <div>
             <div className="uppercase">{plannedBudget.name}</div>
-            <div className="font-bold text-3xl">
-              {toCurrency(plannedBudget.value)}
+            <div className="font-bold text-3xl h-8">
+              {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedBudget.value)}
             </div>
           </div>
           <div className="font-bold text-3xl pt-5"> = </div>
@@ -79,9 +71,9 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
               style={{
                 color: plannedDiff.value > 0 ? '#00d062' : 'red'
               }}
-              className={`font-bold text-3xl`}
+              className={`font-bold text-3xl h-8`}
             >
-              {toCurrency(plannedDiff.value)}
+              {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedDiff.value)}
             </div>
           </div>
         </div>
@@ -94,15 +86,15 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
         >
           <div>
             <div className="uppercase">{actualIncome.name}</div>
-            <div className="font-bold text-3xl">
-              {toCurrency(actualIncome.value)}
+            <div className="font-bold text-3xl h-8">
+              {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualIncome.value)}
             </div>
           </div>
           <div className="font-bold text-3xl pt-5"> + </div>
           <div>
             <div className="uppercase">{actualSpent.name}</div>
-            <div className="font-bold text-3xl">
-              {toCurrency(actualSpent.value)}
+            <div className="font-bold text-3xl h-8">
+              {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualSpent.value)}
             </div>
           </div>
           <div className="font-bold text-gray-600 text-3xl pt-5"> = </div>
@@ -112,9 +104,9 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
               style={{
                 color: actualDiff.value > 0 ? '#00d062' : 'red'
               }}
-              className={`font-bold text-3xl`}
+              className={`font-bold text-3xl h-8`}
             >
-              {toCurrency(actualDiff.value)}
+              {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualDiff.value)}
             </div>
           </div>
         </div>
@@ -131,12 +123,8 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
         <DataTable
           data={data ?? []}
           columns={categoryColumns}
+          isLoading={isLoading}
         />
-        {/* <Table */}
-        {/*   data={data ?? []} */}
-        {/*   columns={categoryColumns} */}
-        {/* /> */}
-        {/**/}
         <SnackbarProvider />
       </Card>
 

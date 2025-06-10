@@ -133,8 +133,6 @@ const BudgetOverviewChart = ({
   const categoryKeys = data.map(el => el.categories).flat()
     .map(el => el.name).filter(el => el !== null) as string[]
 
-
-
   const budgetColorScale = scaleOrdinal<string, string>({
     domain: categoryKeys,
     range: schemePaired as string[]
@@ -290,7 +288,7 @@ const BudgetOverviewChart = ({
                       return barData && barData.categories
                         .sort((a, b) => (a.budget ?? 0) - (b.budget ?? 0))
                         .map(
-                          function(this: { heightAcc: number }, category: any, i) {
+                          function (this: { heightAcc: number }, category: any, i) {
                             const { spent, budget } = category
 
                             let barStackData: BarStackData = { ...category }
@@ -307,7 +305,6 @@ const BudgetOverviewChart = ({
                             barStackData.date = barData.date
 
                             this.heightAcc = barStackData.y + (barStackData?.height ?? 0)
-                            barStackData.name === 'Rent' && console.log(barStackData)
 
                             return (
                               <rect

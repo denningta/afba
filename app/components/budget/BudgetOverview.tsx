@@ -13,6 +13,10 @@ import Link from "next/link"
 import MonthRangePicker from "@/components/ui/month-range-picker"
 import { DataTable } from "../common/DataTable"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChartConfig, ChartContainer } from "@/components/ui/chart"
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts"
+import useBudgetVsActual from "@/app/hooks/useBudgetVsActual"
 
 export interface BudgetOverviewProps {
 }
@@ -39,19 +43,33 @@ const getDefaultEnd = () => {
   return dateToYYYYMM(end)
 }
 
+const chartConfig = {
+  budget: {
+    label: "Budget",
+    color: "var(--chart-1)",
+  },
+  spent: {
+    label: "Spent",
+    color: "var(--chart-2)",
+  },
+} satisfies ChartConfig
+
+
 const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
-  const { data } = useBudgetOverview()
+  // const { data } = useBudgetOverview()
+  const { data } = useBudgetVsActual('2024-11')
   const [start, setStart] = useState(getDefaultStart())
   const [end, setEnd] = useState(getDefaultEnd())
   const [transactionData, setTransactionData] = useState<Transaction[]>([])
   const [budgetNav, setBudgetNav] = useState<string | null>(null)
 
-  console.log(data)
 
   const handleFilterChange = (data: BarStackData | null) => {
     setTransactionData(data?.transactions ?? [])
     setBudgetNav(data?.date ?? null)
   }
+
+  console.log(data)
 
 
   return (
@@ -62,6 +80,58 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
           <TabsTrigger value="savings">Savings</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Budget vs Actual</CardTitle>
+              <CardDescription>{data?.findLast(el => el.date)?.date}</CardDescription>
+
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig}>
+                <BarChart
+                  accessibilityLayer
+                  data={data?.findLast(el => el.date)?.categories}
+                  layout="vertical"
+                >
+                  <CartesianGrid horizontal={false} />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tickLine={false}
+                    tickMargin={5}
+                    axisLine={true}
+                  >
+                  </YAxis>
+
+                  <XAxis dataKey="spent" type="number" hide >
+                  </XAxis>
+                  <Bar dataKey="budget" layout="vertical" fill="blue" radius={4}>
+                    <LabelList
+                      dataKey="budget"
+                      position="insideLeft"
+                      offset={8}
+                      fill="white"
+                      fontSize={12}
+                    />
+                  </Bar>
+                  <Bar dataKey="spent" layout="vertical" fill="red" radius={4}>
+                    <LabelList
+                      dataKey="spent"
+                      position="insideLeft"
+                      offset={8}
+                      fill="white"
+                      fontSize={12}
+                    />
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+
+            </CardContent>
+
+          </Card>
+
+
 
           <div className="flex justify-end space-x-3 mb-4">
             <MonthRangePicker

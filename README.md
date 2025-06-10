@@ -67,14 +67,9 @@ docker compose up -d
 
 ## Backup
 
-Define the name of the volume:
+On the server define the name of the volume and run the docker command
 ```
-VOLUME="afba_data"
-```
-
-Run the following command.  
-
-```
+VOLUME="afba_data" &
 docker run --rm -v "${VOLUME}:/data" -v "${PWD}:/backup-dir" ubuntu tar cvzf /backup-dir/backup/${VOLUME}.tar.gz /data
 ```
 Creates a temporary docker container, connects to the volume data and uses ubuntu tar to create a compressed .tar.gz of the volume directory.  Saves the file to the current working directory.
@@ -82,7 +77,7 @@ Creates a temporary docker container, connects to the volume data and uses ubunt
 
 ## Restore
 
-Ensure volume is named on the local machine
+On the local machine ensure volume is named
 ```
 VOLUME="afba_data"
 ```

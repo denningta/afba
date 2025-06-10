@@ -40,7 +40,6 @@ export default function TransactionForm({
     defaultValues: initialValues
   })
 
-  console.log(form.getValues())
 
   return (
     <Form {...form}>
