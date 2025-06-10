@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
 import { Ellipsis } from "lucide-react";
-import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogContent, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { DataTable } from "../common/DataTable";
 import columns from "../transactions/transactionsColDefs";
@@ -30,8 +30,6 @@ export default function CategoryActions({
 }: EditCategoryProps) {
   const pathname = usePathname()
   const currentDate = pathname.split('/').pop()
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [viewTransactionsDialogOpen, setViewTransactionsDialogOpen] = useState(false)
   const [dialogMenu, setDialogMenu] = useState<string>('none')
 
   let percent: number = 0
@@ -39,9 +37,6 @@ export default function CategoryActions({
 
   const { deleteRecord } = useCategories({ date: currentDate })
 
-  const handleDeleteCategory = async () => {
-    await deleteRecord(category)
-  }
   console.log(dialogMenu)
 
   const handleDialogMenu = (): JSX.Element | null => {
@@ -49,7 +44,18 @@ export default function CategoryActions({
       case "view-transactions":
         return <ViewTransactionsDialog category={category} />
       case "edit":
-        return <EditDialog category={category} onClose={() => setDialogMenu('none')} />
+        return <EditDialog
+          category={category}
+          onClose={() => setDialogMenu('none')}
+        />
+      case "delete":
+        return <DeleteDialog
+          onSubmit={async () => {
+            await deleteRecord(category)
+            setDialogMenu('none')
+          }}
+          onClose={() => setDialogMenu('none')}
+        />
       default:
         return null
     }
@@ -95,86 +101,31 @@ export default function CategoryActions({
     </Dialog>
 
   )
+}
 
+interface DeleteDialogProps {
+  onSubmit: () => void
+  onClose: () => void
+}
+
+function DeleteDialog({ onSubmit, onClose }: DeleteDialogProps) {
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            size="sm"
-            variant="ghost"
-          >
-            <Ellipsis />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.preventDefault()
-              setTimeout(() => setViewTransactionsDialogOpen(true), 0)
-            }}
-          >
-            View transactions
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onSelect={() => setDialogOpen(true)}
-          >
-            Edit
-          </DropdownMenuItem>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Are you sure?</DialogTitle>
+        <DialogDescription>
+          Are you sure you want to delete this category?
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button onClick={() => onClose()} variant="secondary">Cancel</Button>
+        <Button onClick={() => onSubmit()} variant="destructive">Confirm</Button>
+      </DialogFooter>
+    </DialogContent>
 
-          <DropdownMenuItem
-            onSelect={() => handleDeleteCategory()}
-          >
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>
-              Make changes to this budget category.
-            </DialogDescription>
-          </DialogHeader>
-          <CategoryForm category={category} onSubmitted={() => setDialogOpen(false)} />
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={viewTransactionsDialogOpen} onOpenChange={setViewTransactionsDialogOpen}>
-        <DialogContent className="max-w-fit max-h-screen overflow-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Transactions for {category.name}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="flex items-center space-x-4">
-            <div>Budget: {category.budget}</div>
-            <div>Spent: {category.spent}</div>
-            <div className="grow">
-              Progress: {
-
-                <div className="flex w-full items-center space-x-2">
-                  <Progress value={percent} />
-                  <span className="min-w-[40px] text-xs">{percent}%</span>
-                </div>
-              }
-            </div>
-          </div>
-          <DataTable
-            columns={columns}
-            data={category.transactions ?? []}
-          />
-        </DialogContent>
-      </Dialog>
-
-    </>
   )
 }
+
 
 interface EditDialogProps {
   category: Category
