@@ -37,8 +37,6 @@ export default function CategoryActions({
 
   const { deleteRecord } = useCategories({ date: currentDate })
 
-  console.log(dialogMenu)
-
   const handleDialogMenu = (): JSX.Element | null => {
     switch (dialogMenu) {
       case "view-transactions":

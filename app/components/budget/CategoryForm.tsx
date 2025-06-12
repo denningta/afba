@@ -34,7 +34,7 @@ const formSchema = z.object({
   budget: z.string().refine((val) => !isNaN(Number(val)), {
     message: "Budget must be a valid number.",
   }),
-  type: z.enum(["deduction", "income"], {
+  type: z.enum(["deduction", "income", "transfer"], {
     required_error: "Please select a type.",
   }),
 })
@@ -42,11 +42,13 @@ const formSchema = z.object({
 export interface CategoryFormProps {
   category?: Category,
   onSubmitted?: () => void
+  onCancel?: () => void
 }
 
 export default function BudgetCategoryForm({
   category = {},
-  onSubmitted = () => { }
+  onSubmitted = () => { },
+  onCancel = () => { }
 }: CategoryFormProps) {
   const { upsertRecord } = useCategories({ date: category.date })
   const [isLoading, setIsLoading] = useState(false)
@@ -152,7 +154,7 @@ export default function BudgetCategoryForm({
         />
 
         <div className="flex justify-end space-x-8 ">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => onCancel()}>
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading}>

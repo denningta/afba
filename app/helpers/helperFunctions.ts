@@ -1,3 +1,4 @@
+import { BudgetOverview } from "../components/budget/BudgetOverview"
 import Transaction from "../interfaces/transaction"
 
 export function isOdd(input: number) {
@@ -139,4 +140,35 @@ export function generateHexColors(
 
 export function toCurrency(number: number) {
   return number.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+}
+
+
+export const getPlaceholderData = (
+  data: BudgetOverview[],
+  start: string,
+  end: string
+) => {
+  let placeholderData: BudgetOverview[] = []
+
+  const monthsDiff = monthDiff(new Date(start), new Date(end))
+
+  for (let index = 0; index <= monthsDiff; index++) {
+    const dateStr = getPrevMonth(end, index)
+
+
+    placeholderData.unshift({
+      _id: dateStr,
+      date: dateStr,
+      totalSpent: 0,
+      totalBudget: 0,
+      categories: [],
+      transactions: []
+    })
+  }
+
+  const pData = placeholderData.map(placeholder =>
+    data.find(el => el.date === placeholder.date) ?? placeholder
+  )
+
+  return pData
 }

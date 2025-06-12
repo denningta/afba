@@ -1,8 +1,9 @@
 import { Category } from "@/app/interfaces/categories"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTrigger, DialogDescription, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTrigger, DialogDescription, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { SquarePlus } from "lucide-react"
 import BudgetCategoryForm from "./CategoryForm"
+import { useState } from "react"
 
 export interface CategoryFormProps {
   category?: Category,
@@ -11,10 +12,12 @@ export interface CategoryFormProps {
 }
 
 const CategoryDialog = ({
+  category
 }: CategoryFormProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   return (
-    <Dialog>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <SquarePlus size={18} />
@@ -27,7 +30,11 @@ const CategoryDialog = ({
             Budget categories are used to group transactions.
           </DialogDescription>
         </DialogHeader>
-        <BudgetCategoryForm />
+        <BudgetCategoryForm
+          category={category}
+          onCancel={() => setDialogOpen(false)}
+          onSubmitted={() => setDialogOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   )

@@ -12,6 +12,7 @@ export default function useCategories(query?: CategoriesQuery) {
     return acc.concat(curr + '=' + query[curr as keyof typeof query])
   }, '?') : ''
 
+
   const fns = useData<Category, CategoriesQuery>({
     endpoint: {
       listRecords: `/api/categories${urlParams}`,
