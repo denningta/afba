@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card"
 import useCheckDuplicates from "@/app/hooks/useCheckDuplicates"
 import { toast } from "sonner"
 import { useEffect } from "react"
+import axios from "axios"
 
 interface TransactionsTableProps {
   searchParams?: TransactionsFilter
@@ -44,6 +45,9 @@ export default function TransactionsTable({
     )
 
   }, [duplicates.data])
+
+
+
 
 
   const handleAddTransaction = async () => {

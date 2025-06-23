@@ -6,11 +6,13 @@ import DialogProvider from "./components/common/DialogProvider";
 import { CategoryProvider } from "./context/CategoryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
 
 const roboto = Roboto({
   weight: '300',
   subsets: ['latin'],
-  display: 'swap'
+  display: 'swap',
+  variable: '--font-roboto'
 })
 
 export const metadata: Metadata = {
@@ -25,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${roboto.className} bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content`}>
+      <body className={cn(roboto.className, `bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content`)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

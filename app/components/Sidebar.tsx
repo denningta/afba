@@ -1,6 +1,7 @@
 import { RiHomeFill, RiMoneyDollarCircleFill, RiPieChartFill, RiUploadCloudFill, RiUploadFill } from "@remixicon/react"
 import NavItem from "./NavItem"
 import { ThemeToggle } from "./common/ThemeToggle"
+import { PlugIcon } from "lucide-react"
 
 export default function Sidebar() {
   return (
@@ -8,6 +9,7 @@ export default function Sidebar() {
       <NavItem title="Home" icon={<RiHomeFill />} href="/" />
       <NavItem title="Transactions" icon={<RiMoneyDollarCircleFill />} href="/transactions" />
       <NavItem title="Upload" icon={<RiUploadCloudFill />} href="/upload" />
+      <NavItem title="Connect" icon={<PlugIcon />} href="/connect" />
       <div className="grow"></div>
       <ThemeToggle />
     </div>
