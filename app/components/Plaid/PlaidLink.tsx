@@ -18,27 +18,40 @@ const CreatePlaidLink = () => {
 
   useEffect(() => {
     const createLinkToken = async () => {
-      const response = await fetch('/api/create-link-token', {
-        method: 'POST',
-        body: JSON.stringify({ client_user_id })
-      })
+      try {
+        const response = await fetch('/api/create-link-token', {
+          method: 'POST',
+          body: JSON.stringify({ client_user_id })
+        })
 
-      const data = await response.json()
-      setLinkToken(data.link_token)
+        const data = await response.json()
+        console.log(data)
+        setLinkToken(data.link_token)
+
+      } catch (err: any) {
+        console.error(err)
+        throw new Error(err)
+      }
     }
 
     createLinkToken()
   }, [])
 
   const onSuccess = useCallback(async (public_token: string, metadata: any) => {
-    const response = await fetch('/api/exchange-public-token', {
-      method: 'POST',
-      body: JSON.stringify({ client_user_id, public_token })
-    })
+    try {
 
-    const data = await response.json()
-    console.log('Access token exchange success: ', data)
+      const response = await fetch('/api/exchange-public-token', {
+        method: 'POST',
+        body: JSON.stringify({ client_user_id, public_token })
+      })
 
+      const data = await response.json()
+      console.log('Access token exchange success: ', data)
+
+    } catch (err: any) {
+      console.error(err)
+      throw new Error(err)
+    }
   }, [])
 
   const config: Parameters<typeof usePlaidLink>[0] = {
@@ -46,16 +59,7 @@ const CreatePlaidLink = () => {
     onSuccess
   }
 
-
   const { open, ready } = usePlaidLink(config)
-
-  const handleSyncTransactions = async (account_id: string) => {
-    const res = await axios.post('/api/transactions/sync', {
-      userId: 'root-user',
-      account_id
-    })
-    console.log(res.data)
-  }
 
   return (
     <div className="space-y-6">
@@ -73,7 +77,7 @@ const CreatePlaidLink = () => {
         </CardHeader>
         <CardContent>
 
-          {items && items.map((item, i) => (
+          {items && Array.isArray(items) && items.map((item, i) => (
             <div className="flex items-center space-x-5" key={`item-${i}`}>
               <div className="flex flex-col items-center">
                 <div className="text-muted-foreground text-sm">Institution</div>

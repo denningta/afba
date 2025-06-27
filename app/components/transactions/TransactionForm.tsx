@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
 export interface TransactionFormProps {
-  onSubmit: (value: Transaction) => void
+  onSubmit: (value: any) => void
   onClose?: (args?: any) => void
   onChange?: (category: Transaction) => void
-  initialValues?: Transaction
+  initialValues?: any
 }
 
 const formSchema = z.object({
@@ -28,9 +28,8 @@ export default function TransactionForm({
   onClose,
   onChange,
   initialValues = {
-    date: new Date(),
-    description: '',
-    category: '',
+    date: new Date().toDateString(),
+    category: [],
     status: '',
     amount: 0
   }

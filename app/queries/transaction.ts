@@ -7,7 +7,7 @@ export async function listTransaction(filter: Transaction) {
   return res
 }
 
-export async function replaceTransaction(filter: Transaction, replacement: Transaction) {
+export async function replaceTransaction(filter: any, replacement: Transaction) {
   filter._id = new ObjectId(filter._id)
 
   const {
@@ -31,7 +31,7 @@ export async function insertTransaction(transaction: Transaction) {
   return res
 }
 
-export async function deleteTransaction(query: Transaction) {
+export async function deleteTransaction(query: any) {
   if (query._id) {
     query._id = new ObjectId(query._id)
   }

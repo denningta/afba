@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getBudgetOverview } from "@/app/queries/categories"
 
 export async function GET(request: Request) {

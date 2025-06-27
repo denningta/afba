@@ -10,6 +10,7 @@ export default function useGetAccounts({ userId }: GetAccountsParams) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!userId) setItems(null)
     getAccounts()
   }, [])
 

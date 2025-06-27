@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { getPotentialDuplicates } from '@/app/queries/transactions'
 
 export async function GET(request: Request) {

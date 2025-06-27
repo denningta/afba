@@ -1,18 +1,12 @@
 import { ObjectId } from "mongodb"
 import { Category } from "./categories"
+import { Transaction as PlaidTransaction } from 'plaid'
 
-type Transaction = {
+export default interface Transaction extends PlaidTransaction {
   _id?: ObjectId
-  date?: Date
-  isoDate?: string
-  month?: string
-  description?: string
-  originalDescription?: string
-  category?: string
   userCategoryId?: string
   userCategory?: Category
   status?: string
-  amount?: number
+  month?: string
 }
 
-export default Transaction

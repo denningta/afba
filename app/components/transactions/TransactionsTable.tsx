@@ -7,12 +7,10 @@ import { TransactionsFilter } from "@/app/queries/transactions"
 import { DataTable } from "../common/DataTable"
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { FileWarning, PlusIcon, TriangleAlert } from "lucide-react"
-import { Card } from "@/components/ui/card"
+import { PlusIcon, TriangleAlert } from "lucide-react"
 import useCheckDuplicates from "@/app/hooks/useCheckDuplicates"
 import { toast } from "sonner"
 import { useEffect } from "react"
-import axios from "axios"
 
 interface TransactionsTableProps {
   searchParams?: TransactionsFilter
@@ -25,6 +23,9 @@ export default function TransactionsTable({
   const {
     data,
   } = useTransactions(searchParams ?? {})
+  console.log(data)
+
+
   const duplicates = useCheckDuplicates()
   const duplicateData = duplicates?.data?.map(el => el.transactions).flat()
 
@@ -45,10 +46,6 @@ export default function TransactionsTable({
     )
 
   }, [duplicates.data])
-
-
-
-
 
   const handleAddTransaction = async () => {
   }

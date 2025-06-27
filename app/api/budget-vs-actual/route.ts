@@ -1,4 +1,7 @@
+export const dynamic = 'force-dynamic'
+
 import { getBudgetVsActual } from "@/app/queries/budgetVsActual"
+
 
 export async function GET(request: Request) {
   try {

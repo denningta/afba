@@ -1,10 +1,11 @@
-import Transaction from "@/app/interfaces/transaction"
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
 import Checkbox from "../common/Checkbox"
 import TransactionActions from "./TransactionActions"
 import { CSSProperties } from "react"
 import { toCurrency } from "@/app/helpers/helperFunctions"
 import UserCategoryCell from "./UserCategoryCell"
+import Image from "next/image"
+import Transaction from "@/app/interfaces/transaction"
 
 const columnHelper = createColumnHelper<Transaction>()
 
@@ -37,19 +38,52 @@ const columns: ColumnDef<Transaction, any>[] = [
       filterVariant: 'select'
     }
   }),
-  columnHelper.accessor('description', {
+  columnHelper.accessor('merchant_name', {
 
+    header: 'Merchant',
+    cell: info => {
+      return (
+        <div className="flex items-center space-x-4">
+          {info.row.original.logo_url &&
+            <Image
+              src={info.row.original.logo_url}
+              alt="logo"
+              width={30}
+              height={30}
+            />
+          }
+
+          <div>
+            {info.getValue()}
+          </div>
+        </div>
+      )
+    }
+  }),
+  columnHelper.accessor('name', {
     header: 'Description',
     cell: info => info.getValue()
   }),
-  columnHelper.accessor('originalDescription', {
-    header: 'Original Description',
-    cell: info => info.getValue()
-  }),
-  columnHelper.accessor('category', {
-
+  columnHelper.accessor('personal_finance_category', {
     header: 'Category',
-    cell: info => info.getValue()
+    cell: info => {
+
+      return (
+        <div className="flex items-center space-x-4">
+          {info.row.original.personal_finance_category_icon_url &&
+            <Image
+              src={info.row.original.personal_finance_category_icon_url}
+              alt="logo"
+              width={30}
+              height={30}
+            />
+          }
+          <div>
+            {info.getValue()?.primary}
+          </div>
+        </div>
+      )
+    }
   }),
   columnHelper.accessor('userCategory', {
     header: 'User Category',
@@ -65,16 +99,16 @@ const columns: ColumnDef<Transaction, any>[] = [
       filterVariant: 'select',
     }
   }),
-  columnHelper.accessor('status', {
+  columnHelper.accessor('pending', {
     header: 'Status',
-    cell: info => info.getValue()
+    cell: info => info.getValue() ? 'Pending' : 'Posted'
   }),
   columnHelper.accessor('amount', {
     header: 'Amount',
     cell: info => {
       const amount = info.getValue() ?? 0
       const style: CSSProperties = {
-        color: amount > 0 ? '	#00d062' : 'inherit'
+        color: amount < 0 ? '	#00d062' : 'inherit'
       }
       return <span style={style}>{toCurrency(amount)}</span>
     },
@@ -85,9 +119,9 @@ const columns: ColumnDef<Transaction, any>[] = [
       }, 0)
 
       return (
-        <div className="flex space-x-2 pr-3">
+        <div className="flex flex-col space-y-1">
           <div>Total: </div>
-          <div className="font-bold">{total.toFixed(2)}</div>
+          <div className="font-bold">{toCurrency(total)}</div>
         </div>
       )
     }
