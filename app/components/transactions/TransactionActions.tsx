@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Ellipsis } from "lucide-react";
 import { useState } from "react";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
-import ReactJson from 'react-json-view';
+import JsonView from "@uiw/react-json-view"
+import { githubDarkTheme } from "@uiw/react-json-view/githubDark"
 
 interface EditTransactionProps {
   transaction: Transaction
@@ -83,7 +84,7 @@ function TransactionDetailsDialog({ transaction, onClose }: TransactionDetailsDi
         <DialogDescription>View the full details of this transaction.</DialogDescription>
       </DialogHeader>
       <div className="overflow-scroll">
-        <ReactJson src={transaction} theme="tomorrow" collapsed={2} />
+        <JsonView value={transaction} style={githubDarkTheme} />
       </div>
     </DialogContent>
   )
