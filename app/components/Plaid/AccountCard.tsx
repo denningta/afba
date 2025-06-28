@@ -16,6 +16,11 @@ const AccountCard = ({ account }: AccountCardProps) => {
     loading,
   } = useSyncTransactions()
 
+  const handleRemove = () => {
+    console.log('remove')
+
+  }
+
   return (
 
     <Card >
@@ -49,7 +54,7 @@ const AccountCard = ({ account }: AccountCardProps) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="start">
                 <DropdownMenuItem>Sync</DropdownMenuItem>
-                <DropdownMenuItem>Remove</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleRemove}>Remove</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

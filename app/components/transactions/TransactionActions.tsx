@@ -1,12 +1,13 @@
 import Transaction from "@/app/interfaces/transaction";
 import useTransactions from "@/app/hooks/useTransactions";
 import TransactionForm from "./TransactionForm";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Ellipsis } from "lucide-react";
 import { useState } from "react";
-import { createPortal } from "react-dom";
+import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import ReactJson from 'react-json-view';
 
 interface EditTransactionProps {
   transaction: Transaction
@@ -15,27 +16,25 @@ interface EditTransactionProps {
 export default function TransactionActions({
   transaction
 }: EditTransactionProps) {
-  const { upsertRecord, deleteRecord } = useTransactions()
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogMenu, setDialogMenu] = useState<string>('none')
 
-  const handleUpdateTransaction = async (value: Transaction) => {
-    try {
-      await upsertRecord({ ...transaction, ...value })
+  const handleDialogMenu = (): JSX.Element | null => {
 
-    } catch (e: any) {
-      console.error(e)
+    console.log(dialogMenu)
+    switch (dialogMenu) {
+      case "view-transaction":
+        return <TransactionDetailsDialog
+          transaction={transaction}
+          onClose={() => setDialogMenu('none')}
+        />
+      default:
+        return null
     }
-
-    setDialogOpen(false)
-  }
-
-  const handleDeleteTransaction = async () => {
-    await deleteRecord(transaction)
   }
 
   return (
-    <>
-      <DropdownMenu>
+    <Dialog>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             size="sm"
@@ -46,40 +45,79 @@ export default function TransactionActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+
+          <DialogTrigger asChild>
+            <DropdownMenuItem onSelect={() => setDialogMenu("view-transaction")}>
+              <MagnifyingGlassIcon className="mr-2" /> View Transaction Details
+            </DropdownMenuItem>
+          </DialogTrigger>
+
           <DropdownMenuItem
-            onSelect={() => setDialogOpen(true)}
           >
             Edit
           </DropdownMenuItem>
-
           <DropdownMenuItem
-            onSelect={() => handleDeleteTransaction()}
           >
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-
-
-      {typeof document !== 'undefined' && createPortal(
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Transaction</DialogTitle>
-              <DialogDescription>
-                Make changes to this budget category.
-              </DialogDescription>
-            </DialogHeader>
-            <TransactionForm
-              initialValues={transaction}
-              onSubmit={(value) => handleUpdateTransaction(value)}
-            />
-          </DialogContent>
-        </Dialog>,
-        document.body
-      )}
-
-    </>
+      {handleDialogMenu()}
+    </Dialog>
   )
 
+}
+
+
+export interface TransactionDetailsDialogProps {
+  transaction: Transaction
+  onClose: () => void
+}
+
+function TransactionDetailsDialog({ transaction, onClose }: TransactionDetailsDialogProps) {
+
+  return (
+    <DialogContent className="max-w-fit h-5/6">
+      <DialogHeader>
+        <DialogTitle>View Transaction Details</DialogTitle>
+        <DialogDescription>View the full details of this transaction.</DialogDescription>
+      </DialogHeader>
+      <div className="overflow-scroll">
+        <ReactJson src={transaction} theme="tomorrow" collapsed={2} />
+      </div>
+    </DialogContent>
+  )
+}
+
+export interface EditTransactionDialogProps {
+  transaction: Transaction
+  onClose: () => void
+}
+
+export function EditTransactionDialog({ transaction, onClose }: EditTransactionDialogProps) {
+  const { upsertRecord } = useTransactions()
+
+  const handleUpdateTransaction = async (value: Transaction) => {
+    try {
+      await upsertRecord({ ...transaction, ...value })
+
+    } catch (e: any) {
+      console.error(e)
+    }
+  }
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Edit Transaction</DialogTitle>
+        <DialogDescription>
+          Make changes to this budget category.
+        </DialogDescription>
+      </DialogHeader>
+      <TransactionForm
+        initialValues={transaction}
+        onSubmit={(value) => handleUpdateTransaction(value)}
+      />
+    </DialogContent>
+  )
 }

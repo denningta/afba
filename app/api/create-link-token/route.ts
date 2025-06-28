@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         client_user_id: client_user_id
       },
       client_name: 'afba',
-      products: [Products.Auth, Products.Transactions],
+      products: [Products.Transactions],
       country_codes: [CountryCode.Us],
       language: 'en'
     }

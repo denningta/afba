@@ -178,120 +178,34 @@ export async function listCategories({ date }: CategoriesQuery) {
 }
 
 export async function getBudgetOverview() {
-  const res = await categories.aggregate<BudgetOverview>([
-    {
-      $addFields:
-      {
-        id: {
-          $toString: "$_id"
-        }
-      }
-    },
-    {
-      $match: {
-        type: { $ne: "income" }
-      }
-    },
-    {
-      $lookup: {
-        from: "transactions",
-        localField: "id",
-        foreignField: "userCategory._id",
-        pipeline: [
-          {
-            $project: {
-              date: "$date",
-              description: "$description",
-              amount: "$amount",
-              userCategory: "$userCategory"
-            }
-          },
-        ],
-        as: "transactions"
-      }
-    },
-    {
-      $lookup: {
-        from: "transactions",
-        localField: "id",
-        foreignField: "userCategory._id",
-        pipeline: [
-          {
-            $group: {
-              _id: null,
-              spent: {
-                $sum: "$amount"
-              }
-            }
-          }
-        ],
-        as: "spent"
-      }
-    },
-    {
-      $addFields: {
-        spent: {
-          $round: [
-            {
-              $first: "$spent.spent"
-            },
-            2
-          ]
-        },
-        _id: {
-          $toString: "$_id"
-        }
-      }
-    },
-    {
-      $addFields: {
-        date: {
-          $dateFromString: {
-            dateString: "$date"
-          }
-        },
-        dateString: "$date"
-      }
-    },
-    {
-      $group: {
-        _id: "$dateString",
-        date: {
-          $first: "$dateString"
-        },
-        totalBudget: {
-          $sum: "$budget"
-        },
-        totalSpent: {
-          $sum: "$spent"
-        },
-        categories: {
-          $push: {
-            name: "$name",
-            budget: "$budget",
-            spent: "$spent",
-            type: "$type",
-            transactions: "$transactions"
-          }
-        },
-        transactions: {
-          $push: "$transactions"
-        }
-      }
-    },
-    {
-      $addFields: {
-        transactions: {
-          $reduce: {
-            input: "$transactions",
-            initialValue: [],
-            in: {
-              $concatArrays: ["$$value", "$$this"]
-            }
-          }
-        }
-      }
+  const res = await categories.aggregate<BudgetOverview>([{
+    $lookup: {
+      from: "transactions",
+      localField: "id",
+      foreignField: "userCategory._id",
+      pipeline: [
+        { $sort: { date: -1 } },
+        { $limit: 10 },
+        { $project: { date: 1, amount: 1, description: 1 } }
+      ],
+      as: "transactions"
     }
+  },
+  {
+    $group: {
+      _id: "$dateString",
+      categories: {
+        $push: {
+          name: "$name",
+          budget: "$budget",
+          spent: "$spent",
+          transactions: "$transactions"
+        }
+      },
+      totalBudget: { $sum: "$budget" },
+      totalSpent: { $sum: "$spent" }
+    }
+  }
   ]).toArray()
 
   return res

@@ -1,5 +1,6 @@
-import { dateToYYYYMM, getPlaceholderData, getPrevMonth, YYYYMMToDate } from "@/app/helpers/helperFunctions"
-import useBudgetOverview from "@/app/hooks/useBudgetOverview"
+'use client'
+
+import { dateToYYYYMM, getPrevMonth, YYYYMMToDate } from "@/app/helpers/helperFunctions"
 import { Button } from "@/components/ui/button"
 import MonthPicker from "@/components/ui/month-picker"
 import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons"
@@ -11,7 +12,7 @@ const BudgetNavigator = () => {
 
   const params = useParams()
   const route = useRouter()
-  const date: string = Array.isArray(params.date) ? params.date[0] : params.date
+  const date: string = params.date ? (Array.isArray(params.date) ? params.date[0] : params.date) : dateToYYYYMM(new Date())
 
   useEffect(() => {
     if (!date) return
@@ -43,7 +44,7 @@ const BudgetNavigator = () => {
 
       <MonthPicker
         value={YYYYMMToDate(date)}
-        onValueChange={(date) => route.push(dateToYYYYMM(date))}
+        onValueChange={(date) => route.push(`/budget/${dateToYYYYMM(date)}`)}
       />
 
       <Button variant="ghost"
