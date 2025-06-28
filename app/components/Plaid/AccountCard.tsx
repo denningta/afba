@@ -17,7 +17,6 @@ const AccountCard = ({ account }: AccountCardProps) => {
   } = useSyncTransactions()
 
   const handleRemove = () => {
-    console.log('remove')
 
   }
 

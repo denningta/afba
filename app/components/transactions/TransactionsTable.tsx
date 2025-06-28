@@ -23,7 +23,6 @@ export default function TransactionsTable({
   const {
     data,
   } = useTransactions(searchParams ?? {})
-  console.log(data)
 
 
   const duplicates = useCheckDuplicates()

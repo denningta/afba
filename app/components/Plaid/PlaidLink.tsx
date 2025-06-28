@@ -25,7 +25,6 @@ const CreatePlaidLink = () => {
         })
 
         const data = await response.json()
-        console.log(data)
         setLinkToken(data.link_token)
 
       } catch (err: any) {

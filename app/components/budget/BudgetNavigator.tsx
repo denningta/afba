@@ -23,7 +23,6 @@ const BudgetNavigator = () => {
 
   const handleNextMonth = () => {
     const nextMonth = getPrevMonth(date, -1)
-    console.log(nextMonth)
     route.push(nextMonth)
   }
 

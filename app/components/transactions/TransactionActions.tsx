@@ -21,7 +21,6 @@ export default function TransactionActions({
 
   const handleDialogMenu = (): JSX.Element | null => {
 
-    console.log(dialogMenu)
     switch (dialogMenu) {
       case "view-transaction":
         return <TransactionDetailsDialog
