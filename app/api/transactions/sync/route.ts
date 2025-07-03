@@ -40,10 +40,13 @@ export async function POST(request: Request) {
         options: { account_id }
       }
 
+      console.log(req)
+
       if (count) req.count = count
 
       const response = await plaidClient.transactionsSync(req)
       const data = response.data
+      console.log(data)
 
       added = added.concat(data.added)
       modified = modified.concat(data.modified)
@@ -95,9 +98,6 @@ export async function POST(request: Request) {
     }
 
     const syncRes = await insertTransactionSync(syncResponse as TransactionSync)
-
-    console.log(syncRes)
-    console.log(syncResponse)
 
     return Response.json(syncResponse)
 

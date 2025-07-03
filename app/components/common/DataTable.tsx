@@ -133,6 +133,7 @@ export function DataTable<TData, TValue>({
     filterFns: {
       fuzzy: fuzzyFilter
     },
+    autoResetPageIndex: false,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),

@@ -1,6 +1,6 @@
 'use client'
 
-import columns from "./transactionsColDefs"
+import transactionColDefs from "./transactionsColDefs"
 import TransactionForm from "./TransactionForm"
 import useTransactions from "@/app/hooks/useTransactions"
 import { TransactionsFilter } from "@/app/queries/transactions"
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button"
 import { PlusIcon, TriangleAlert } from "lucide-react"
 import useCheckDuplicates from "@/app/hooks/useCheckDuplicates"
 import { toast } from "sonner"
-import { useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { PaginationState } from "@tanstack/react-table"
 
 interface TransactionsTableProps {
   searchParams?: TransactionsFilter
@@ -20,9 +21,13 @@ export default function TransactionsTable({
   searchParams,
 }: TransactionsTableProps) {
 
+  const columns = useMemo(() => transactionColDefs, [])
+
   const {
     data,
   } = useTransactions(searchParams ?? {})
+
+  const stableData = useMemo(() => data ?? [], [data])
 
 
   const duplicates = useCheckDuplicates()
@@ -89,7 +94,7 @@ export default function TransactionsTable({
       </div>
 
       <DataTable
-        data={data ?? []}
+        data={stableData ?? []}
         columns={columns}
       />
     </div>

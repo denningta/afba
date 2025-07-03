@@ -49,9 +49,9 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
 
     const optimisticData = (data: T[] | undefined) => {
       if (!data) return []
-      const index = data?.findIndex((el) => el._id === value._id)
-      if (index >= 0) data[index] = value
-      return data
+      return data.map((item) =>
+        item._id === value._id ? { ...item, ...value } : item
+      )
     }
 
     const handleUpsert = async () => {
@@ -71,7 +71,7 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
     try {
       const options: MutatorOptions = {
         optimisticData: optimisticData,
-        rollbackOnError: true
+        rollbackOnError: true,
       }
 
       await mutate(

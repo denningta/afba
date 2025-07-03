@@ -44,8 +44,6 @@ export function UserCategorySelector({
     const [_, id] = value.split(',')
     const category = options.find((option) => option._id?.toString() === id)
     delete category?.transactions
-
-    console.log(category)
     category && onSelectionChange(category)
     setOpen(false)
   }
