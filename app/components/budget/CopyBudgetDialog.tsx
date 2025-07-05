@@ -1,4 +1,5 @@
 import useBudgetOverview from "@/app/hooks/useBudgetOverview"
+import useBudgetSummary from "@/app/hooks/useBudgetSummary"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -20,6 +21,7 @@ import {
 import axios from "axios"
 import { Copy } from "lucide-react"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 
 export interface CopyBudgetDialogProps {
@@ -29,22 +31,25 @@ export interface CopyBudgetDialogProps {
   onSubmit?: (value: string) => void
 }
 
+export interface BudgetSummary {
+  _id?: any
+  date: string
+  budget: number
+}
+
 export function CopyBudgetDialog({
   value,
-  onChange = () => { },
-  onClose = () => { },
-  onSubmit = () => { }
 }: CopyBudgetDialogProps) {
-  const { data } = useBudgetOverview()
+  const { data } = useBudgetSummary()
+  const [isLoading, setIsLoading] = useState(false)
 
   const pathname = usePathname()
   const currentDate = pathname.split('/').pop()
+  console.log(data)
 
   const {
-    register,
     control,
     handleSubmit,
-    formState: { errors },
   } = useForm<{ month: string }>({
     defaultValues: {
       month: value
@@ -52,13 +57,18 @@ export function CopyBudgetDialog({
   })
 
   const handleCopyBudget = async (month: string) => {
+    setIsLoading(true)
     try {
       const res = await axios.post(`/api/copyCategories/${month}`, {
         currentDate: currentDate
       })
 
+      console.log(res)
+
+      setIsLoading(false)
     } catch (e: any) {
       console.error(e)
+      setIsLoading(false)
     }
   }
 
@@ -99,9 +109,9 @@ export function CopyBudgetDialog({
                 <SelectContent>
                   <SelectGroup>
                     {data && data.map((el, index) =>
-                      <SelectItem value={el.date} key={`${el.date}-${index}`}>
+                      <SelectItem value={el.date} key={index}>
                         <div>
-                          {el.date + ' | Budget: $' + el.totalBudget}
+                          {el.date + ' | Budget: $' + el.budget}
                         </div>
                       </SelectItem>
                     )}

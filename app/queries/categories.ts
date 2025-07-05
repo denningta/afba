@@ -197,6 +197,7 @@ export async function getBudgetOverview() {
       categories: {
         $push: {
           name: "$name",
+          date: "$date",
           budget: "$budget",
           spent: "$spent",
           transactions: "$transactions"
@@ -207,6 +208,54 @@ export async function getBudgetOverview() {
     }
   }
   ]).toArray()
+
+  return res
+}
+
+export async function getExistingBudgetSummaries() {
+  const res = await categories.aggregate(
+    [
+      {
+        $group: {
+          _id: {
+            date: "$date"
+          },
+          date: {
+            $first: "$date"
+          },
+          budget: {
+            $sum: "$budget"
+          }
+        }
+      },
+      {
+        $project:
+        /**
+         * specifications: The fields to
+         *   include or exclude.
+         */
+        {
+          _id: 1,
+          date: 1,
+          budget: {
+            $round: ["$budget", 2]
+          },
+          isoDate: {
+            $dateFromString: {
+              dateString: {
+                $concat: ["$date", "-01T00:00:00Z"]  // e.g., '2025-07' → '2025-07-01T00:00:00Z'
+              }
+            }
+          }
+        }
+      },
+      {
+        $sort: {
+          isoDate: -1
+        }
+      },
+    ]
+  ).toArray()
 
   return res
 }
