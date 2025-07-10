@@ -130,10 +130,12 @@ export async function listCategories({ date }: CategoriesQuery) {
               date: "$date",
               description: "$description",
               amount: "$amount",
-              category: "$category",
+              personal_finance_category: "$personal_finance_category.primary",
               originalDescription: "$originalDescription",
               status: "$status",
-              userCategory: "$userCategory"
+              userCategory: "$userCategory",
+              merchant_name: "$merchant_name",
+              name: "$name",
             }
           }
         ],

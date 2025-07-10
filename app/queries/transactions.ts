@@ -19,8 +19,7 @@ export async function listTransactions(searchParams: URLSearchParams) {
       }
     },
     {
-      $addFields:
-      {
+      $addFields: {
         isoDate: {
           $dateFromString: {
             dateString: "$date"
@@ -29,8 +28,7 @@ export async function listTransactions(searchParams: URLSearchParams) {
       }
     },
     {
-      $set:
-      {
+      $set: {
         date: {
           $dateToString: {
             date: "$isoDate",
@@ -46,7 +44,13 @@ export async function listTransactions(searchParams: URLSearchParams) {
             date: "$isoDate",
             format: "%m-%Y"
           }
-        },
+        }
+      }
+    },
+    {
+      $sort:
+      {
+        isoDate: -1
       }
     }
   ]

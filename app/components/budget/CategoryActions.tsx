@@ -152,6 +152,8 @@ function ViewTransactionsDialog({ category }: ViewTransactionsDialogProps) {
   let percent: number = 0
   if (category.budget && category.spent) percent = Math.round(((Math.abs(category.spent)) / category.budget) * 100)
 
+  console.log(category)
+
   return (
     <DialogContent className="max-w-fit max-h-screen overflow-auto">
       <DialogHeader>

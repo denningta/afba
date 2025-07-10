@@ -45,7 +45,6 @@ export function CopyBudgetDialog({
 
   const pathname = usePathname()
   const currentDate = pathname.split('/').pop()
-  console.log(data)
 
   const {
     control,
@@ -62,8 +61,6 @@ export function CopyBudgetDialog({
       const res = await axios.post(`/api/copyCategories/${month}`, {
         currentDate: currentDate
       })
-
-      console.log(res)
 
       setIsLoading(false)
     } catch (e: any) {
