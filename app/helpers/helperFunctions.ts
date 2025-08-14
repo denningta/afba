@@ -172,3 +172,77 @@ export const getPlaceholderData = (
 
   return pData
 }
+
+interface DateObject {
+  date?: string | null
+  [key: string]: any
+}
+
+export function generateMonthDates(yearMonth: string): DateObject[] {
+  // Validate input format (YYYY-MM)
+  const regex = /^\d{4}-(0[1-9]|1[0-2])$/;
+  if (!regex.test(yearMonth)) {
+    throw new Error('Invalid input format. Expected "YYYY-MM" (e.g., "2025-08").');
+  }
+
+  const [year, month] = yearMonth.split('-').map(Number);
+  const date = new Date(year, month - 1, 1); // Month is 0-based in JS Date
+
+  // Validate year and month
+  if (isNaN(date.getTime()) || date.getFullYear() !== year || date.getMonth() !== month - 1) {
+    throw new Error('Invalid year or month.');
+  }
+
+  // Get number of days in the month
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // Generate array of date objects
+  const result: DateObject[] = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    // Format day with leading zero if needed
+    const dayStr = day.toString().padStart(2, '0');
+    result.push({ date: `${year}-${month.toString().padStart(2, '0')}-${dayStr}` });
+  }
+
+  return result;
+}
+
+
+/**
+ * Performs a left join on two arrays of objects based on their 'date' property.
+ * All objects from array1 are included in the result. Objects in array2 with undefined or null 'date' are filtered out.
+ * @param array1 - First array of objects with a 'date' property.
+ * @param array2 - Second array of objects with a 'date' property.
+ * @returns An array of merged objects, including all array1 objects, with matching array2 objects where available.
+ */
+export function joinArraysOnDate<T extends DateObject, U extends DateObject>(array1: T[], array2: U[]): T[] {
+  // Filter array2 to exclude objects with undefined or null date
+  const filteredArray2 = array2.filter(item => item.date !== undefined && item.date !== null);
+
+  // Create a map for faster lookup from filtered array2
+  const map2 = new Map<string, U>();
+  for (const item of filteredArray2) {
+    // Type assertion since we know date is not undefined/null after filtering
+    map2.set(item.date!, item);
+  }
+
+  // Perform left join
+  const result: T[] = [];
+  for (const item1 of array1) {
+    if (item1.date !== undefined && item1.date !== null) {
+      const match = map2.get(item1.date);
+      if (match) {
+        // Merge objects, prioritizing item1 properties in case of overlap
+        result.push({ ...match, ...item1 });
+      } else {
+        // No match, include only array1 object
+        result.push({ ...item1 });
+      }
+    } else {
+      // Include array1 object even if date is undefined or null
+      result.push({ ...item1 });
+    }
+  }
+
+  return result;
+}

@@ -1,13 +1,14 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import axios from "axios"
 import { useCallback, useEffect, useState } from "react"
 import { usePlaidLink } from "react-plaid-link"
 import useGetAccounts from "../../hooks/useGetAccounts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import useSyncTransactions from "../../hooks/useSyncTransactions"
 import AccountCard from "./AccountCard"
+import useGetUser from "@/app/hooks/useGetUser"
+import UpdatePlaidLink from "./UpdatePlaidLink"
+import { AccountBase } from "plaid"
 
 
 const client_user_id = 'root-user'
@@ -15,26 +16,33 @@ const client_user_id = 'root-user'
 const CreatePlaidLink = () => {
   const [linkToken, setLinkToken] = useState<string | null>(null)
   const { items, error } = useGetAccounts({ userId: client_user_id })
+  const userRes = useGetUser({ userId: client_user_id })
+  console.log(items)
 
   useEffect(() => {
-    const createLinkToken = async () => {
-      try {
-        const response = await fetch('/api/create-link-token', {
-          method: 'POST',
-          body: JSON.stringify({ client_user_id })
-        })
-
-        const data = await response.json()
-        setLinkToken(data.link_token)
-
-      } catch (err: any) {
-        console.error(err)
-        throw new Error(err)
-      }
-    }
-
     createLinkToken()
   }, [])
+
+  const createLinkToken = async () => {
+    try {
+
+      const body: { client_user_id: string, access_token?: string } = {
+        client_user_id: client_user_id,
+      }
+
+      const response = await fetch('/api/create-link-token', {
+        method: 'POST',
+        body: JSON.stringify(body)
+      })
+
+      const data = await response.json()
+      setLinkToken(data.link_token)
+
+    } catch (err: any) {
+      console.error(err)
+      throw new Error(err)
+    }
+  }
 
   const onSuccess = useCallback(async (public_token: string, metadata: any) => {
     try {
@@ -69,15 +77,19 @@ const CreatePlaidLink = () => {
         Link Account
       </Button>
 
-      <Card className="max-w-fit">
-        <CardHeader>
-          <CardTitle>Linked Accounts</CardTitle>
-          <CardDescription>Accounts connected to this app through Plaid</CardDescription>
-        </CardHeader>
-        <CardContent>
 
-          {items && Array.isArray(items) && items.map((item, i) => (
-            <div className="flex items-center space-x-5" key={`item-${i}`}>
+
+      {items && Array.isArray(items) && items.map((item, i) => (
+        <div className="flex items-center space-x-5" key={`item-${i}`}>
+          {error && error.error_code === 'ITEM_LOGIN_REQUIRED' &&
+            <UpdatePlaidLink
+              client_user_id={client_user_id}
+              access_token={userRes?.user?.items[0].plaidAccessToken}
+            />
+          }
+
+          {!error &&
+            <>
               <div className="flex flex-col items-center">
                 <div className="text-muted-foreground text-sm">Institution</div>
                 <div className="text-lg">{item.item.institution_name}</div>
@@ -85,21 +97,18 @@ const CreatePlaidLink = () => {
 
 
               <div key={`item-${i}`} className="flex space-x-5">
-                {item.accounts.map((account, i) => (
+                {item.accounts.map((account: AccountBase, i: number) => (
                   <div key={`account-${i}`}>
                     <AccountCard account={account} />
                   </div>
                 ))}
               </div>
-            </div>
+            </>
+          }
+        </div>
 
-          ))}
-
-        </CardContent>
-      </Card>
-
-
-    </div>
+      ))}
+    </div >
   )
 
 }

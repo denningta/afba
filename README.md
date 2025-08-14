@@ -49,6 +49,10 @@ Run the image using the command `docker compose -f docker-compose.dev.yml up`
 
 # Production Workflow
 
+Run `npm run publish` to build and push produciton updates
+
+Alternatively:
+
 Run `docker compose build` to build the production image
 
 Run `docker push denningta/afba:latest` to push production image

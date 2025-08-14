@@ -1,13 +1,14 @@
 import axios from "axios"
 import { useEffect, useState } from "react"
 import { GetAccountsParams } from "../api/accounts/route"
-import { AccountsGetResponse } from "plaid"
+import { AccountsGetResponse, PlaidError } from "plaid"
+import { PlaidLinkError } from "react-plaid-link"
 
 
 export default function useGetAccounts({ userId }: GetAccountsParams) {
-  const [items, setItems] = useState<AccountsGetResponse[] | null>(null)
+  const [items, setItems] = useState<Array<AccountsGetResponse> | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<PlaidError | null>(null)
 
   useEffect(() => {
     if (!userId) setItems(null)

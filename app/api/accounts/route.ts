@@ -1,5 +1,6 @@
 import plaidClient from "@/app/lib/plaid"
 import { listUser, User } from "@/app/queries/users"
+import { PlaidError } from "plaid"
 
 export interface GetAccountsParams {
   userId?: string
@@ -24,8 +25,8 @@ export async function POST(request: Request) {
 
           return res.data
 
-        } catch (err) {
-          return { error: true, message: (err as any).response.data || 'Failed to fetch data.' }
+        } catch (err: any) {
+          return Response.json(err.response.data || 'Failed to fetch data.')
         }
       })
     )

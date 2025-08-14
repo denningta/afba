@@ -12,6 +12,7 @@ import useCheckDuplicates from "@/app/hooks/useCheckDuplicates"
 import { toast } from "sonner"
 import { useEffect, useMemo, useState } from "react"
 import { PaginationState } from "@tanstack/react-table"
+import useRecurringTransactions from "@/app/hooks/useRecurringTransactions"
 
 interface TransactionsTableProps {
   searchParams?: TransactionsFilter

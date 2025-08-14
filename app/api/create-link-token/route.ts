@@ -3,7 +3,7 @@ import { CountryCode, LinkTokenCreateRequest, Products } from "plaid";
 
 export async function POST(req: Request) {
   try {
-    const { client_user_id } = await req.json()
+    const { client_user_id, access_token } = await req.json()
 
     if (!client_user_id) throw new Error('Missing Plaid client_user_id')
 
@@ -12,12 +12,22 @@ export async function POST(req: Request) {
         client_user_id: client_user_id
       },
       client_name: 'afba',
-      products: [Products.Transactions],
       country_codes: [CountryCode.Us],
-      language: 'en'
+      language: 'en',
     }
 
+    // If passing in an access token in the POST body this will enable "update mode"
+    if (access_token) {
+      configs.access_token = access_token
+    } else {
+      configs.products = [Products.Transactions]
+    }
+
+    console.log(configs)
+
     const createTokenResponse = await plaidClient.linkTokenCreate(configs)
+
+    console.log(createTokenResponse.data)
 
     return Response.json(createTokenResponse.data)
 
