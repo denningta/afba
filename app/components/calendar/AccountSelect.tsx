@@ -15,6 +15,7 @@ export default function AccountSelect({
   defaultValue,
   onValueChange
 }: AccountSelectProps) {
+  console.log(accounts)
 
   return (
     <Select

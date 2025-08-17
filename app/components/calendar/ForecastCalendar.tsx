@@ -33,7 +33,7 @@ const ForecastCalendar = () => {
 
   useEffect(() => {
     if (!items) return
-    setSelectedAccount(items[0].accounts[0])
+    setSelectedAccount(items[0]?.accounts[0] ?? [])
   }, [items])
 
   const testData: TransactionStreamBalance[] = [
@@ -72,7 +72,7 @@ const ForecastCalendar = () => {
         {items &&
           <AccountSelect
             value={selectedAccount?.account_id}
-            accounts={items[0].accounts}
+            accounts={items[0].accounts ?? []}
             onValueChange={handleAccountChange}
           />
         }

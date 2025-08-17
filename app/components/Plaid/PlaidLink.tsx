@@ -92,16 +92,21 @@ const CreatePlaidLink = () => {
             <>
               <div className="flex flex-col items-center">
                 <div className="text-muted-foreground text-sm">Institution</div>
-                <div className="text-lg">{item.item.institution_name}</div>
+                <div className="text-lg">{item.item?.institution_name}</div>
               </div>
 
 
               <div key={`item-${i}`} className="flex space-x-5">
-                {item.accounts.map((account: AccountBase, i: number) => (
+                {item?.accounts ? item.accounts.map((account: AccountBase, i: number) => (
                   <div key={`account-${i}`}>
                     <AccountCard account={account} />
                   </div>
-                ))}
+                ))
+                  :
+                  <div>
+                    No Accounts Found
+                  </div>
+                }
               </div>
             </>
           }
