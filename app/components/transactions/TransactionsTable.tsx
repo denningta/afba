@@ -10,9 +10,7 @@ import { Button } from "@/components/ui/button"
 import { PlusIcon, TriangleAlert } from "lucide-react"
 import useCheckDuplicates from "@/app/hooks/useCheckDuplicates"
 import { toast } from "sonner"
-import { useEffect, useMemo, useState } from "react"
-import { PaginationState } from "@tanstack/react-table"
-import useRecurringTransactions from "@/app/hooks/useRecurringTransactions"
+import { useEffect, useMemo } from "react"
 
 interface TransactionsTableProps {
   searchParams?: TransactionsFilter

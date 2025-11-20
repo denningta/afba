@@ -20,6 +20,7 @@ import {
   ColumnFiltersState,
   VisibilityState,
   RowSelectionState,
+  OnChangeFn,
 } from "@tanstack/react-table"
 
 import {
@@ -48,6 +49,7 @@ import { compareItems, RankingInfo, rankItem } from "@tanstack/match-sorter-util
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ColumnFilter from "./ColumnFilter"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter, useSearchParams } from "next/navigation"
 
 declare module '@tanstack/react-table' {
   interface FilterFns {
@@ -104,6 +106,21 @@ export function DataTable<TData, TValue>({
     pageIndex: 0,
     pageSize: 100
   })
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const urlFilters: ColumnFiltersState = []
+    if (!searchParams.keys()) return
+    searchParams.keys().forEach(key => {
+      urlFilters.push({
+        id: key,
+        value: searchParams.get(key)
+      })
+    })
+
+  }, [])
+
+  console.log(globalFilter)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -117,6 +134,7 @@ export function DataTable<TData, TValue>({
     if (firstRender) return
     localStorage.setItem('colVis', JSON.stringify(columnVisibility))
   }, [columnVisibility])
+
 
 
   const table = useReactTable({
