@@ -46,81 +46,81 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
 
   return (
     <div className="space-y-6">
+      <div className="mx-4 text-2xl">
+        Budget
+      </div>
 
       <BudgetNavigator />
 
       <div className="grid grid-cols-2 gap-4">
 
-        <Card
-        >
-          <div
-            className="flex space-x-5"
-          >
-            <div>
-              <div className="uppercase">{plannedIncome.name}</div>
+        <div className="flex flex-col md:flex">
+          <Card>
+            <div className="flex space-x-5">
+              <div>
+                <div className="uppercase">{plannedIncome.name}</div>
 
-              <div className="font-bold text-3xl h-8">
-                {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedIncome.value)}
-              </div>
+                <div className="font-bold md:text-3xl h-8">
+                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedIncome.value)}
+                </div>
 
-            </div>
-            <div className="font-bold text-3xl pt-5"> - </div>
-            <div>
-              <div className="uppercase">{plannedBudget.name}</div>
-              <div className="font-bold text-3xl h-8">
-                {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedBudget.value)}
+              </div>
+              <div className="font-bold md:text-3xl pt-5"> - </div>
+              <div>
+                <div className="uppercase">{plannedBudget.name}</div>
+                <div className="font-bold md:text-3xl h-8">
+                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedBudget.value)}
+                </div>
+              </div>
+              <div className="font-bold md:text-3xl pt-5"> = </div>
+              <div>
+                <div className="uppercase">DIFFERENCE</div>
+                <div
+                  style={{
+                    color: plannedDiff.value > 0 ? '#00d062' : 'red'
+                  }}
+                  className={`font-bold md:text-3xl h-8`}
+                >
+                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedDiff.value)}
+                </div>
               </div>
             </div>
-            <div className="font-bold text-3xl pt-5"> = </div>
-            <div>
-              <div className="uppercase">DIFFERENCE</div>
-              <div
-                style={{
-                  color: plannedDiff.value > 0 ? '#00d062' : 'red'
-                }}
-                className={`font-bold text-3xl h-8`}
-              >
-                {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedDiff.value)}
-              </div>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card
-        >
-          <div
-            className="flex space-x-5"
-          >
-            <div>
-              <div className="uppercase">{actualIncome.name}</div>
-              <div className="font-bold text-3xl h-8">
-                {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualIncome.value)}
+          <Card >
+            <div
+              className="flex space-x-5"
+            >
+              <div>
+                <div className="uppercase">{actualIncome.name}</div>
+                <div className="font-bold md:text-3xl h-8">
+                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualIncome.value)}
+                </div>
+              </div>
+              <div className="font-bold md:text-3xl pt-5"> + </div>
+              <div>
+                <div className="uppercase">{actualSpent.name}</div>
+                <div className="font-bold md:text-3xl h-8">
+                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualSpent.value)}
+                </div>
+              </div>
+              <div className="font-bold text-gray-600 md:text-3xl pt-5"> = </div>
+              <div>
+                <div className="uppercase">DIFFERENCE</div>
+                <div
+                  style={{
+                    color: actualDiff.value > 0 ? '#00d062' : 'red'
+                  }}
+                  className={`font-bold md:text-3xl h-8`}
+                >
+                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualDiff.value)}
+                </div>
               </div>
             </div>
-            <div className="font-bold text-3xl pt-5"> + </div>
-            <div>
-              <div className="uppercase">{actualSpent.name}</div>
-              <div className="font-bold text-3xl h-8">
-                {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualSpent.value)}
-              </div>
-            </div>
-            <div className="font-bold text-gray-600 text-3xl pt-5"> = </div>
-            <div>
-              <div className="uppercase">DIFFERENCE</div>
-              <div
-                style={{
-                  color: actualDiff.value > 0 ? '#00d062' : 'red'
-                }}
-                className={`font-bold text-3xl h-8`}
-              >
-                {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualDiff.value)}
-              </div>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
-
-        <Card className="col-span-2">
+        <div className="col-span-2 mx-2">
 
 
           <div className="flex justify-end space-x-6 mb-4">
@@ -136,7 +136,7 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
             isLoading={isLoading}
           />
           <SnackbarProvider />
-        </Card>
+        </div>
 
       </div>
 

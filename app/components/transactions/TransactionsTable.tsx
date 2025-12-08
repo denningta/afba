@@ -55,27 +55,10 @@ export default function TransactionsTable({
 
 
   return (
-    <div>
+    <div className="m-2">
+      <div className="text-2xl mx-4 mb-8">Transactions</div>
       <div className="flex items-center space-x-6 mb-4">
         <div className="grow"></div>
-
-        {duplicates.data?.length &&
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="destructive">
-                <TriangleAlert />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-fit max-h-screen overflow-auto">
-              <DialogTitle>Potential Trasaction Duplicates</DialogTitle>
-              <DialogDescription>These records may be dupliacates of eachother.</DialogDescription>
-              <DataTable
-                columns={columns}
-                data={duplicateData ?? []}
-              />
-            </DialogContent>
-          </Dialog>
-        }
 
         <Dialog>
           <DialogTrigger asChild>

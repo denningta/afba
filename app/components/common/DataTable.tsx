@@ -343,7 +343,7 @@ export function DataTable<TData, TValue>({
 
       </div >
 
-      <div className="flex items-center text-sm mt-4 mx-4 space-x-10">
+      <div className="flex flex-col md:flex-row space-y-4 items-center text-sm mt-4 mx-4 space-x-10">
         <div> {Object.keys(rowSelection).length} of {data.length} rows(s) selected</div>
 
         <div className="grow" />

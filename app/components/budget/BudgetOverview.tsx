@@ -63,10 +63,6 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
           <TabsTrigger value="actual">Actual vs Savings</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
-
-
-
-
           <div className="flex justify-end space-x-3 mb-4">
             <MonthRangePicker
               value={{ from: new Date(start), to: new Date(end) }}

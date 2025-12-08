@@ -7,6 +7,8 @@ import { CategoryProvider } from "./context/CategoryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { MenuIcon } from "lucide-react";
 
 const roboto = Roboto({
   weight: '300',
@@ -26,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={cn(roboto.className, `bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content`)}>
+    <html lang="en" >
+      <body className={cn(roboto.className, `bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content mb-10`)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -36,10 +38,8 @@ export default function RootLayout({
         >
           <DialogProvider>
             <CategoryProvider>
-              <aside className="fixed top-0 left-0 h-screen w-20 z-40 flex flex-col space-y-4 bg-tremor-brand dark:bg-dark-tremor-brand">
-                <Sidebar />
-              </aside>
-              <div className="ml-20 p-5 space-x-3 space-y-3">
+              <Sidebar />
+              <div className="md:ml-20 pt-4 md:p-5 space-x-3 space-y-3 max-w-7xl mx-auto">
                 {children}
               </div>
               <Toaster />
