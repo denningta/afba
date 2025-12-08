@@ -54,8 +54,8 @@ export default function Sidebar() {
         </DrawerTrigger>
         <DrawerContent>
           <div className="flex flex-col items-center space-y-8 p-10">
-            {navItems.map(navItem => (
-              <Link href={navItem.href}>
+            {navItems.map((navItem, i) => (
+              <Link href={navItem.href} key={i}>
                 <Button variant="ghost" size="lg">
                   <div className="flex items-center space-x-4">
                     <span> {navItem.icon} </span>
@@ -69,8 +69,9 @@ export default function Sidebar() {
       </Drawer>
       <aside className="fixed top-0 left-0 h-screen w-20 z-40 hidden md:flex flex-col space-y-4 bg-tremor-brand dark:bg-dark-tremor-brand">
         <div className="h-full flex flex-col items-center space-y-14 pt-20 pb-10 bg-accent">
-          {navItems.map(navItem => (
+          {navItems.map((navItem, i) => (
             <NavItem
+              key={i}
               title={navItem.title}
               icon={navItem.icon}
               href={navItem.href}
