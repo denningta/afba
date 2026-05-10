@@ -5,7 +5,7 @@ import { useState } from "react"
 import transactionCols from "./transactions/transactionsColDefs"
 import { SnackbarProvider } from "notistack"
 import UploadWidget from "./UploadWidget"
-import { DataTable } from "./common/DataTable"
+import { DataTable } from "./common/DataTable/DataTable"
 
 const columns = transactionCols
 

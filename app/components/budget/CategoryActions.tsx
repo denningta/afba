@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Ellipsis } from "lucide-react";
 import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogContent, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
-import { DataTable } from "../common/DataTable";
+import { DataTable } from "../common/DataTable/DataTable";
 import columns from "../transactions/transactionsColDefs";
 import { Progress } from "@/components/ui/progress";
 import { DotsHorizontalIcon, MagnifyingGlassIcon, Pencil1Icon, TrashIcon } from "@radix-ui/react-icons";

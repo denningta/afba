@@ -11,7 +11,7 @@ import columns from "../transactions/transactionsColDefs"
 import Transaction from "@/app/interfaces/transaction"
 import Link from "next/link"
 import MonthRangePicker from "@/components/ui/month-range-picker"
-import { DataTable } from "../common/DataTable"
+import { DataTable } from "../common/DataTable/DataTable"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import BudgetVsActual from "./BudgetVsActual"
 

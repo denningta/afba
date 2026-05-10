@@ -1,5 +1,5 @@
 import { RecurringInsightsStream } from "plaid"
-import { DataTable } from "../common/DataTable"
+import { DataTable } from "../common/DataTable/DataTable"
 import recurringTransactionColumns from "./RecurringTransactionsColDefs"
 import { TransactionStreamBalance } from "./ForecastCalendar"
 

@@ -9,7 +9,7 @@ import getBudgetKpis from "./kpis";
 import { toCurrency } from "@/app/helpers/helperFunctions";
 import { CopyBudgetDialog } from "./CopyBudgetDialog";
 import CategoryDialog from "./CategoryDialog";
-import { DataTable } from "../common/DataTable";
+import { DataTable } from "../common/DataTable/DataTable";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import BudgetNavigator from "./BudgetNavigator";

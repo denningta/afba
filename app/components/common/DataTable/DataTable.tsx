@@ -1,4 +1,3 @@
-'use client'
 
 import {
   ColumnDef,
@@ -45,10 +44,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, PlusCircle, Settings2Icon, X } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { DebouncedInput } from "./DebouncedInput"
+import { DebouncedInput } from "../DebouncedInput"
 import { compareItems, RankingInfo, rankItem } from "@tanstack/match-sorter-utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import ColumnFilter from "./ColumnFilter"
+import ColumnFilter from "../ColumnFilter"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useRouter, useSearchParams } from "next/navigation"
 

@@ -9,7 +9,7 @@ import { AccountBase, TransactionStream } from "plaid"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import AccountSelect from "./AccountSelect"
 import { useEffect, useState } from "react"
-import { DataTable } from "../common/DataTable"
+import { DataTable } from "../common/DataTable/DataTable"
 import RecurringTransactionsTable from "./RecurringTransactionsTable"
 
 const chartConfig = {
