@@ -1,6 +1,7 @@
+import React from "react";
 
 interface MenuProps {
-  children: JSX.Element[] | JSX.Element
+  children: React.JSX.Element[] | React.JSX.Element
   className?: string
   onClick?: () => void
   open?: boolean
@@ -11,7 +12,7 @@ const Menu = ({
   onClick,
   open = false
 }: MenuProps) => {
-  const childArray: JSX.Element[] = Array.isArray(children) ? children : [children]
+  const childArray: React.JSX.Element[] = Array.isArray(children) ? children : [children]
 
   return (
     <div className={`absolute right-0 ${open ? 'block' : 'hidden'}`} onClick={onClick}>

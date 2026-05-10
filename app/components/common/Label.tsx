@@ -1,5 +1,7 @@
+import React from "react";
+
 export interface LabelProps {
-  children: JSX.Element | string
+  children: React.JSX.Element | string
 }
 const Label = ({ children }: LabelProps) => {
 

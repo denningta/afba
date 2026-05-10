@@ -1,10 +1,10 @@
 import { ClickAwayListener } from '@mui/base/ClickAwayListener';
 import { RiMoreLine } from '@remixicon/react';
 import { Popper } from '@mui/base/Popper'
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface TableActionButtonProps {
-  children: JSX.Element | JSX.Element[]
+  children: React.JSX.Element | React.JSX.Element[]
 }
 
 const TableActionButton = ({

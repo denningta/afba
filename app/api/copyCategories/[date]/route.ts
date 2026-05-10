@@ -3,10 +3,8 @@ import { database } from "@/app/lib/mongodb";
 import { listCategories } from "@/app/queries/categories";
 
 
-export async function POST(
-  request: Request,
-  { params }: { params: { date: string } }
-) {
+export async function POST(request: Request, props: { params: Promise<{ date: string }> }) {
+  const params = await props.params;
   try {
     const body = await request.json()
     const { currentDate } = body

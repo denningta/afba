@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import Transaction from "@/app/interfaces/transaction";
 import useTransactions from "@/app/hooks/useTransactions";
 import TransactionForm from "./TransactionForm";
@@ -5,7 +6,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Ellipsis } from "lucide-react";
-import { useState } from "react";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import JsonView from "@uiw/react-json-view"
 import { githubDarkTheme } from "@uiw/react-json-view/githubDark"
@@ -19,7 +19,7 @@ export default function TransactionActions({
 }: EditTransactionProps) {
   const [dialogMenu, setDialogMenu] = useState<string>('none')
 
-  const handleDialogMenu = (): JSX.Element | null => {
+  const handleDialogMenu = (): React.JSX.Element | null => {
 
     switch (dialogMenu) {
       case "view-transaction":

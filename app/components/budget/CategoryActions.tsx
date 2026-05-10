@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react";
 import { Category } from "@/app/interfaces/categories";
 import CategoryForm from "./CategoryForm";
 import useCategories from "@/app/hooks/useCategories";
@@ -37,7 +38,7 @@ export default function CategoryActions({
 
   const { deleteRecord } = useCategories({ date: currentDate })
 
-  const handleDialogMenu = (): JSX.Element | null => {
+  const handleDialogMenu = (): React.JSX.Element | null => {
     switch (dialogMenu) {
       case "view-transactions":
         return <ViewTransactionsDialog category={category} />
