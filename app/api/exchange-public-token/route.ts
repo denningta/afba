@@ -1,5 +1,5 @@
 import plaidClient from "@/app/lib/plaid"
-import { insertUser } from "@/app/queries/users"
+import { insertUser, listUser, replaceUser, User } from "@/app/queries/users"
 
 export async function POST(req: Request) {
 
@@ -25,17 +25,27 @@ export async function POST(req: Request) {
     const access_token = response.data.access_token
     const item_id = response.data.item_id
 
-    // TODO: Make this replace a current user after auth has been put in place
+    const existingUser = await listUser({ userId: client_user_id }) as User | null
 
-    await insertUser({
-      userId: client_user_id,
-      items: [
-        {
-          item_id: item_id,
-          plaidAccessToken: access_token,
-        }
-      ]
-    })
+    if (existingUser) {
+      const items = (existingUser.items ?? []).filter((item) => item.item_id !== item_id)
+      items.push({ item_id, plaidAccessToken: access_token })
+
+      await replaceUser(
+        { _id: existingUser._id },
+        { userId: client_user_id, items }
+      )
+    } else {
+      await insertUser({
+        userId: client_user_id,
+        items: [
+          {
+            item_id: item_id,
+            plaidAccessToken: access_token,
+          }
+        ]
+      })
+    }
 
     return Response.json({ message: `${item_id} successfully added to user ${client_user_id}` })
 

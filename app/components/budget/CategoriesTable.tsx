@@ -1,6 +1,6 @@
 'use client'
 
-import { Card } from "@tremor/react";
+import { Card, CardContent } from "@/components/ui/card";
 import { SnackbarProvider } from "notistack"
 import categoryColumns from "./CategoriesColDefs";
 import useCategories from "@/app/hooks/useCategories";
@@ -52,10 +52,11 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
 
       <BudgetNavigator />
 
-      <div className="grid grid-cols-2 gap-4">
 
-        <div className="flex flex-col md:flex">
-          <Card>
+
+      <div className="flex flex-col md:flex space-y-5 max-w-fit">
+        <Card>
+          <CardContent>
             <div className="flex space-x-5">
               <div>
                 <div className="uppercase">{plannedIncome.name}</div>
@@ -85,9 +86,11 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
                 </div>
               </div>
             </div>
-          </Card>
+          </CardContent>
+        </Card>
 
-          <Card >
+        <Card>
+          <CardContent>
             <div
               className="flex space-x-5"
             >
@@ -117,8 +120,12 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
                 </div>
               </div>
             </div>
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+
 
         <div className="col-span-2 mx-2">
 

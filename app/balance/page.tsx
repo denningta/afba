@@ -1,24 +1,10 @@
-'use client'
+import { Suspense } from "react";
+import BalanceOverview from "../components/balance/BalanceOverview";
 
-import { Card } from "@tremor/react";
-import AccountSelect from "../components/calendar/AccountSelect";
-import { useState } from "react";
-
-export default function BalancePage() {
-  const [accountId, setAccountId] = useState<string | undefined>(undefined)
-
+export default async function BalancePage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Account Balance</h1>
-      <Card>
-        <div className="h-96">
-        </div>
-      </Card>
-      <div className="w-1/4">
-        {/* <AccountSelect */}
-        {/*   onValueChange={setAccountId} */}
-        {/* /> */}
-      </div>
-    </div>
+    <Suspense>
+      <BalanceOverview />
+    </Suspense>
   )
 }
