@@ -27,7 +27,7 @@ services:
  
   afba-database:
     container_name: mongodb
-    image: mongo
+    image: mongo:7.0
     volumes:
       - afba_data:/data/db
     ports:
