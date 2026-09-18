@@ -254,7 +254,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border " >
+      <div className="rounded-md border bg-muted/30 overflow-hidden" >
         {isLoading ?
           <div className="flex flex-col space-y-4 p-5">
             <Skeleton className="h-7 w-full" />

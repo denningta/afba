@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto } from "next/font/google"
+import { Roboto, Geist } from "next/font/google"
 import "./globals.css";
 import Sidebar from "./components/Sidebar";
 import DialogProvider from "./components/common/DialogProvider";
@@ -9,6 +9,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { MenuIcon } from "lucide-react";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const roboto = Roboto({
   weight: '300',
@@ -28,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" >
-      <body className={cn(roboto.className, `bg-tremor-background-subtle dark:bg-dark-tremor-background-subtle text-tremor-default text-tremor-content dark:text-dark-tremor-content mb-10`)}>
+    <html lang="en" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
+      <body className={cn(roboto.className, "mb-10")}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

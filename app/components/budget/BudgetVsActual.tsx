@@ -1,7 +1,7 @@
 import useBudgetVsActual from "@/app/hooks/useBudgetVsActual";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ChartConfig, ChartContainer } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 
 const chartConfig = {
   budget: {
@@ -31,19 +31,18 @@ export default function BudgetVsActual() {
             data={data?.findLast(el => el.date)?.categories}
             layout="vertical"
           >
-            <CartesianGrid horizontal={false} />
             <YAxis
               dataKey="name"
               type="category"
               tickLine={false}
               tickMargin={5}
-              axisLine={true}
+              axisLine={false}
             >
             </YAxis>
 
             <XAxis dataKey="spent" type="number" hide >
             </XAxis>
-            <Bar dataKey="budget" layout="vertical" fill="blue" radius={4}>
+            <Bar dataKey="budget" fill="var(--chart-1)" radius={4}>
               <LabelList
                 dataKey="budget"
                 position="insideLeft"
@@ -52,7 +51,7 @@ export default function BudgetVsActual() {
                 fontSize={12}
               />
             </Bar>
-            <Bar dataKey="spent" layout="vertical" fill="red" radius={4}>
+            <Bar dataKey="spent" fill="var(--chart-2)" radius={4}>
               <LabelList
                 dataKey="spent"
                 position="insideLeft"
