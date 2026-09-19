@@ -21,15 +21,27 @@ const UserCategoryCell = (info: CellContext<Transaction, Category | undefined>) 
     setIsLoading(true)
     const transaction: Transaction = {
       ...info.row.original,
-      userCategory: category ?? undefined
+      userCategory: category ?? undefined,
+      categorySource: 'manual',
+      categoryConfirmed: true
     }
     await upsertRecord(transaction)
     setIsLoading(false)
   }
 
+  const handleConfirm = async () => {
+    const transaction: Transaction = {
+      ...info.row.original,
+      categoryConfirmed: true
+    }
+    await upsertRecord(transaction)
+  }
+
   const handleChangeDate = (date: string) => {
     setDate(date)
   }
+
+  const needsReview = info.row.original.categorySource === 'auto' && !info.row.original.categoryConfirmed
 
   return (
     <div className="flex items-center space-x-4">
@@ -37,8 +49,10 @@ const UserCategoryCell = (info: CellContext<Transaction, Category | undefined>) 
         options={data ?? []}
         value={info.row.original.userCategory ?? undefined}
         date={date}
+        needsReview={needsReview}
         onSelectionChange={(category) => updateTransaction(category)}
         onMonthChange={handleChangeDate}
+        onConfirm={handleConfirm}
         isLoading={isLoading}
       />
     </div>

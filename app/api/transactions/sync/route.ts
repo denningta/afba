@@ -1,8 +1,10 @@
 import { transactions, transactionsSync } from "@/app/lib/mongodb"
 import plaidClient from "@/app/lib/plaid"
+import { buildMerchantCategoryMap, suggestCategory } from "@/app/lib/autoCategorize"
 import { getLastTransactionSync, insertTransactionSync, TransactionSync } from "@/app/queries/transactionsSync"
 import { listUser } from "@/app/queries/users"
-import { RemovedTransaction, Transaction, TransactionsSyncRequest, TransactionsSyncResponse } from "plaid"
+import { RemovedTransaction, TransactionsSyncRequest, TransactionsSyncResponse } from "plaid"
+import Transaction from "@/app/interfaces/transaction"
 
 export interface TransactionsSyncParams {
   userId?: string
@@ -70,6 +72,18 @@ export async function POST(request: Request) {
     }
 
     if (added.length) {
+      const merchantCategoryMap = await buildMerchantCategoryMap()
+
+      for (const transaction of added) {
+        const suggestion = await suggestCategory(transaction, merchantCategoryMap)
+        if (suggestion) {
+          transaction.userCategory = suggestion.category
+          transaction.categorySource = 'auto'
+          transaction.categoryConfirmed = false
+          transaction.categoryConfidence = suggestion.confidence
+        }
+      }
+
       await transactions.insertMany(added)
     }
 

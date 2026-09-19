@@ -7,10 +7,8 @@ import { TransactionsFilter } from "@/app/queries/transactions"
 import { DataTable } from "../common/DataTable/DataTable"
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { PlusIcon, TriangleAlert } from "lucide-react"
-import useCheckDuplicates from "@/app/hooks/useCheckDuplicates"
-import { toast } from "sonner"
-import { useEffect, useMemo } from "react"
+import { PlusIcon } from "lucide-react"
+import { useMemo } from "react"
 
 interface TransactionsTableProps {
   searchParams?: TransactionsFilter
@@ -27,28 +25,6 @@ export default function TransactionsTable({
   } = useTransactions(searchParams ?? {})
 
   const stableData = useMemo(() => data ?? [], [data])
-
-
-  const duplicates = useCheckDuplicates()
-  const duplicateData = duplicates?.data?.map(el => el.transactions).flat()
-
-  useEffect(() => {
-    if (!duplicates.data?.length) return
-    toast.warning(
-      <div className="flex items-center space-x-4">
-        <TriangleAlert />
-        <div className="flex flex-col">
-          <div className="flex items-center">
-            Warning: There are {duplicates.data.length} potential duplicates
-          </div>
-          <div>
-            Click here to view
-          </div>
-        </div>
-      </div>
-    )
-
-  }, [duplicates.data])
 
   const handleAddTransaction = async () => {
   }

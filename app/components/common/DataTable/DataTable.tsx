@@ -100,6 +100,7 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [firstRender, setFirstRender] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
   const [pagination, setPagination] = useState<PaginationState>({
@@ -121,6 +122,10 @@ export function DataTable<TData, TValue>({
   }, [])
 
   console.log(globalFilter)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
@@ -375,28 +380,28 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             onClick={() => table.firstPage()}
-            disabled={!table.getCanPreviousPage()}
+            disabled={!mounted || !table.getCanPreviousPage()}
           >
             <ChevronsLeft size={15} />
           </Button>
           <Button
             variant="outline"
             onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            disabled={!mounted || !table.getCanPreviousPage()}
           >
             <ChevronLeft size={15} />
           </Button>
           <Button
             variant="outline"
             onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            disabled={!mounted || !table.getCanNextPage()}
           >
             <ChevronRight size={15} />
           </Button>
           <Button
             variant="outline"
             onClick={() => table.lastPage()}
-            disabled={!table.getCanNextPage()}
+            disabled={!mounted || !table.getCanNextPage()}
           >
             <ChevronsRight size={15} />
           </Button>

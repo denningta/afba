@@ -6,8 +6,14 @@ import { toCurrency } from "@/app/helpers/helperFunctions"
 import UserCategoryCell from "./UserCategoryCell"
 import Image from "next/image"
 import Transaction from "@/app/interfaces/transaction"
+import { Button } from "@/components/ui/button"
+import { ExternalLink } from "lucide-react"
 
 const columnHelper = createColumnHelper<Transaction>()
+
+// Amazon's own transaction history has line-item detail Plaid doesn't give us,
+// which helps decide how a purchase should actually be categorized.
+const AMAZON_TRANSACTIONS_URL = "https://www.amazon.com/cpe/yourpayments/transactions"
 
 const columns: ColumnDef<Transaction, any>[] = [
   columnHelper.display({
@@ -42,6 +48,8 @@ const columns: ColumnDef<Transaction, any>[] = [
 
     header: 'Merchant',
     cell: info => {
+      const isAmazon = info.getValue()?.toLowerCase() === 'amazon'
+
       return (
         <div className="flex items-center space-x-4">
           {info.row.original.logo_url &&
@@ -56,6 +64,19 @@ const columns: ColumnDef<Transaction, any>[] = [
           <div>
             {info.getValue()}
           </div>
+
+          {isAmazon &&
+            <Button variant="ghost" size="icon-sm" asChild>
+              <a
+                href={AMAZON_TRANSACTIONS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="View this purchase on Amazon"
+              >
+                <ExternalLink />
+              </a>
+            </Button>
+          }
         </div>
       )
     }
