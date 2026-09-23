@@ -2,23 +2,14 @@ import * as React from "react"
 
 import { Button } from "@/components/ui/button"
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Category } from "@/app/interfaces/categories"
-import { ChevronLeft, ChevronRight, Loader, LoaderCircle, TriangleAlert } from "lucide-react"
-import { Separator } from "@/components/ui/separator"
+import { LoaderCircle, TriangleAlert } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { getPrevMonthString } from "@/app/helpers/helperFunctions"
+import { CategoryPicker } from "./CategoryPicker"
 
 export interface UserCategorySelectorProps {
   options: Category[]
@@ -52,28 +43,9 @@ export function UserCategorySelector({
     if (nextOpen && needsReview) onConfirm()
   }
 
-  const handleSelect = (value: string) => {
-    const [_, id] = value.split(',')
-    const category = options.find((option) => option._id?.toString() === id)
-    delete category?.transactions
-    category && onSelectionChange(category)
+  const handleSelectionChange = (category: Category | undefined) => {
+    onSelectionChange(category)
     setOpen(false)
-  }
-
-  const handlePreviousMonth = () => {
-    const prevMonth = getPrevMonthString(date, 1)
-    onMonthChange(prevMonth)
-  }
-
-  const handleNextMonth = () => {
-    const nextMonth = getPrevMonthString(date, -1)
-    onMonthChange(nextMonth)
-  }
-
-  const handleClearValue = () => {
-    onSelectionChange(undefined)
-    setOpen(false)
-
   }
 
   return (
@@ -95,51 +67,14 @@ export function UserCategorySelector({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-0" side="right" align="start">
-          <Command>
-            <CommandInput placeholder="Find a budget category.." />
-            <CommandList>
-              <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup>
-                {options.map((option) => (
-                  <CommandItem
-                    key={option._id?.toString()}
-                    value={option.name + ',' + option._id}
-                    onSelect={handleSelect}
-                  >
-                    <div className="w-full flex">
-                      <div className="grow">{option.name}</div>
-                      <div>{option.date}</div>
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-          <Separator />
-          <div className="w-full flex items-center justify-center m-2 space-x-3">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handlePreviousMonth}
-            >
-              <ChevronLeft />
-            </Button>
-            <div className="text-sm">{date}</div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleNextMonth}
-            >
-              <ChevronRight />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleClearValue}
-            >
-              clear
-            </Button>
-          </div>
+          <CategoryPicker
+            options={options}
+            value={value}
+            date={date}
+            autoFocus
+            onSelectionChange={handleSelectionChange}
+            onMonthChange={onMonthChange}
+          />
         </PopoverContent>
       </Popover>
     </div>

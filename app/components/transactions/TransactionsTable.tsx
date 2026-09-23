@@ -2,6 +2,7 @@
 
 import transactionColDefs from "./transactionsColDefs"
 import TransactionForm from "./TransactionForm"
+import AssignCategoriesButton from "./AssignCategoriesButton"
 import useTransactions from "@/app/hooks/useTransactions"
 import { TransactionsFilter } from "@/app/queries/transactions"
 import { DataTable } from "../common/DataTable/DataTable"
@@ -35,6 +36,8 @@ export default function TransactionsTable({
       <div className="text-2xl mx-4 mb-8">Transactions</div>
       <div className="flex items-center space-x-6 mb-4">
         <div className="grow"></div>
+
+        <AssignCategoriesButton />
 
         <Dialog>
           <DialogTrigger asChild>

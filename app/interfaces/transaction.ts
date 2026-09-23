@@ -15,5 +15,7 @@ export default interface Transaction extends PlaidTransaction {
   categoryConfirmed?: boolean
   // The ratio (0-1) that triggered an auto-assignment, kept for debugging/analytics.
   categoryConfidence?: number
+  // The specific Amazon order URL the user saved after manually finding it once.
+  amazonOrderUrl?: string
 }
 

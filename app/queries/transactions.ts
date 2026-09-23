@@ -3,11 +3,14 @@ import Transaction from "../interfaces/transaction";
 
 export interface TransactionsFilter {
   userCategoryId?: string
+  // 'true' when present - query params arrive from the URL as strings.
+  needsCategory?: string
 }
 
 export async function listTransactions(searchParams: URLSearchParams) {
   const {
-    userCategoryId
+    userCategoryId,
+    needsCategory
   }: TransactionsFilter = Object.fromEntries(searchParams)
 
   const query: any[] = [
@@ -59,6 +62,17 @@ export async function listTransactions(searchParams: URLSearchParams) {
     {
       $match: {
         "userCategory._id": userCategoryId
+      }
+    },
+  )
+
+  if (needsCategory === 'true') query.unshift(
+    {
+      $match: {
+        $or: [
+          { userCategory: { $exists: false } },
+          { $and: [{ categorySource: 'auto' }, { categoryConfirmed: { $ne: true } }] }
+        ]
       }
     },
   )
