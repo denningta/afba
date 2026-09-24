@@ -74,10 +74,17 @@ export interface TransactionDetailsDialogProps {
   onClose: () => void
 }
 
-function TransactionDetailsDialog({ transaction, onClose }: TransactionDetailsDialogProps) {
+export function TransactionDetailsDialog({ transaction, onClose }: TransactionDetailsDialogProps) {
 
   return (
-    <DialogContent className="max-w-fit h-5/6">
+    <DialogContent
+      className={[
+        // Full screen on mobile - no floating card, no side margins.
+        "top-0 left-0 h-dvh max-w-none translate-x-0 translate-y-0 rounded-none p-3",
+        // Restore the original floating/centered look from sm: up.
+        "sm:top-1/2 sm:left-1/2 sm:h-5/6 sm:max-w-fit sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:p-4",
+      ].join(" ")}
+    >
       <DialogHeader>
         <DialogTitle>View Transaction Details</DialogTitle>
         <DialogDescription>View the full details of this transaction.</DialogDescription>

@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { TriangleAlert } from "lucide-react"
+import { Info, TriangleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import useTransactions from "@/app/hooks/useTransactions"
 import useCategories from "@/app/hooks/useCategories"
 import { dateToYYYYMM, toCurrency } from "@/app/helpers/helperFunctions"
@@ -15,6 +16,7 @@ import Transaction from "@/app/interfaces/transaction"
 import { Category } from "@/app/interfaces/categories"
 import { CategoryPicker } from "@/app/components/common/CategoryPicker"
 import AmazonOrderLink from "@/app/components/transactions/AmazonOrderLink"
+import { TransactionDetailsDialog } from "@/app/components/transactions/TransactionActions"
 
 type Decision =
   | { type: 'assigned'; category: Category | undefined }
@@ -26,6 +28,21 @@ export default function AssignQueue() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [decisions, setDecisions] = useState<Map<string, Decision>>(new Map())
   const [categoryDate, setCategoryDate] = useState('')
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  // Auto-focusing the search box is great on desktop (no on-screen keyboard
+  // to fight with), but on mobile it pops the keyboard up over half the
+  // screen the instant a new transaction loads, before the user has even
+  // read it - only autofocus on viewports wide enough not to have that
+  // problem (matches the md: breakpoint used everywhere else for this).
+  const [isDesktop, setIsDesktop] = useState(true)
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)')
+    const update = () => setIsDesktop(mql.matches)
+    update()
+    mql.addEventListener('change', update)
+    return () => mql.removeEventListener('change', update)
+  }, [])
 
   // Snapshot the filtered list once so the session's order/length doesn't
   // shift under the user as upsertRecord optimistically mutates the same
@@ -95,6 +112,9 @@ export default function AssignQueue() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!queue || currentIndex >= queue.length) return
+      // Let the details dialog handle its own Escape-to-close instead of
+      // also skipping the transaction underneath it.
+      if (detailsOpen) return
       if (e.key === '[') {
         e.preventDefault()
         handleBack()
@@ -108,7 +128,12 @@ export default function AssignQueue() {
     }
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [queue, currentIndex, decisions])
+  }, [queue, currentIndex, decisions, detailsOpen])
+
+  // Don't carry an open details dialog over to the next transaction.
+  useEffect(() => {
+    setDetailsOpen(false)
+  }, [currentIndex])
 
   if (queue === null) {
     return <div className="m-4 text-muted-foreground">Loading…</div>
@@ -119,8 +144,8 @@ export default function AssignQueue() {
     const skippedCount = [...decisions.values()].filter(d => d.type === 'skipped').length
 
     return (
-      <div className="m-4 flex justify-center">
-        <Card className="w-full max-w-md">
+      <div className="flex justify-center md:m-4">
+        <Card className="w-full rounded-none md:max-w-md md:rounded-xl">
           <CardHeader>
             <div className="text-xl">All caught up</div>
           </CardHeader>
@@ -163,8 +188,8 @@ export default function AssignQueue() {
     : transaction
 
   return (
-    <div className="m-4 flex justify-center">
-      <Card className="w-full max-w-md">
+    <div className="flex justify-center md:m-4">
+      <Card className="w-full rounded-none md:max-w-md md:rounded-xl">
         <CardHeader className="flex flex-col gap-2">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>{currentIndex + 1} of {queue.length}</span>
@@ -176,7 +201,20 @@ export default function AssignQueue() {
           <div>
             <div className="flex items-center justify-between">
               <div className="text-lg font-medium">{description}</div>
-              {isAmazon && <AmazonOrderLink transaction={displayTransaction} />}
+              <div className="flex items-center">
+                {isAmazon && <AmazonOrderLink transaction={displayTransaction} />}
+                <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon-sm" title="View all transaction details">
+                      <Info />
+                    </Button>
+                  </DialogTrigger>
+                  <TransactionDetailsDialog
+                    transaction={displayTransaction}
+                    onClose={() => setDetailsOpen(false)}
+                  />
+                </Dialog>
+              </div>
             </div>
             <div className="flex items-center justify-between text-muted-foreground">
               <span>{transaction.date}</span>
@@ -186,12 +224,25 @@ export default function AssignQueue() {
 
           <Separator />
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 mb-10">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium">Category</div>
               {currentValue && (
                 needsReview ? (
-                  <Badge variant="secondary" className="gap-1">
+                  <Badge
+                    variant="secondary"
+                    className="gap-1 cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleConfirm}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleConfirm()
+                      }
+                    }}
+                    title="Tap to confirm this category"
+                  >
                     <TriangleAlert className="h-3 w-3" />
                     {currentValue.name}
                   </Badge>
@@ -202,7 +253,7 @@ export default function AssignQueue() {
             </div>
             {needsReview && (
               <div className="text-sm text-muted-foreground">
-                Auto-assigned - press Enter to confirm, or search to change it.
+                Auto-assigned - tap the badge or press Enter to confirm, or search to change it.
               </div>
             )}
             {categoryDate && (
@@ -214,7 +265,7 @@ export default function AssignQueue() {
                 options={categories ?? []}
                 value={currentValue}
                 date={categoryDate}
-                autoFocus
+                autoFocus={isDesktop}
                 needsReview={needsReview}
                 onSelectionChange={handleAssign}
                 onMonthChange={setCategoryDate}

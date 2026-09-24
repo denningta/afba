@@ -75,7 +75,10 @@ function CommandInput({
         <CommandPrimitive.Input
           data-slot="command-input"
           className={cn(
-            "w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+            // text-base (16px) avoids iOS Safari auto-zooming the page on
+            // focus for inputs under 16px; drop back to text-sm on larger
+            // viewports where that isn't a concern.
+            "w-full text-base outline-hidden disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm",
             className
           )}
           {...props}
@@ -96,7 +99,7 @@ function CommandList({
     <CommandPrimitive.List
       data-slot="command-list"
       className={cn(
-        "no-scrollbar max-h-72 scroll-py-1 overflow-x-hidden overflow-y-auto outline-none",
+        "no-scrollbar max-h-56 scroll-py-1 overflow-x-hidden overflow-y-auto outline-none sm:max-h-72",
         className
       )}
       {...props}

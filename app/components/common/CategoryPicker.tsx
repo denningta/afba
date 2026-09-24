@@ -70,6 +70,14 @@ export function CategoryPicker({
     onSelectionChange(undefined)
   }
 
+  // On mobile, scrolling the results list can otherwise leave the search
+  // input focused after the on-screen keyboard is dismissed by the scroll
+  // gesture, which some browsers then pop back up once the scroll settles.
+  // Blurring proactively as soon as a scroll/drag starts prevents that.
+  const handleListInteractionStart = () => {
+    (document.activeElement as HTMLElement | null)?.blur?.()
+  }
+
   return (
     <div>
       <Command>
@@ -80,7 +88,10 @@ export function CategoryPicker({
           onValueChange={setSearch}
           onKeyDown={handleInputKeyDown}
         />
-        <CommandList>
+        <CommandList
+          onTouchMove={handleListInteractionStart}
+          onWheel={handleListInteractionStart}
+        >
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup>
             {options.map((option) => (
@@ -99,7 +110,7 @@ export function CategoryPicker({
         </CommandList>
       </Command>
       <Separator />
-      <div className="w-full flex items-center justify-center m-2 space-x-3">
+      <div className="w-full flex flex-wrap items-center justify-center gap-2 m-2">
         <Button
           size="sm"
           variant="outline"

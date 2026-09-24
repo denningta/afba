@@ -41,7 +41,9 @@ export default function RootLayout({
           <DialogProvider>
             <CategoryProvider>
               <Sidebar />
-              <div className="md:ml-20 pt-4 md:p-5 space-x-3 space-y-3 max-w-7xl mx-auto">
+              {/* Mobile top padding matches the fixed bar's actual height:
+                  h-14 (3.5rem) plus whatever safe-area inset it added on top. */}
+              <div className="pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] md:ml-20 md:p-5 space-x-3 space-y-3 max-w-7xl mx-auto">
                 {children}
               </div>
               <Toaster />
