@@ -65,42 +65,26 @@ docker compose pull
 docker compose up -d
 ```
 
-# Backup and Restore Docker Volume
+# Sync Production Data to Local Development
 
-[Source] (https://www.augmentedmind.de/2023/08/20/backup-docker-volumes/)
+One-time setup:
 
-## Backup
+- Set `REMOTE_DB_HOST=user@host` in `.env` (or `.env.local`).
+- Set up key-based SSH so the sync doesn't prompt for a password: `ssh-copy-id user@host`
 
-On the server define the name of the volume and run the docker command
-
-```
-VOLUME="afba_data"
-```
-
-And then run:
+Then:
 
 ```
-docker run --rm -v "${VOLUME}:/data" -v "${PWD}:/backup-dir" ubuntu tar cvzf /backup-dir/backup/${VOLUME}.tar.gz /data
+npm run db:sync                 # dump prod over SSH and restore into the local dev database
+npm run db:restore              # re-restore locally from the newest snapshot (no network needed)
+npm run db:restore -- <file>    # restore a specific snapshot
 ```
 
-Creates a temporary docker container, connects to the volume data and uses ubuntu tar to create a compressed .tar.gz of the volume directory.  Saves the file to the current working directory.
+`db:sync` runs `mongodump` inside the production `mongodb` container, streams it over SSH into
+`mongorestore` in the local container, and saves a copy to `backup/afba-<timestamp>.archive.gz`
+(the newest 5 are kept). It starts the local database, and creates the `afba_data` volume, if needed.
+Local collections are replaced with the production copies.
 
-
-## Restore
-
-On the local machine ensure volume is named
-```
-VOLUME="afba_data"
-```
-
-Use `rsync` to copy the file from the remote server
-
-```
-rsync -a denningta@192.168.1.240:/home/denningta/afba/backup .
-```
-
-Run a docker container to restore the volume data.  (Run with PWD inside the `backup` directory)
-```
-docker run --rm -v "${VOLUME}:/data" -v "${PWD}:/backup" ubuntu bash -c "rm -rf /data/{*,.*}; cd /data && tar xvzf /backup/${VOLUME}.tar.gz --strip 1"
-```
-
+A logical dump is used instead of copying the Docker volume because it is consistent while the
+server is running and works across MongoDB versions (prod runs `mongo:latest`, dev runs `mongo:7.0`,
+and 7.0 cannot open data files written by 8.x).

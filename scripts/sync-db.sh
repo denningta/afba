@@ -1,53 +1,96 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Copy the production MongoDB into the local dev container.
+#
+#   npm run db:sync [user@host]      dump prod over SSH, restore locally, keep a snapshot in backup/
+#   npm run db:restore [-- <file>]   restore locally from a snapshot (defaults to the newest)
+#
+# Uses mongodump/mongorestore rather than copying volume files, so it is safe
+# against a running server and works across MongoDB versions (prod: latest, dev: 7.0).
+set -Eeuo pipefail
+trap 'echo "Error: ${BASH_SOURCE[0]}:${LINENO}: \"${BASH_COMMAND}\" failed" >&2' ERR
 
-# Configuration
 DB_NAME="afba"
-LOCAL_CONTAINER="mongodb"
-REMOTE_CONTAINER="mongodb"
+CONTAINER="mongodb"       # container_name in both compose files
+VOLUME="afba_data"        # external volume used by docker-compose.dev.yml
+COMPOSE_FILE="docker-compose.dev.yml"
+BACKUP_DIR="backup"
+KEEP=5                    # snapshots to keep in BACKUP_DIR
 
-# Check if remote host is provided as an argument
-REMOTE_HOST=$1
+cd "$(dirname "$0")/.."
 
-# If not provided, try to load from .env or .env.local
-if [ -z "$REMOTE_HOST" ]; then
-    if [ -f .env.local ]; then
-        REMOTE_HOST=$(grep REMOTE_DB_HOST .env.local | cut -d '=' -f2)
-    elif [ -f .env ]; then
-        REMOTE_HOST=$(grep REMOTE_DB_HOST .env | cut -d '=' -f2)
-    fi
-fi
+die() { echo "Error: $*" >&2; exit 1; }
 
-# Final check for REMOTE_HOST
-if [ -z "$REMOTE_HOST" ]; then
-    echo "Error: REMOTE_HOST not provided and REMOTE_DB_HOST not found in .env or .env.local"
-    echo "Usage: ./scripts/sync-db.sh <remote-host>"
-    echo "Alternatively, add REMOTE_DB_HOST=user@host to your .env.local file."
-    exit 1
-fi
+ensure_docker() {
+  docker info >/dev/null 2>&1 ||
+    die "can't reach Docker. If you were just added to the docker group, log out and back in (or run 'newgrp docker')."
+}
 
-echo "--- Starting Database Sync ---"
-echo "Remote Host: $REMOTE_HOST"
-echo "Database: $DB_NAME"
+# Start just the dev database (creating its volume if needed) and wait until it accepts connections.
+ensure_local_db() {
+  if ! docker ps --format '{{.Names}}' | grep -qx "$CONTAINER"; then
+    echo "Starting local MongoDB..."
+    docker volume create "$VOLUME" >/dev/null
+    docker compose -f "$COMPOSE_FILE" up -d afba-database
+  fi
+  for _ in $(seq 30); do
+    docker exec "$CONTAINER" mongosh --quiet --eval 'db.runCommand({ ping: 1 })' >/dev/null 2>&1 && return
+    sleep 1
+  done
+  die "local MongoDB didn't become ready"
+}
 
-# Check if local container is running
-if ! docker ps --format '{{.Names}}' | grep -q "^${LOCAL_CONTAINER}$"; then
-    echo "Error: Local Docker container '$LOCAL_CONTAINER' is not running."
-    echo "Please start it with: npm run dev:docker"
-    exit 1
-fi
+# Read a gzipped mongodump archive on stdin and replace the local database with it.
+restore_stdin() {
+  docker exec -i "$CONTAINER" mongorestore --archive --gzip --drop --nsInclude="${DB_NAME}.*"
+}
 
-echo "Syncing data from remote... (this may take a moment)"
+latest_snapshot() {
+  ls -1t "$BACKUP_DIR"/"$DB_NAME"-*.archive.gz 2>/dev/null | head -n 1
+}
 
-# Execute sync command
-# 1. mongodump on remote server (inside container) to stdout
-# 2. pipe to local mongorestore (inside container) from stdin
-ssh "$REMOTE_HOST" "docker exec $REMOTE_CONTAINER mongodump --db $DB_NAME --archive" | \
-docker exec -i "$LOCAL_CONTAINER" mongorestore --archive --drop
+sync_from_remote() {
+  local remote_host="${1:-}"
+  if [ -z "$remote_host" ]; then
+    local env_file
+    for env_file in .env.local .env; do
+      [ -f "$env_file" ] || continue
+      remote_host=$(sed -n 's/^REMOTE_DB_HOST=//p' "$env_file" | head -n 1)
+      [ -n "$remote_host" ] && break
+    done
+  fi
+  [ -n "$remote_host" ] ||
+    die "no remote host. Pass one (npm run db:sync user@host) or set REMOTE_DB_HOST in .env / .env.local."
 
-if [ $? -eq 0 ]; then
-    echo "--- Sync Complete! ---"
-    echo "Local database '$DB_NAME' has been updated with production data."
+  mkdir -p "$BACKUP_DIR"
+  local snapshot
+  snapshot="$BACKUP_DIR/$DB_NAME-$(date +%Y%m%d-%H%M%S).archive.gz"
+
+  echo "Syncing '$DB_NAME' from $remote_host -> local (snapshot: $snapshot)"
+  if ! ssh "$remote_host" "docker exec $CONTAINER mongodump --db $DB_NAME --archive --gzip" |
+    tee "$snapshot" |
+    restore_stdin; then
+    rm -f "$snapshot"
+    die "sync failed"
+  fi
+
+  # Keep only the newest $KEEP snapshots.
+  ls -1t "$BACKUP_DIR"/"$DB_NAME"-*.archive.gz | tail -n +$((KEEP + 1)) | xargs -r rm --
+  echo "Sync complete."
+}
+
+restore_from_file() {
+  local file="${1:-$(latest_snapshot)}"
+  [ -n "$file" ] && [ -f "$file" ] || die "no snapshot found (looked in $BACKUP_DIR/)"
+  echo "Restoring '$DB_NAME' from $file"
+  restore_stdin <"$file"
+  echo "Restore complete."
+}
+
+ensure_docker
+ensure_local_db
+
+if [ "${1:-}" = "--restore" ]; then
+  restore_from_file "${2:-}"
 else
-    echo "--- Sync Failed ---"
-    exit 1
+  sync_from_remote "${1:-}"
 fi

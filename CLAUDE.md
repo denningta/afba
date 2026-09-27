@@ -15,7 +15,8 @@ npm run dev:debug    # Dev server with Node inspector on :9229
 npm run build        # Production Next build (output: 'standalone')
 npm run lint         # next lint (eslint config: next/core-web-vitals)
 npm run publish      # Build + push production Docker image to denningta/afba:latest
-npm run db:sync <user@host>   # Pull prod MongoDB dump to local container (see scripts/sync-db.sh; needs REMOTE_DB_HOST in .env)
+npm run db:sync [user@host]   # Stream prod MongoDB into the local dev container + save a snapshot in backup/ (host defaults to REMOTE_DB_HOST)
+npm run db:restore            # Restore local DB from the newest backup/ snapshot (or `-- <file>`)
 ```
 
 There is no test suite in this repo.
@@ -57,7 +58,7 @@ Charting uses **Tremor**, **Recharts**, and **visx** (different chart types pick
 
 ## Deployment
 
-Production runs as a single Docker image (`denningta/afba`) alongside a `mongo` container on the prod host. The build uses `next.config.mjs` `output: 'standalone'`. `prod.Dockerfile` builds the image; `docker-compose.yml` is the production compose file. See `README.md` for the backup/restore procedure for the `afba_data` volume.
+Production runs as a single Docker image (`denningta/afba`) alongside a `mongo` container on the prod host. The build uses `next.config.mjs` `output: 'standalone'`. `prod.Dockerfile` builds the image; `docker-compose.yml` is the production compose file. See `README.md` for syncing prod data to local dev (`scripts/sync-db.sh`).
 
 ## Gotchas
 
