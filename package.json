@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:debug": "NODE_OPTIONS='--inspect=0.0.0.0:9229' next dev",
-    "dev:docker": "docker compose -f docker-compose.dev.yml up",
+    "dev:docker": "bash scripts/dev-docker.sh",
     "docker": "docker compose -f docker-compose.dev.yml up",
     "build": "next build",
     "start": "next start",
