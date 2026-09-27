@@ -1,5 +1,6 @@
 import plaidClient from "@/app/lib/plaid"
 import { insertUser, listUser, replaceUser, User } from "@/app/queries/users"
+import { findDuplicateAccounts, refreshAccounts } from "@/app/queries/accounts"
 
 export async function POST(req: Request) {
 
@@ -25,6 +26,24 @@ export async function POST(req: Request) {
     const access_token = response.data.access_token
     const item_id = response.data.item_id
 
+    const { data: newItem } = await plaidClient.accountsGet({ access_token })
+    const duplicates = await findDuplicateAccounts(newItem.item.institution_id, newItem.accounts, item_id)
+
+    if (duplicates.length) {
+      // Plaid already created (and bills for) the new item - disconnect it.
+      await plaidClient.itemRemove({ access_token })
+
+      const names = duplicates.map((a) => a.mask ? `${a.name} ••${a.mask}` : a.name)
+      return Response.json(
+        {
+          error: 'DUPLICATE_ACCOUNT',
+          message: `Already linked: ${names.join(', ')}. To add or fix accounts at ${newItem.item.institution_name ?? 'this institution'}, use the existing connection instead of linking it again.`,
+          duplicates: names
+        },
+        { status: 409 }
+      )
+    }
+
     const existingUser = await listUser({ userId: client_user_id }) as User | null
 
     if (existingUser) {
@@ -47,10 +66,15 @@ export async function POST(req: Request) {
       })
     }
 
+    await refreshAccounts()
+
     return Response.json({ message: `${item_id} successfully added to user ${client_user_id}` })
 
   } catch (err: any) {
-    console.error(err)
-    return Response.json({ message: err, status: 500 })
+    console.error(err?.response?.data ?? err)
+    return Response.json(
+      { message: err?.response?.data?.error_message ?? err?.message ?? 'Failed to link account' },
+      { status: 500 }
+    )
   }
 }

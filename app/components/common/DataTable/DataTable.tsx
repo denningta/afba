@@ -65,6 +65,10 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[],
   isLoading?: boolean
+  // Each table should pass its own key so column choices don't leak between tables.
+  columnVisibilityStorageKey?: string
+  // Applied until the user changes a column; saved choices win for the columns they cover.
+  defaultColumnVisibility?: VisibilityState
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -94,11 +98,13 @@ export function DataTable<TData, TValue>({
   onLoad = () => { },
   columns,
   data,
-  isLoading = false
+  isLoading = false,
+  columnVisibilityStorageKey = 'colVis',
+  defaultColumnVisibility = {}
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(defaultColumnVisibility)
   const [firstRender, setFirstRender] = useState(true)
   const [mounted, setMounted] = useState(false)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -128,16 +134,22 @@ export function DataTable<TData, TValue>({
   }, [])
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const colVis = JSON.parse(localStorage.getItem('colVis') || '{}')
-      setColumnVisibility(colVis)
-      setFirstRender(false)
+    try {
+      const saved = JSON.parse(localStorage.getItem(columnVisibilityStorageKey) || '{}')
+      setColumnVisibility({ ...defaultColumnVisibility, ...saved })
+    } catch {
+      // Storage unavailable or corrupt - fall back to the defaults already in state.
     }
+    setFirstRender(false)
   }, [])
 
   useEffect(() => {
     if (firstRender) return
-    localStorage.setItem('colVis', JSON.stringify(columnVisibility))
+    try {
+      localStorage.setItem(columnVisibilityStorageKey, JSON.stringify(columnVisibility))
+    } catch {
+      // Storage unavailable - column choices just won't persist.
+    }
   }, [columnVisibility])
 
 

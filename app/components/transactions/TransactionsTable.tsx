@@ -11,6 +11,15 @@ import { Button } from "@/components/ui/button"
 import { PlusIcon } from "lucide-react"
 import { useMemo } from "react"
 
+// Everything not listed stays visible (date, merchant, description, account
+// type, user category, amount, and the select/actions columns).
+const DEFAULT_COLUMN_VISIBILITY = {
+  month: false,
+  account: false,
+  personal_finance_category: false,
+  pending: false,
+}
+
 interface TransactionsTableProps {
   searchParams?: TransactionsFilter
 }
@@ -57,6 +66,8 @@ export default function TransactionsTable({
       <DataTable
         data={stableData ?? []}
         columns={columns}
+        columnVisibilityStorageKey="afba:transactions-columns"
+        defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
       />
     </div>
   )

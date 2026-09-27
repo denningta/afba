@@ -13,6 +13,7 @@ import { DataTable } from "../common/DataTable/DataTable";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import BudgetNavigator from "./BudgetNavigator";
+import BudgetAccountsPicker from "./BudgetAccountsPicker";
 
 
 
@@ -46,8 +47,9 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
 
   return (
     <div className="space-y-6">
-      <div className="mx-4 text-2xl">
-        Budget
+      <div className="mx-4 flex items-center justify-between">
+        <div className="text-2xl">Budget</div>
+        <BudgetAccountsPicker />
       </div>
 
       <BudgetNavigator />

@@ -13,3 +13,5 @@ export const transactionsSync = database.collection('transactionSync')
 export const categories = database.collection('categories')
 
 export const users = database.collection('users')
+
+export const accounts = database.collection('accounts')

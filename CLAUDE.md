@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev          # Next dev server on :3000 (expects mongodb on localhost:27017)
-npm run dev:docker   # Full stack (app + mongo) via docker-compose.dev.yml
+npm run dev:docker   # Full stack (app + mongo) via docker-compose.dev.yml; opens localhost:3000 in the browser unless a tab is already open
 npm run dev:debug    # Dev server with Node inspector on :9229
 npm run build        # Production Next build (output: 'standalone')
 npm run lint         # next lint (eslint config: next/core-web-vitals)
@@ -29,6 +29,7 @@ This is a single Next.js app that combines UI, API, and data access:
 - **`app/api/`** — REST-ish endpoints (transactions, categories, accounts, budget-summary, budget-vs-actual, plus Plaid endpoints: `create-link-token`, `exchange-public-token`, `update-link-token`, `items`, `transactions/sync`).
 - **`app/queries/`** — Mongo aggregation/query logic per resource (`transactions.ts`, `categories.ts`, `budgetVsActual.ts`, …). API route handlers stay thin and delegate here.
 - **`app/lib/mongodb.ts`** — Singleton `MongoClient` connecting to `mongodb://mongodb:27017/afba`. Hostname `mongodb` is the docker-compose service name; running `npm run dev` (not `dev:docker`) requires that hostname to resolve (e.g., via `/etc/hosts` or by editing the URI).
+- **`accounts` collection** (`app/queries/accounts.ts`) — Local cache of Plaid account metadata plus the user's `includeInBudget` flag, refreshed from Plaid by `refreshAccounts()`. Includes a `manual` pseudo-account for transactions without an `account_id`. Every budget aggregation must prepend `getBudgetAccountMatch()` to its transactions `$lookup` pipeline so excluded accounts don't count.
 - **`app/lib/plaid.ts`** — Plaid SDK client; environment selected by `PLAID_ENV` (defaults to `sandbox`), credentials from `PLAID_CLIENT_ID` / `PLAID_SECRET`.
 - **`app/hooks/`** — SWR-based data hooks (`useTransactions`, `useBudgetOverview`, `useBudgetVsActual`, `useCategories`, `useSyncTransactions`, …). UI components consume these rather than fetching directly.
 - **`app/components/`** — App-specific React components (Sidebar, budget/calendar/transactions widgets, Plaid Link integration, upload, table filtering UI). Stateful business components.

@@ -30,7 +30,7 @@ export default function useGetAccounts({ userId }: GetAccountsParams) {
     }
   }
 
-  return { items, loading, error }
+  return { items, loading, error, refresh: getAccounts }
 
 }
 

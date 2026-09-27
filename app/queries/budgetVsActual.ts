@@ -1,4 +1,5 @@
 import { categories } from "@/app/lib/mongodb"
+import { accountJoinStages, getBudgetAccountMatch } from "./accounts"
 
 export interface BudgetVsActualQuery {
   date?: string
@@ -54,6 +55,7 @@ export async function getBudgetVsActual({ date }: BudgetVsActualQuery) {
 
   const month = new Date(date).getMonth()
   const year = new Date(date).getFullYear()
+  const budgetMatch = await getBudgetAccountMatch()
 
   const res = await categories.aggregate([
     {
@@ -110,14 +112,17 @@ export async function getBudgetVsActual({ date }: BudgetVsActualQuery) {
         localField: "id",
         foreignField: "userCategory._id",
         pipeline: [
+          ...budgetMatch,
           {
             $project: {
+              account_id: "$account_id",
               date: "$date",
               description: "$description",
               amount: "$amount",
               type: "$type"
             }
-          }
+          },
+          ...accountJoinStages
         ],
         as: "transactions"
       }
@@ -128,6 +133,7 @@ export async function getBudgetVsActual({ date }: BudgetVsActualQuery) {
         localField: "id",
         foreignField: "userCategory._id",
         pipeline: [
+          ...budgetMatch,
           {
             $group: {
               _id: null,

@@ -1,6 +1,7 @@
 import { categories } from "@/app/lib/mongodb"
 import { Document } from "mongodb"
 import { BudgetOverview } from "../components/budget/BudgetOverview"
+import { accountJoinStages, getBudgetAccountMatch } from "./accounts"
 
 export interface CategoriesQuery {
   date?: string
@@ -105,6 +106,7 @@ const budgetOverviewStages: Document[] = [
 ]
 
 export async function listCategories({ date }: CategoriesQuery) {
+  const budgetMatch = await getBudgetAccountMatch()
 
   const res = await categories.aggregate([
     ... !!date ? [{
@@ -125,8 +127,10 @@ export async function listCategories({ date }: CategoriesQuery) {
         localField: "id",
         foreignField: "userCategory._id",
         pipeline: [
+          ...budgetMatch,
           {
             $project: {
+              account_id: "$account_id",
               date: "$date",
               description: "$description",
               amount: "$amount",
@@ -137,7 +141,8 @@ export async function listCategories({ date }: CategoriesQuery) {
               merchant_name: "$merchant_name",
               name: "$name",
             }
-          }
+          },
+          ...accountJoinStages
         ],
         as: "transactions"
       }
@@ -148,6 +153,7 @@ export async function listCategories({ date }: CategoriesQuery) {
         localField: "id",
         foreignField: "userCategory._id",
         pipeline: [
+          ...budgetMatch,
           {
             $group: {
               _id: null,
@@ -180,22 +186,50 @@ export async function listCategories({ date }: CategoriesQuery) {
 }
 
 export async function getBudgetOverview() {
+  const budgetMatch = await getBudgetAccountMatch()
+
   const res = await categories.aggregate<BudgetOverview>([{
+    $addFields: {
+      id: { $toString: "$_id" }
+    }
+  },
+  {
     $lookup: {
       from: "transactions",
       localField: "id",
       foreignField: "userCategory._id",
       pipeline: [
+        ...budgetMatch,
         { $sort: { date: -1 } },
         { $limit: 10 },
-        { $project: { date: 1, amount: 1, description: 1 } }
+        { $project: { account_id: 1, date: 1, amount: 1, description: 1 } },
+        ...accountJoinStages
       ],
       as: "transactions"
     }
   },
   {
+    // Computed live (not read from the stored doc) so it honours budgetMatch.
+    $lookup: {
+      from: "transactions",
+      localField: "id",
+      foreignField: "userCategory._id",
+      pipeline: [
+        ...budgetMatch,
+        { $group: { _id: null, spent: { $sum: "$amount" } } }
+      ],
+      as: "spent"
+    }
+  },
+  {
+    $addFields: {
+      spent: { $round: [{ $ifNull: [{ $first: "$spent.spent" }, 0] }, 2] }
+    }
+  },
+  {
     $group: {
-      _id: "$dateString",
+      _id: "$date",
+      date: { $first: "$date" },
       categories: {
         $push: {
           name: "$name",

@@ -14,6 +14,18 @@ const columnHelper = createColumnHelper<Transaction>()
 // which helps decide how a purchase should actually be categorized.
 export const AMAZON_TRANSACTIONS_URL = "https://www.amazon.com/cpe/yourpayments/transactions"
 
+// A missing account_id is a manual/CSV transaction; a missing `account` with an
+// account_id means the account isn't in the local cache (e.g. since unlinked).
+const accountLabel = ({ account, account_id }: Transaction) => {
+  if (account) return account.mask ? `${account.name} ••${account.mask}` : account.name
+  return account_id ? 'Unknown account' : 'Manual / Imported'
+}
+
+const accountSubtype = ({ account, account_id }: Transaction) => {
+  if (account) return account.subtype ?? account.type
+  return account_id ? 'unknown' : 'manual'
+}
+
 const columns: ColumnDef<Transaction, any>[] = [
   columnHelper.display({
     id: 'select',
@@ -74,6 +86,22 @@ const columns: ColumnDef<Transaction, any>[] = [
   columnHelper.accessor('name', {
     header: 'Description',
     cell: info => info.getValue()
+  }),
+  columnHelper.accessor(accountLabel, {
+    id: 'account',
+    header: 'Account',
+    cell: info => info.getValue(),
+    meta: {
+      filterVariant: 'select'
+    }
+  }),
+  columnHelper.accessor(accountSubtype, {
+    id: 'accountSubtype',
+    header: 'Account Type',
+    cell: info => <span className="capitalize">{info.getValue()}</span>,
+    meta: {
+      filterVariant: 'select'
+    }
   }),
   columnHelper.accessor('personal_finance_category', {
     header: 'Category',

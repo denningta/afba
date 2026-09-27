@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb"
 import { Category } from "./categories"
 import { Transaction as PlaidTransaction } from 'plaid'
+import { Account } from "./account"
 
 export default interface Transaction extends PlaidTransaction {
   _id?: ObjectId
@@ -17,5 +18,7 @@ export default interface Transaction extends PlaidTransaction {
   categoryConfidence?: number
   // The specific Amazon order URL the user saved after manually finding it once.
   amazonOrderUrl?: string
+  // Joined from the accounts collection by listTransactions; absent elsewhere.
+  account?: Pick<Account, 'name' | 'mask' | 'type' | 'subtype'>
 }
 

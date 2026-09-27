@@ -1,5 +1,6 @@
 import { transactions } from "@/app/lib/mongodb";
 import Transaction from "../interfaces/transaction";
+import { accountJoinStages } from "./accounts";
 
 export interface TransactionsFilter {
   userCategoryId?: string
@@ -50,6 +51,7 @@ export async function listTransactions(searchParams: URLSearchParams) {
         }
       }
     },
+    ...accountJoinStages,
     {
       $sort:
       {

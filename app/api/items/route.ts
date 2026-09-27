@@ -1,6 +1,6 @@
 import plaidClient from "@/app/lib/plaid"
 import { listUser, User } from "@/app/queries/users"
-import axios from "axios"
+import { removeItem } from "@/app/queries/accounts"
 
 export interface GetItemParams {
   userId?: string
@@ -34,5 +34,29 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     throw new Error(error)
+  }
+}
+
+export interface DeleteItemBody {
+  item_id?: string
+  deleteTransactions?: boolean
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { item_id, deleteTransactions } = await request.json() as DeleteItemBody
+    if (!item_id) return Response.json({ message: 'item_id is required' }, { status: 400 })
+
+    const res = await removeItem(item_id, deleteTransactions === true)
+    if (!res) return Response.json({ message: 'Item not found' }, { status: 404 })
+
+    return Response.json(res)
+
+  } catch (err: any) {
+    console.error(err?.response?.data ?? err)
+    return Response.json(
+      { message: err?.response?.data?.error_message ?? 'Failed to remove item' },
+      { status: 500 }
+    )
   }
 }

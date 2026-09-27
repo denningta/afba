@@ -5,20 +5,25 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { RiMoreFill } from "@remixicon/react"
 import { Loader2Icon } from "lucide-react"
 import { AccountBase } from "plaid"
+import IncludeInBudgetSwitch from "./IncludeInBudgetSwitch"
+import RemoveItemDialog from "./RemoveItemDialog"
+import { useState } from "react"
 
 export interface AccountCardProps {
   account: AccountBase
+  item_id: string
+  institutionName?: string | null
+  // Every account under the same item - removing one removes them all.
+  itemAccounts: AccountBase[]
+  onRemoved: () => void
 }
 
-const AccountCard = ({ account }: AccountCardProps) => {
+const AccountCard = ({ account, item_id, institutionName, itemAccounts, onRemoved }: AccountCardProps) => {
   const {
     syncTransactions,
     loading,
   } = useSyncTransactions()
-
-  const handleRemove = () => {
-
-  }
+  const [removeOpen, setRemoveOpen] = useState(false)
 
   return (
 
@@ -34,6 +39,7 @@ const AccountCard = ({ account }: AccountCardProps) => {
             <div>Current: ${account.balances.current}</div>
             <div>Available: ${account.balances.available}</div>
           </div>
+          <IncludeInBudgetSwitch account_id={account.account_id} />
           <div className="flex space-x-6">
             <Button
               onClick={() => syncTransactions(account)}
@@ -53,9 +59,17 @@ const AccountCard = ({ account }: AccountCardProps) => {
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="start">
                 <DropdownMenuItem>Sync</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleRemove}>Remove</DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onSelect={() => setRemoveOpen(true)}>Remove</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <RemoveItemDialog
+              open={removeOpen}
+              onOpenChange={setRemoveOpen}
+              item_id={item_id}
+              institutionName={institutionName}
+              accounts={itemAccounts}
+              onRemoved={onRemoved}
+            />
           </div>
         </div>
       </CardContent>

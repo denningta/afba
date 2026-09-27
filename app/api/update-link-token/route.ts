@@ -1,39 +1,46 @@
-// app/api/plaid/link-token/update/route.ts
-import plaidClient from "@/app/lib/plaid";
-import { CountryCode } from "plaid";
-import { listUser } from "@/app/queries/users";
-import { access } from "fs";
+import plaidClient from "@/app/lib/plaid"
+import { CountryCode, LinkTokenCreateRequest } from "plaid"
+import { listUser, User } from "@/app/queries/users"
+import { USER_ID } from "@/app/queries/accounts"
 
-export async function POST(req: Request) {
-  try {
-
-    const res = await listUser({ userId: 'root-user' })
-    if (!res) return
-    const client_user_id = res.userId
-    const access_token = res.items[0].plaidAccessToken
-
-    console.log(client_user_id)
-    console.log(access_token)
-
-    if (!client_user_id || !access_token) {
-      return Response.json({ error: "Missing client_user_id or access_token" }, { status: 400 });
-    }
-
-
-    const response = await plaidClient.linkTokenCreate({
-      user: {
-        client_user_id,
-      },
-      client_name: "AFBA",
-      language: "en",
-      country_codes: [CountryCode.Us],
-      access_token, // 👈 this enables update mode
-    });
-
-    return Response.json({ link_token: response.data.link_token });
-  } catch (err: any) {
-    console.error("Link token (update mode) error:", err);
-    return Response.json({ error: err.message || "Unexpected error" }, { status: 500 });
-  }
+export interface UpdateLinkTokenBody {
+  item_id?: string
+  // Lets the user change which accounts are shared, e.g. add a card they
+  // didn't tick on the bank's OAuth consent screen the first time.
+  accountSelection?: boolean
 }
 
+/**
+ * Creates a Link token in update mode for an existing item. The access token
+ * is looked up here so it never has to reach the browser.
+ */
+export async function POST(req: Request) {
+  try {
+    const { item_id, accountSelection } = await req.json() as UpdateLinkTokenBody
+    if (!item_id) return Response.json({ message: 'item_id is required' }, { status: 400 })
+
+    const user = await listUser({ userId: USER_ID }) as User | null
+    const item = user?.items?.find((i) => i.item_id === item_id)
+    if (!item) return Response.json({ message: 'Item not found' }, { status: 404 })
+
+    const configs: LinkTokenCreateRequest = {
+      user: { client_user_id: USER_ID },
+      client_name: 'afba',
+      language: 'en',
+      country_codes: [CountryCode.Us],
+      access_token: item.plaidAccessToken,
+    }
+    if (accountSelection) configs.update = { account_selection_enabled: true }
+
+    const response = await plaidClient.linkTokenCreate(configs)
+
+    return Response.json({ link_token: response.data.link_token })
+
+  } catch (err: any) {
+    console.error('Link token (update mode) error:', err?.response?.data ?? err)
+    return Response.json(
+      { message: err?.response?.data?.error_message ?? err?.message ?? 'Failed to create update link token' },
+      { status: 500 }
+    )
+  }
+}

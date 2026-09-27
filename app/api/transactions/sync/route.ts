@@ -1,4 +1,4 @@
-import { transactions, transactionsSync } from "@/app/lib/mongodb"
+import { accounts, transactions } from "@/app/lib/mongodb"
 import plaidClient from "@/app/lib/plaid"
 import { buildMerchantCategoryMap, suggestCategory } from "@/app/lib/autoCategorize"
 import { getLastTransactionSync, insertTransactionSync, TransactionSync } from "@/app/queries/transactionsSync"
@@ -24,6 +24,11 @@ export async function POST(request: Request) {
     if (!user) return Response.json({ message: 'User does not exist', status: 400 })
     if (!account_id) return Response.json({ message: 'account_id is missing and is a required parameter', status: 500 })
 
+    // Each account belongs to one item; its token is the only one Plaid will accept.
+    const account = await accounts.findOne({ account_id })
+    const item = user.items.find((i: { item_id: string }) => i.item_id === account?.item_id)
+    if (!item) return Response.json({ message: `No linked item found for account ${account_id}` }, { status: 404 })
+
     const transactionSync = await getLastTransactionSync(account_id)
     let cursor: string | null = transactionSync[0]?.next_cursor ?? null
 
@@ -37,7 +42,7 @@ export async function POST(request: Request) {
       const req: TransactionsSyncRequest = {
         client_id: process.env.PLAID_CLIENT_ID,
         secret: process.env.PLAID_SECRET,
-        access_token: user.items[0].plaidAccessToken,
+        access_token: item.plaidAccessToken,
         cursor: cursor,
         options: { account_id }
       }

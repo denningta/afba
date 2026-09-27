@@ -86,6 +86,31 @@ function resolveRange(preset: RangePreset, customStart?: Date, customEnd?: Date)
   }
 }
 
+// Excluded (not included) ids are saved so newly linked accounts start included.
+const FILTERS_STORAGE_KEY = "afba:balance-filters"
+
+interface SavedBalanceFilters {
+  excludedAccountIds?: string[]
+  typeFilter?: string
+  institutionFilter?: string
+}
+
+function readSavedFilters(): SavedBalanceFilters {
+  try {
+    return JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY) ?? "{}") ?? {}
+  } catch {
+    return {}
+  }
+}
+
+function writeSavedFilters(filters: SavedBalanceFilters) {
+  try {
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filters))
+  } catch {
+    // Storage unavailable (private window, blocked site data) - filters just won't persist.
+  }
+}
+
 export default function BalanceOverview() {
   const [preset, setPreset] = useState<RangePreset>("90d")
   const [customStart, setCustomStart] = useState<Date | undefined>(undefined)
@@ -112,11 +137,33 @@ export default function BalanceOverview() {
       .sort((a, b) => a.localeCompare(b))
   }, [categories])
 
+  // Read after mount (not in useState initializers) to avoid a hydration mismatch.
+  useEffect(() => {
+    const saved = readSavedFilters()
+    if (saved.typeFilter) setTypeFilter(saved.typeFilter)
+    if (saved.institutionFilter) setInstitutionFilter(saved.institutionFilter)
+  }, [])
+
   useEffect(() => {
     if (data?.accounts && includedAccountIds === null) {
-      setIncludedAccountIds(new Set(data.accounts.map((a) => a.account_id)))
+      const excluded = new Set(readSavedFilters().excludedAccountIds ?? [])
+      setIncludedAccountIds(new Set(
+        data.accounts.map((a) => a.account_id).filter((id) => !excluded.has(id))
+      ))
     }
   }, [data, includedAccountIds])
+
+  useEffect(() => {
+    // Wait for the seed above so defaults never overwrite the saved selection.
+    if (!data?.accounts || includedAccountIds === null) return
+    writeSavedFilters({
+      excludedAccountIds: data.accounts
+        .map((a) => a.account_id)
+        .filter((id) => !includedAccountIds.has(id)),
+      typeFilter,
+      institutionFilter,
+    })
+  }, [data, includedAccountIds, typeFilter, institutionFilter])
 
   const institutions = useMemo(() => {
     if (!data) return []

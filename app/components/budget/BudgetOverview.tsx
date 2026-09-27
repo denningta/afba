@@ -14,6 +14,7 @@ import MonthRangePicker from "@/components/ui/month-range-picker"
 import { DataTable } from "../common/DataTable/DataTable"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import BudgetVsActual from "./BudgetVsActual"
+import BudgetAccountsPicker from "./BudgetAccountsPicker"
 
 export interface BudgetOverviewProps {
 }
@@ -64,6 +65,7 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
         </TabsList>
         <TabsContent value="overview">
           <div className="flex justify-end space-x-3 mb-4">
+            <BudgetAccountsPicker />
             <MonthRangePicker
               value={{ from: new Date(start), to: new Date(end) }}
               onRangeChange={(range) => {
