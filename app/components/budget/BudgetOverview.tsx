@@ -15,6 +15,12 @@ import { DataTable } from "../common/DataTable/DataTable"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import BudgetVsActual from "./BudgetVsActual"
 import BudgetAccountsPicker from "./BudgetAccountsPicker"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowRight } from "lucide-react"
+import { format } from "date-fns"
+import { YYYYMMToDate } from "@/app/helpers/helperFunctions"
+import { Amount } from "../transactions/TransactionCells"
+import { DEFAULT_TRANSACTION_COLUMN_VISIBILITY } from "../transactions/TransactionsTable"
 
 export interface BudgetOverviewProps {
 }
@@ -56,64 +62,82 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
     setBudgetNav(data?.date ?? null)
   }
 
+  const selectedTotal = transactionData.reduce((sum, t) => sum + (t.amount ?? 0), 0)
+
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="actual">Actual vs Savings</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview">
-          <div className="flex justify-end space-x-3 mb-4">
-            <BudgetAccountsPicker />
-            <MonthRangePicker
-              value={{ from: new Date(start), to: new Date(end) }}
-              onRangeChange={(range) => {
-                if (!range) return
-                setStart(dateToYYYYMM(range.from))
-                setEnd(dateToYYYYMM(range.to))
-              }}
+    <Tabs defaultValue="overview" className="w-full space-y-4">
+      <TabsList>
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="actual">Actual vs Savings</TabsTrigger>
+      </TabsList>
+      <TabsContent value="overview" className="space-y-6">
+        <Card>
+          <CardHeader className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle>Budget vs spending</CardTitle>
+              <CardDescription>Click a month to see its transactions.</CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <BudgetAccountsPicker />
+              <MonthRangePicker
+                value={{ from: new Date(start), to: new Date(end) }}
+                onRangeChange={(range) => {
+                  if (!range) return
+                  setStart(dateToYYYYMM(range.from))
+                  setEnd(dateToYYYYMM(range.to))
+                }}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[420px]">
+              <ParentSize>
+                {({ width, height }) =>
+                  <BudgetOverviewChart
+                    data={data ?? []}
+                    start={start}
+                    end={end}
+                    width={width}
+                    height={height}
+                    onFilterChange={handleFilterChange}
+                  />
+                }
+              </ParentSize>
+            </div>
+          </CardContent>
+        </Card>
+
+        {budgetNav &&
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">
+                  {format(YYYYMMToDate(budgetNav), "MMMM yyyy")}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {transactionData.length} transaction{transactionData.length === 1 ? '' : 's'}
+                  {' · '}
+                  <Amount value={selectedTotal} className="font-normal" /> total
+                </p>
+              </div>
+              <Button variant="outline" asChild>
+                <Link href={`/budget/${budgetNav}`}>Open budget <ArrowRight /></Link>
+              </Button>
+            </div>
+            <DataTable
+              columns={columns}
+              data={transactionData}
+              columnVisibilityStorageKey="afba:transactions-columns"
+              defaultColumnVisibility={DEFAULT_TRANSACTION_COLUMN_VISIBILITY}
             />
-          </div>
+          </section>
+        }
+      </TabsContent>
 
-
-          <div style={{ height: 600 }} className="mb-6">
-            <ParentSize>
-              {({ width, height }) =>
-                <BudgetOverviewChart
-                  data={data ?? []}
-                  start={start}
-                  end={end}
-                  width={width}
-                  height={height}
-                  onFilterChange={handleFilterChange}
-                />
-              }
-            </ParentSize>
-          </div>
-
-
-          {budgetNav &&
-            <Link href={`/budget/${budgetNav}`}>
-              <Button>Go to budget</Button>
-            </Link>
-
-          }
-
-          <DataTable
-            columns={columns}
-            data={transactionData}
-          />
-        </TabsContent>
-
-
-        <TabsContent value="actual">
-          <BudgetVsActual />
-        </TabsContent>
-
-      </Tabs>
-
-    </div>
+      <TabsContent value="actual">
+        <BudgetVsActual />
+      </TabsContent>
+    </Tabs>
   )
 
 }

@@ -34,6 +34,7 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -336,16 +337,16 @@ export default function BalanceOverview() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        {(Object.keys(PRESET_LABELS) as (keyof typeof PRESET_LABELS)[]).map((key) => (
-          <Button
-            key={key}
-            size="sm"
-            variant={preset === key ? "default" : "outline"}
-            onClick={() => setPreset(key)}
-          >
-            {PRESET_LABELS[key]}
-          </Button>
-        ))}
+        {/* Segmented range control; a custom range leaves no preset selected. */}
+        <Tabs value={preset} onValueChange={(value) => setPreset(value as RangePreset)}>
+          <TabsList aria-label="Date range">
+            {(Object.keys(PRESET_LABELS) as (keyof typeof PRESET_LABELS)[]).map((key) => (
+              <TabsTrigger key={key} value={key} className="px-3">
+                {PRESET_LABELS[key]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         <div className="flex items-center gap-1">
           <DatePicker

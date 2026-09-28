@@ -14,7 +14,7 @@ import PageHeader from "../common/PageHeader"
 
 // Everything not listed stays visible (date, merchant, description, account
 // type, user category, amount, and the select/actions columns).
-const DEFAULT_COLUMN_VISIBILITY = {
+export const DEFAULT_TRANSACTION_COLUMN_VISIBILITY = {
   month: false,
   account: false,
   personal_finance_category: false,
@@ -69,7 +69,7 @@ export default function TransactionsTable({
         data={stableData ?? []}
         columns={columns}
         columnVisibilityStorageKey="afba:transactions-columns"
-        defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+        defaultColumnVisibility={DEFAULT_TRANSACTION_COLUMN_VISIBILITY}
       />
     </div>
   )

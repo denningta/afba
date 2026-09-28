@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { usePlaidLink } from "react-plaid-link"
 import useGetAccounts from "../../hooks/useGetAccounts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PlusIcon } from "lucide-react"
+import PageHeader from "../common/PageHeader"
 import AccountCard from "./AccountCard"
 import UpdatePlaidLink from "./UpdatePlaidLink"
 import { AccountBase } from "plaid"
@@ -98,76 +100,83 @@ const CreatePlaidLink = () => {
 
   return (
     <div className="space-y-6">
-      <Button
-        onClick={() => open()}
-        disabled={!ready}
-      >
-        Link Account
-      </Button>
-
-
+      <PageHeader
+        className="mb-0"
+        title="Accounts"
+        description="Linked institutions and which accounts count toward your budget."
+        actions={
+          <Button onClick={() => open()} disabled={!ready}>
+            <PlusIcon />
+            Link account
+          </Button>
+        }
+      />
 
       {items && Array.isArray(items) && items.map((item, i) => (
-        <div className="flex items-center space-x-5" key={`item-${i}`}>
-          {isItemError(item) &&
-            <div className="flex items-center space-x-3">
-              <div className="text-sm text-destructive">
-                {item.error.display_message ?? item.error.error_message ?? 'This connection needs attention.'}
-              </div>
-              {item.error.error_code === 'ITEM_LOGIN_REQUIRED' &&
-                <UpdatePlaidLink item_id={item.item_id} label="Login Required" onSuccess={afterUpdate} />
-              }
-            </div>
-          }
-
-          {!isItemError(item) &&
-            <>
-              <div className="flex flex-col items-center space-y-2">
-                <div className="text-muted-foreground text-sm">Institution</div>
-                <div className="text-lg">{item.item?.institution_name}</div>
-                <UpdatePlaidLink
-                  item_id={item.item.item_id}
-                  accountSelection
-                  label="Manage accounts"
-                  onSuccess={afterUpdate}
-                />
-              </div>
-
-
-              <div key={`item-${i}`} className="flex space-x-5">
-                {item?.accounts ? item.accounts.map((account: AccountBase, i: number) => (
-                  <div key={`account-${i}`}>
-                    <AccountCard
-                      account={account}
-                      item_id={item.item.item_id}
-                      institutionName={item.item.institution_name}
-                      itemAccounts={item.accounts}
-                      onRemoved={refresh}
-                    />
-                  </div>
-                ))
-                  :
-                  <div>
-                    No Accounts Found
-                  </div>
+        isItemError(item)
+          ? (
+            <Card key={`item-${i}`} className="ring-destructive/40">
+              <CardHeader>
+                <CardTitle>Connection needs attention</CardTitle>
+                <CardDescription className="text-destructive">
+                  {item.error.display_message ?? item.error.error_message ?? 'This connection needs attention.'}
+                </CardDescription>
+                {item.error.error_code === 'ITEM_LOGIN_REQUIRED' &&
+                  <CardAction>
+                    <UpdatePlaidLink item_id={item.item_id} label="Log in again" onSuccess={afterUpdate} />
+                  </CardAction>
                 }
-              </div>
-            </>
-          }
-        </div>
-
+              </CardHeader>
+            </Card>
+          )
+          : (
+            <Card key={`item-${i}`}>
+              <CardHeader>
+                <CardTitle className="text-base">{item.item?.institution_name ?? 'Institution'}</CardTitle>
+                <CardDescription>
+                  {item.accounts?.length ?? 0} account{item.accounts?.length === 1 ? '' : 's'}
+                </CardDescription>
+                <CardAction>
+                  <UpdatePlaidLink
+                    item_id={item.item.item_id}
+                    accountSelection
+                    label="Manage accounts"
+                    onSuccess={afterUpdate}
+                  />
+                </CardAction>
+              </CardHeader>
+              <CardContent>
+                {item?.accounts?.length ? (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {item.accounts.map((account: AccountBase) => (
+                      <AccountCard
+                        key={account.account_id}
+                        account={account}
+                        item_id={item.item.item_id}
+                        institutionName={item.item.institution_name}
+                        itemAccounts={item.accounts}
+                        onRemoved={refresh}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No accounts found.</p>
+                )}
+              </CardContent>
+            </Card>
+          )
       ))}
 
-      <Card className="w-fit">
+      <Card>
         <CardHeader>
-          <CardTitle>Manual / Imported</CardTitle>
+          <CardTitle className="text-base">Manual / Imported</CardTitle>
           <CardDescription>Transactions added by hand or uploaded from CSV, with no linked account.</CardDescription>
         </CardHeader>
         <CardContent>
           <IncludeInBudgetSwitch account_id={MANUAL_ACCOUNT_ID} />
         </CardContent>
       </Card>
-    </div >
+    </div>
   )
 
 }

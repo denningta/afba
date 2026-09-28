@@ -2,11 +2,15 @@ import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
 import { EmptyCell, SelectAllCheckbox, SelectRowCheckbox } from "../common/DataTable/cells"
 import { Category } from "@/app/interfaces/categories"
 import CategoryActions from "./CategoryActions"
-import { CSSProperties } from "react"
 import { toCurrency } from "@/app/helpers/helperFunctions"
 import { Progress } from "@/components/ui/progress"
 
 const columnHelper = createColumnHelper<Category>()
+
+// Spent follows Plaid's sign convention (money in is negative), so flip income
+// rows to show what was actually received as a positive amount.
+export const actualAmount = (category: Category) =>
+  category.type === 'income' ? -(category.spent ?? 0) : (category.spent ?? 0)
 
 const categoryColumns: ColumnDef<Category, any>[] = [
   columnHelper.display({
@@ -19,71 +23,25 @@ const categoryColumns: ColumnDef<Category, any>[] = [
     header: 'Name',
     cell: info => <span className="font-medium">{info.getValue()}</span>,
     meta: { truncate: true },
-    footer: () => <div className="flex flex-col items-end pr-3 text-xs text-muted-foreground">
-      <div>Deduction Total:</div>
-      <div>Gross Total:</div>
-    </div>
+    footer: () => <span className="text-xs font-medium text-muted-foreground">Total</span>
   }),
   columnHelper.accessor('budget', {
     header: 'Budget',
     meta: { align: 'right', width: 120 },
-    cell: info => {
-      const row = info.row.original as Category
-      const budget = info.getValue() ?? 0
-
-      const style: CSSProperties = {
-        color: row.type === 'income' ? 'var(--positive)' : 'inherit'
-      }
-      return <span style={style}>{toCurrency(budget)}</span>
-    },
+    cell: info => toCurrency(info.getValue() ?? 0),
     footer: props => {
-      const deductionTotal = props.table.getRowModel().rows.reduce((sum, row) => {
-        const value: number = row.getValue('budget')
-        if (row.getValue('type') === 'income') return sum
-        return sum + value
-      }, 0)
-
-      const total = props.table.getRowModel().rows.reduce((sum, row) => {
-        const value: number = row.getValue('budget')
-        return sum + value
-      }, 0)
-
-      return (
-        <div>
-          <div>{toCurrency(deductionTotal)}</div>
-          <div>{toCurrency(total)}</div>
-        </div>
-      )
+      const total = props.table.getRowModel().rows.reduce((sum, row) => sum + (row.original.budget ?? 0), 0)
+      return <span className="font-semibold">{toCurrency(total)}</span>
     }
   }),
-  columnHelper.accessor('spent', {
-    header: 'Spent',
+  columnHelper.accessor(actualAmount, {
+    id: 'spent',
+    header: 'Actual',
     meta: { align: 'right', width: 120 },
-    cell: info => {
-      const spent = info.getValue() ?? 0
-      const style: CSSProperties = {
-      }
-      return <span style={style}>{toCurrency(spent)}</span>
-    },
+    cell: info => toCurrency(info.getValue()),
     footer: props => {
-      const deductionTotal = props.table.getRowModel().rows.reduce((sum, row) => {
-        const value: number = row.getValue('spent')
-        if (row.getValue('type') === 'income') return sum
-        return sum + value
-      }, 0)
-
-      const grandTotal = props.table.getRowModel().rows.reduce((sum, row) => {
-        const value: number = row.getValue('spent')
-        return sum + value
-      }, 0)
-
-      return (
-        <div>
-          <div>{toCurrency(deductionTotal)}</div>
-          <div>{toCurrency(grandTotal)}</div>
-        </div>
-      )
-
+      const total = props.table.getRowModel().rows.reduce((sum, row) => sum + actualAmount(row.original), 0)
+      return <span className="font-semibold">{toCurrency(total)}</span>
     }
   }),
   columnHelper.display({

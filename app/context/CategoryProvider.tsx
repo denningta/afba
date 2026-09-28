@@ -5,7 +5,7 @@ import { Category } from "../interfaces/categories";
 import axios from "axios";
 import fetcher from "../lib/fetcher";
 import useSWR, { KeyedMutator } from "swr";
-import { enqueueSnackbar } from "notistack";
+import { toast } from "sonner";
 
 interface CategoryContextProps {
   getCategories: () => Category[] | undefined
@@ -48,7 +48,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
       return res.data
 
     } catch (error: any) {
-      enqueueSnackbar('Something went wrong, please try again.', { variant: 'error' })
+      toast.error("Something went wrong, please try again.")
     }
   }
 
@@ -64,7 +64,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
 
       return true
     } catch (error: any) {
-      enqueueSnackbar('Something went wrong, please try again.', { variant: 'error' })
+      toast.error("Something went wrong, please try again.")
       return false
     }
   }

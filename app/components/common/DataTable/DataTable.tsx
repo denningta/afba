@@ -95,6 +95,11 @@ interface DataTableProps<TData, TValue> {
   columnVisibilityStorageKey?: string
   // Applied until the user changes a column; saved choices win for the columns they cover.
   defaultColumnVisibility?: VisibilityState
+  // Extra buttons shown in the toolbar, left of the View menu.
+  toolbarActions?: React.ReactNode
+  // 'minimal' drops the toolbar and the row-count/pagination bar, for short
+  // tables that sit alongside a full one.
+  variant?: 'full' | 'minimal'
 }
 
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
@@ -126,7 +131,9 @@ export function DataTable<TData, TValue>({
   data,
   isLoading = false,
   columnVisibilityStorageKey = 'colVis',
-  defaultColumnVisibility = {}
+  defaultColumnVisibility = {},
+  toolbarActions,
+  variant = 'full',
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
@@ -224,6 +231,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-3">
+      {variant === 'full' &&
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative w-full sm:w-64">
           <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -249,9 +257,11 @@ export function DataTable<TData, TValue>({
           </Button>
         }
 
+        <div className="ml-auto flex items-center gap-2">
+        {toolbarActions}
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline">
               <Settings2Icon />
               View
             </Button>
@@ -278,7 +288,9 @@ export function DataTable<TData, TValue>({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+        </div>
       </div>
+      }
 
       <div className="overflow-hidden rounded-lg border bg-card">
         {isLoading ?
@@ -408,6 +420,7 @@ export function DataTable<TData, TValue>({
 
       </div>
 
+      {variant === 'full' &&
       <div className="flex flex-col-reverse gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center">
         <div className="sm:mr-auto">
           {selectable && selectedCount > 0
@@ -477,6 +490,7 @@ export function DataTable<TData, TValue>({
           </div>
         }
       </div>
+      }
     </div>
   )
 }

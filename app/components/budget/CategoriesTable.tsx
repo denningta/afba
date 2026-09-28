@@ -1,59 +1,52 @@
 'use client'
 
-import { Card, CardContent } from "@/components/ui/card";
-import { SnackbarProvider } from "notistack"
-import categoryColumns from "./CategoriesColDefs";
+import categoryColumns, { actualAmount } from "./CategoriesColDefs";
 import useCategories from "@/app/hooks/useCategories";
 import { usePathname } from "next/navigation";
-import getBudgetKpis from "./kpis";
 import { toCurrency } from "@/app/helpers/helperFunctions";
 import { CopyBudgetDialog } from "./CopyBudgetDialog";
 import CategoryDialog from "./CategoryDialog";
 import { DataTable } from "../common/DataTable/DataTable";
-import { useEffect, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo } from "react";
 import BudgetNavigator from "./BudgetNavigator";
 import BudgetAccountsPicker from "./BudgetAccountsPicker";
 import PageHeader from "../common/PageHeader";
+import BudgetKpiCards from "./BudgetKpiCards";
+import { Category } from "@/app/interfaces/categories";
 
-
-
-
-
-// The month is already in the page header; Type is implied by the row.
+// The month is already in the page header; Type is implied by the section.
 const DEFAULT_COLUMN_VISIBILITY = {
   date: false,
   type: false,
 }
 
-interface CategoriesTableProps {
+function SectionHeading({ title, rows }: { title: string, rows: Category[] }) {
+  const budget = rows.reduce((sum, c) => sum + (c.budget ?? 0), 0)
+  const actual = rows.reduce((sum, c) => sum + actualAmount(c), 0)
+
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+      <span className="text-sm tabular-nums text-muted-foreground">
+        {toCurrency(actual)} of {toCurrency(budget)}
+      </span>
+    </div>
+  )
 }
 
-export default function CategoriesTable({ }: CategoriesTableProps) {
+export default function CategoriesTable() {
   const pathname = usePathname()
   const currentDate = pathname.split('/').pop()
 
-  const [isLoading, setIsLoading] = useState(true)
+  const { data, isLoading } = useCategories({ date: currentDate })
 
-  const { data } = useCategories({ date: currentDate })
-
-  useEffect(() => {
-    if (data) setIsLoading(false)
-  }, [data])
-
-
-  const {
-    actualSpent,
-    actualIncome,
-    actualDiff,
-    plannedBudget,
-    plannedDiff,
-    plannedIncome
-  } = getBudgetKpis(data)
-
+  const { income, expenses } = useMemo(() => ({
+    income: (data ?? []).filter(c => c.type === 'income'),
+    expenses: (data ?? []).filter(c => c.type !== 'income'),
+  }), [data])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         className="mb-0"
         title="Budget"
@@ -65,105 +58,36 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
         }
       />
 
+      <BudgetKpiCards data={data} isLoading={isLoading} />
 
-      <div className="flex flex-col md:flex space-y-5 max-w-fit">
-        <Card>
-          <CardContent>
-            <div className="flex space-x-5">
-              <div>
-                <div className="uppercase">{plannedIncome.name}</div>
+      <section className="space-y-3">
+        <SectionHeading title="Income" rows={income} />
+        <DataTable
+          variant="minimal"
+          data={income}
+          columns={categoryColumns}
+          isLoading={isLoading}
+          columnVisibilityStorageKey="afba:budget-columns"
+          defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+        />
+      </section>
 
-                <div className="font-bold md:text-3xl h-8">
-                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedIncome.value)}
-                </div>
-
-              </div>
-              <div className="font-bold md:text-3xl pt-5"> - </div>
-              <div>
-                <div className="uppercase">{plannedBudget.name}</div>
-                <div className="font-bold md:text-3xl h-8">
-                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedBudget.value)}
-                </div>
-              </div>
-              <div className="font-bold md:text-3xl pt-5"> = </div>
-              <div>
-                <div className="uppercase">DIFFERENCE</div>
-                <div
-                  style={{
-                    color: plannedDiff.value >= 0 ? 'var(--positive)' : 'var(--negative)'
-                  }}
-                  className={`font-bold md:text-3xl h-8`}
-                >
-                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(plannedDiff.value)}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div
-              className="flex space-x-5"
-            >
-              <div>
-                <div className="uppercase">{actualIncome.name}</div>
-                <div className="font-bold md:text-3xl h-8">
-                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualIncome.value)}
-                </div>
-              </div>
-              <div className="font-bold md:text-3xl pt-5"> - </div>
-              <div>
-                <div className="uppercase">{actualSpent.name}</div>
-                <div className="font-bold md:text-3xl h-8">
-                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualSpent.value)}
-                </div>
-              </div>
-              <div className="font-bold md:text-3xl pt-5"> = </div>
-              <div>
-                <div className="uppercase">DIFFERENCE</div>
-                <div
-                  style={{
-                    color: actualDiff.value >= 0 ? 'var(--positive)' : 'var(--negative)'
-                  }}
-                  className={`font-bold md:text-3xl h-8`}
-                >
-                  {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualDiff.value)}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-
-
-        <div className="col-span-2 mx-2">
-
-
-          <div className="flex justify-end space-x-6 mb-4">
-            <CategoryDialog category={{
-              date: currentDate
-            }} />
-            <CopyBudgetDialog />
-          </div>
-
-          <DataTable
-            data={data ?? []}
-            columns={categoryColumns}
-            isLoading={isLoading}
-            columnVisibilityStorageKey="afba:budget-columns"
-            defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
-          />
-          <SnackbarProvider />
-        </div>
-
-      </div>
-
+      <section className="space-y-3">
+        <SectionHeading title="Expenses" rows={expenses} />
+        <DataTable
+          data={expenses}
+          columns={categoryColumns}
+          isLoading={isLoading}
+          columnVisibilityStorageKey="afba:budget-columns"
+          defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+          toolbarActions={
+            <>
+              <CategoryDialog category={{ date: currentDate }} />
+              <CopyBudgetDialog />
+            </>
+          }
+        />
+      </section>
     </div>
   )
-
 }
-
-

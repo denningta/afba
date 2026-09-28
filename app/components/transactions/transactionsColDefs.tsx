@@ -1,6 +1,6 @@
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
 import TransactionActions from "./TransactionActions"
-import { formatShortDate, humanizeEnum, toCurrency } from "@/app/helpers/helperFunctions"
+import { formatShortDate, humanizeEnum, parseDisplayDate } from "@/app/helpers/helperFunctions"
 import UserCategoryCell from "./UserCategoryCell"
 import AmazonOrderLink from "./AmazonOrderLink"
 import Image from "next/image"
@@ -8,6 +8,7 @@ import Transaction from "@/app/interfaces/transaction"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { EmptyCell, SelectAllCheckbox, SelectRowCheckbox } from "../common/DataTable/cells"
+import { Amount, MerchantLogo } from "./TransactionCells"
 
 const columnHelper = createColumnHelper<Transaction>()
 
@@ -27,29 +28,6 @@ const accountSubtype = ({ account, account_id }: Transaction) => {
   return account_id ? 'unknown' : 'manual'
 }
 
-// Plaid amounts are positive for money out. Show income as a green "+$X" and
-// spending as a plain "$X".
-function Amount({ value, className }: { value: number, className?: string }) {
-  const income = value < 0
-  return (
-    <span className={cn("font-medium tabular-nums", income && "text-positive", className)}>
-      {income ? '+' : ''}{toCurrency(Math.abs(value))}
-    </span>
-  )
-}
-
-// 24px logo, or a letter placeholder so names line up either way.
-function MerchantLogo({ src, name }: { src?: string | null, name: string }) {
-  if (src) {
-    return <Image src={src} alt="" width={24} height={24} className="size-6 shrink-0 rounded-full" />
-  }
-  return (
-    <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
-      {name.charAt(0).toUpperCase() || '?'}
-    </span>
-  )
-}
-
 const columns: ColumnDef<Transaction, any>[] = [
   columnHelper.display({
     id: 'select',
@@ -59,6 +37,9 @@ const columns: ColumnDef<Transaction, any>[] = [
   }),
   columnHelper.accessor('date', {
     header: 'Date',
+    // Stored as MM/DD/YYYY, which doesn't sort as text across years.
+    sortingFn: (a, b) =>
+      (parseDisplayDate(a.original.date)?.getTime() ?? 0) - (parseDisplayDate(b.original.date)?.getTime() ?? 0),
     cell: info => (
       <span className="tabular-nums text-muted-foreground" title={info.getValue()}>
         {formatShortDate(info.getValue())}

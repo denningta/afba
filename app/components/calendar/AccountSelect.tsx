@@ -15,7 +15,6 @@ export default function AccountSelect({
   defaultValue,
   onValueChange
 }: AccountSelectProps) {
-  console.log(accounts)
 
   return (
     <Select
@@ -23,7 +22,7 @@ export default function AccountSelect({
       defaultValue={defaultValue}
       onValueChange={onValueChange}
     >
-      <SelectTrigger>
+      <SelectTrigger className="w-[220px]" aria-label="Account">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

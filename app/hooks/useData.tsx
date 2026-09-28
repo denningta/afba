@@ -1,5 +1,4 @@
 import useSWR, { KeyedMutator, MutatorOptions, useSWRConfig } from "swr";
-import { enqueueSnackbar } from "notistack";
 import axios from "axios";
 import { ObjectId } from "mongodb";
 import defaultFetcher from "@/app/lib/fetcher";

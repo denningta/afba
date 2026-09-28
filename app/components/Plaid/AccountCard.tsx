@@ -1,9 +1,9 @@
 import useSyncTransactions from "@/app/hooks/useSyncTransactions"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { RiMoreFill } from "@remixicon/react"
-import { Loader2Icon } from "lucide-react"
+import { RefreshCwIcon } from "lucide-react"
+import { toCurrency } from "@/app/helpers/helperFunctions"
 import { AccountBase } from "plaid"
 import IncludeInBudgetSwitch from "./IncludeInBudgetSwitch"
 import RemoveItemDialog from "./RemoveItemDialog"
@@ -25,55 +25,66 @@ const AccountCard = ({ account, item_id, institutionName, itemAccounts, onRemove
   } = useSyncTransactions()
   const [removeOpen, setRemoveOpen] = useState(false)
 
-  return (
+  const { current, available } = account.balances
 
-    <Card >
-      <CardHeader>
-        <CardTitle>{account.name}</CardTitle>
-        <CardDescription>{account.official_name}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div>
-            <div className="text-muted-foreground text-sm">Balance</div>
-            <div>Current: ${account.balances.current}</div>
-            <div>Available: ${account.balances.available}</div>
+  return (
+    <div className="flex flex-col gap-4 rounded-lg border p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate font-medium" title={account.name}>
+            {account.name}
+            {account.mask && <span className="ml-1.5 font-normal text-muted-foreground">••{account.mask}</span>}
           </div>
-          <IncludeInBudgetSwitch account_id={account.account_id} />
-          <div className="flex space-x-6">
-            <Button
-              onClick={() => syncTransactions(account)}
-              className="w-36"
-            >
-              {loading ?
-                <span className="flex items-center space-x-2">
-                  <Loader2Icon className="animate-spin" />
-                  <div>Syncing...</div>
-                </span>
-                : 'Sync Transactions'
-              }
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost"><RiMoreFill /></Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
-                <DropdownMenuItem>Sync</DropdownMenuItem>
-                <DropdownMenuItem variant="destructive" onSelect={() => setRemoveOpen(true)}>Remove</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <RemoveItemDialog
-              open={removeOpen}
-              onOpenChange={setRemoveOpen}
-              item_id={item_id}
-              institutionName={institutionName}
-              accounts={itemAccounts}
-              onRemoved={onRemoved}
-            />
+          <div className="truncate text-xs capitalize text-muted-foreground">
+            {account.official_name ?? account.subtype ?? account.type}
           </div>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex shrink-0 items-center">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground"
+            aria-label={loading ? "Syncing transactions" : "Sync transactions"}
+            title="Sync transactions"
+            disabled={loading}
+            onClick={() => syncTransactions(account)}
+          >
+            <RefreshCwIcon className={loading ? "animate-spin" : undefined} />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label="Account actions">
+                <RiMoreFill />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48" align="end">
+              <DropdownMenuItem onSelect={() => syncTransactions(account)}>Sync transactions</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => setRemoveOpen(true)}>Remove</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div>
+        <div className="text-2xl font-semibold tracking-tight">
+          {current != null ? toCurrency(current) : '—'}
+        </div>
+        {available != null && available !== current &&
+          <div className="text-xs text-muted-foreground">{toCurrency(available)} available</div>
+        }
+      </div>
+
+      <IncludeInBudgetSwitch account_id={account.account_id} />
+
+      <RemoveItemDialog
+        open={removeOpen}
+        onOpenChange={setRemoveOpen}
+        item_id={item_id}
+        institutionName={institutionName}
+        accounts={itemAccounts}
+        onRemoved={onRemoved}
+      />
+    </div>
   )
 }
 

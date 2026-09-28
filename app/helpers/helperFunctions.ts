@@ -1,6 +1,6 @@
 import { BudgetOverview } from "../components/budget/BudgetOverview"
 import Transaction from "../interfaces/transaction"
-import { format, isValid, parseISO } from "date-fns"
+import { format, isValid, parse, parseISO } from "date-fns"
 
 export function isOdd(input: number) {
   return input % 2 === 1 ? true : false
@@ -143,12 +143,21 @@ export function toCurrency(number: number) {
   return number.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
-// "Sep 12", or "Sep 12, 2025" outside the current year. parseISO reads a bare
-// YYYY-MM-DD as a local date, so it doesn't slip a day in US time zones.
-export function formatShortDate(iso: string | null | undefined) {
-  if (!iso) return ''
-  const date = parseISO(iso)
-  if (!isValid(date)) return iso
+// Transaction dates are stored as MM/DD/YYYY; Plaid-sourced fields (recurring
+// streams, balance history) use YYYY-MM-DD. Both parse as local dates, so
+// nothing slips a day in US time zones. Returns null when unparseable.
+export function parseDisplayDate(value: string | null | undefined): Date | null {
+  if (!value) return null
+  const date = /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)
+    ? parse(value, 'M/d/yyyy', new Date())
+    : parseISO(value)
+  return isValid(date) ? date : null
+}
+
+// "Sep 12", or "Sep 12, 2025" outside the current year.
+export function formatShortDate(value: string | null | undefined) {
+  const date = parseDisplayDate(value)
+  if (!date) return value ?? ''
   return format(date, date.getFullYear() === new Date().getFullYear() ? 'MMM d' : 'MMM d, yyyy')
 }
 

@@ -1,15 +1,16 @@
 "use client"
 
-import { generateMonthDates, joinArraysOnDate, toCurrency } from "@/app/helpers/helperFunctions"
+import { dateToYYYYMM, formatShortDate, generateMonthDates, joinArraysOnDate, toCurrency } from "@/app/helpers/helperFunctions"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import PageHeader from "../common/PageHeader"
 import useGetAccounts from "@/app/hooks/useGetAccounts"
 import useGetUser from "@/app/hooks/useGetUser"
 import useRecurringTransactions from "@/app/hooks/useRecurringTransactions"
-import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { AccountBase, TransactionStream } from "plaid"
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 import AccountSelect from "./AccountSelect"
 import { useEffect, useState } from "react"
-import { DataTable } from "../common/DataTable/DataTable"
 import RecurringTransactionsTable from "./RecurringTransactionsTable"
 
 const chartConfig = {
@@ -29,7 +30,6 @@ const ForecastCalendar = () => {
   const { transactions, loading } = useRecurringTransactions({ access_token: userRes.user?.items[0].plaidAccessToken })
   const { items } = useGetAccounts({ userId: 'root-user' })
   const [selectedAccount, setSelectedAccount] = useState<AccountBase | null>(null)
-  console.log(selectedAccount)
 
   useEffect(() => {
     if (!items) return
@@ -53,7 +53,7 @@ const ForecastCalendar = () => {
 
   testData.map(el => el.date = el.predicted_next_date)
 
-  const chartData = joinArraysOnDate(generateMonthDates('2025-08'), testData)
+  const chartData = joinArraysOnDate(generateMonthDates(dateToYYYYMM(new Date())), testData)
 
   let currentBalance = selectedAccount?.balances.current ?? 0
 
@@ -68,68 +68,75 @@ const ForecastCalendar = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex max-w-[200px]">
-        {items &&
+      <PageHeader
+        className="mb-0"
+        title="Forecast"
+        description="Projected balance from recurring transactions."
+        actions={items &&
           <AccountSelect
             value={selectedAccount?.account_id}
             accounts={items[0].accounts ?? []}
             onValueChange={handleAccountChange}
           />
         }
-      </div>
-      <ChartContainer config={chartConfig} className="min-h-[200px] w-full max-w-[1200px] mx-6">
-        <LineChart accessibilityLayer data={chartData} onClick={(el) => console.log(el)}>
-          <CartesianGrid />
-          <XAxis
-            dataKey="date"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-          />
-          <YAxis
-            dataKey="balance"
-            tickLine={false}
-            tickMargin={10}
-            axisLine={false}
-          />
-          <ChartTooltip
-            content={<ChartTooltipContent formatter={(value, name, item, index) => {
-              console.log(item.payload)
-              return (
-                <div className="flex flex-col space-y-3">
-                  <div className="flex space-x-2">
-                    <div
-                      className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-(--color-bg)"
-                      style={
-                        {
-                          "--color-bg": `var(--color-${name})`,
-                        } as React.CSSProperties
+      />
+      <Card>
+        <CardHeader>
+          <CardTitle>Projected balance</CardTitle>
+          <CardDescription>{selectedAccount?.name ?? 'Select an account'} · this month</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-72 w-full">
+            <LineChart accessibilityLayer data={chartData} margin={{ left: 12, right: 12 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                minTickGap={24}
+                tickFormatter={(value) => formatShortDate(String(value))}
+              />
+              <YAxis
+                dataKey="balance"
+                tickLine={false}
+                tickMargin={10}
+                axisLine={false}
+                width={80}
+                tickFormatter={(value) => toCurrency(Number(value)).replace(/\.\d\d$/, '')}
+              />
+              <ChartTooltip
+                content={<ChartTooltipContent
+                  labelFormatter={(label) => formatShortDate(String(label))}
+                  formatter={(value, name, item) => (
+                    <div className="flex w-full flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-(--color-balance)" />
+                        {chartConfig.balance.label}
+                        <span className="ml-auto font-mono font-medium tabular-nums text-foreground">
+                          {toCurrency(value as number)}
+                        </span>
+                      </div>
+                      {item.payload.account_id &&
+                        <div className="text-muted-foreground">
+                          {item.payload.description} · {toCurrency(item.payload.average_amount?.amount)}
+                        </div>
                       }
-                    />
-                    {chartConfig[name as keyof typeof chartConfig]?.label ||
-                      name}
-                    <div className="text-foreground ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums">
-                      {toCurrency(value as number)}
                     </div>
-                  </div>
-                  {item.payload.account_id &&
-                    <div className="flex flex-col">
-                      <div>Description: {item.payload.description}</div>
-                      <div>Amount: {toCurrency(item.payload.average_amount?.amount)}</div>
-                    </div>
-                  }
-                </div>
-              )
-            }}
-            />}
-          />
-          <ChartLegend content={<ChartLegendContent />} />
-          <Line
-            dataKey="balance"
-            type="monotone"
-          />
-        </LineChart>
-      </ChartContainer>
+                  )}
+                />}
+              />
+              <Line
+                dataKey="balance"
+                type="monotone"
+                stroke="var(--color-balance)"
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
 
       <RecurringTransactionsTable data={testData} />
 
