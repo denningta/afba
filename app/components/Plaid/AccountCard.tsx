@@ -1,8 +1,7 @@
 import useSyncTransactions from "@/app/hooks/useSyncTransactions"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { RiMoreFill } from "@remixicon/react"
-import { RefreshCwIcon } from "lucide-react"
+import { EllipsisIcon, RefreshCwIcon } from "lucide-react"
 import { toCurrency } from "@/app/helpers/helperFunctions"
 import { AccountBase } from "plaid"
 import IncludeInBudgetSwitch from "./IncludeInBudgetSwitch"
@@ -54,7 +53,7 @@ const AccountCard = ({ account, item_id, institutionName, itemAccounts, onRemove
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label="Account actions">
-                <RiMoreFill />
+                <EllipsisIcon />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48" align="end">

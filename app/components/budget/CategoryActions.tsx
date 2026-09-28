@@ -14,13 +14,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, PencilIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogContent, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { DataTable } from "../common/DataTable/DataTable";
 import columns from "../transactions/transactionsColDefs";
 import { Progress } from "@/components/ui/progress";
-import { DotsHorizontalIcon, MagnifyingGlassIcon, Pencil1Icon, TrashIcon } from "@radix-ui/react-icons";
 
 interface EditCategoryProps {
   category: Category
@@ -70,7 +69,7 @@ export default function CategoryActions({
             className="text-muted-foreground"
             aria-label="Category actions"
           >
-            <DotsHorizontalIcon />
+            <Ellipsis />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
@@ -78,20 +77,20 @@ export default function CategoryActions({
 
             <DialogTrigger asChild>
               <DropdownMenuItem onSelect={() => setDialogMenu("view-transactions")}>
-                <MagnifyingGlassIcon className="mr-2" /> View Transactions
+                <SearchIcon /> View Transactions
               </DropdownMenuItem>
             </DialogTrigger>
             <DropdownMenuSeparator />
 
             <DialogTrigger asChild>
               <DropdownMenuItem onSelect={() => setDialogMenu("edit")}>
-                <Pencil1Icon className="mr-2" /> Edit
+                <PencilIcon /> Edit
               </DropdownMenuItem>
             </DialogTrigger>
 
             <DialogTrigger asChild>
               <DropdownMenuItem onSelect={() => setDialogMenu("delete")}>
-                <TrashIcon className="mr-2" /> Delete
+                <Trash2Icon /> Delete
               </DropdownMenuItem>
             </DialogTrigger>
           </DropdownMenuGroup>

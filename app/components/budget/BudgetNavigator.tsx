@@ -3,7 +3,7 @@
 import { dateToYYYYMM, getPrevMonth, YYYYMMToDate } from "@/app/helpers/helperFunctions"
 import { Button } from "@/components/ui/button"
 import MonthPicker from "@/components/ui/month-picker"
-import { ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons"
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect } from "react"
 

@@ -5,8 +5,7 @@ import TransactionForm from "./TransactionForm";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Ellipsis } from "lucide-react";
-import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { Ellipsis, SearchIcon } from "lucide-react";
 import JsonView from "@uiw/react-json-view"
 import { githubDarkTheme } from "@uiw/react-json-view/githubDark"
 
@@ -50,7 +49,7 @@ export default function TransactionActions({
 
           <DialogTrigger asChild>
             <DropdownMenuItem onSelect={() => setDialogMenu("view-transaction")}>
-              <MagnifyingGlassIcon className="mr-2" /> View Transaction Details
+              <SearchIcon /> View Transaction Details
             </DropdownMenuItem>
           </DialogTrigger>
 

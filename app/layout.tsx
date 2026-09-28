@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import AppSidebar from "./components/AppSidebar";
 import AppHeader from "./components/AppHeader";
-import DialogProvider from "./components/common/DialogProvider";
 import { CategoryProvider } from "./context/CategoryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -37,22 +36,20 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DialogProvider>
-            <CategoryProvider>
-              <TooltipProvider delayDuration={0}>
-                <SidebarProvider defaultOpen={sidebarOpen}>
-                  <AppSidebar />
-                  <SidebarInset>
-                    <AppHeader />
-                    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
-                      {children}
-                    </div>
-                  </SidebarInset>
-                </SidebarProvider>
-              </TooltipProvider>
-              <Toaster />
-            </CategoryProvider>
-          </DialogProvider>
+          <CategoryProvider>
+            <TooltipProvider delayDuration={0}>
+              <SidebarProvider defaultOpen={sidebarOpen}>
+                <AppSidebar />
+                <SidebarInset>
+                  <AppHeader />
+                  <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
+                    {children}
+                  </div>
+                </SidebarInset>
+              </SidebarProvider>
+            </TooltipProvider>
+            <Toaster />
+          </CategoryProvider>
         </ThemeProvider>
       </body>
     </html>
