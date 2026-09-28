@@ -1,5 +1,6 @@
 import { BudgetOverview } from "../components/budget/BudgetOverview"
 import Transaction from "../interfaces/transaction"
+import { format, isValid, parseISO } from "date-fns"
 
 export function isOdd(input: number) {
   return input % 2 === 1 ? true : false
@@ -140,6 +141,22 @@ export function generateHexColors(
 
 export function toCurrency(number: number) {
   return number.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+}
+
+// "Sep 12", or "Sep 12, 2025" outside the current year. parseISO reads a bare
+// YYYY-MM-DD as a local date, so it doesn't slip a day in US time zones.
+export function formatShortDate(iso: string | null | undefined) {
+  if (!iso) return ''
+  const date = parseISO(iso)
+  if (!isValid(date)) return iso
+  return format(date, date.getFullYear() === new Date().getFullYear() ? 'MMM d' : 'MMM d, yyyy')
+}
+
+// Plaid enum values like FOOD_AND_DRINK -> "Food and drink".
+export function humanizeEnum(value: string | null | undefined) {
+  if (!value) return ''
+  const text = value.replace(/_/g, ' ').toLowerCase()
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 

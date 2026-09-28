@@ -37,8 +37,10 @@ export default function TransactionActions({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
-            size="sm"
+            size="icon-sm"
             variant="ghost"
+            className="text-muted-foreground"
+            aria-label="Transaction actions"
             tabIndex={-1}
           >
             <Ellipsis />

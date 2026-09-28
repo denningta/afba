@@ -1,12 +1,13 @@
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
-import Checkbox from "../common/Checkbox"
 import TransactionActions from "./TransactionActions"
-import { CSSProperties } from "react"
-import { toCurrency } from "@/app/helpers/helperFunctions"
+import { formatShortDate, humanizeEnum, toCurrency } from "@/app/helpers/helperFunctions"
 import UserCategoryCell from "./UserCategoryCell"
 import AmazonOrderLink from "./AmazonOrderLink"
 import Image from "next/image"
 import Transaction from "@/app/interfaces/transaction"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { EmptyCell, SelectAllCheckbox, SelectRowCheckbox } from "../common/DataTable/cells"
 
 const columnHelper = createColumnHelper<Transaction>()
 
@@ -26,79 +27,97 @@ const accountSubtype = ({ account, account_id }: Transaction) => {
   return account_id ? 'unknown' : 'manual'
 }
 
+// Plaid amounts are positive for money out. Show income as a green "+$X" and
+// spending as a plain "$X".
+function Amount({ value, className }: { value: number, className?: string }) {
+  const income = value < 0
+  return (
+    <span className={cn("font-medium tabular-nums", income && "text-positive", className)}>
+      {income ? '+' : ''}{toCurrency(Math.abs(value))}
+    </span>
+  )
+}
+
+// 24px logo, or a letter placeholder so names line up either way.
+function MerchantLogo({ src, name }: { src?: string | null, name: string }) {
+  if (src) {
+    return <Image src={src} alt="" width={24} height={24} className="size-6 shrink-0 rounded-full" />
+  }
+  return (
+    <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+      {name.charAt(0).toUpperCase() || '?'}
+    </span>
+  )
+}
+
 const columns: ColumnDef<Transaction, any>[] = [
   columnHelper.display({
     id: 'select',
-    cell: ({ row }) =>
-      <Checkbox
-        checked={row.getIsSelected()}
-        disabled={!row.getCanSelect()}
-        onChange={row.getToggleSelectedHandler()}
-        tabIndex={-1}
-      />,
-    header: ({ table }) =>
-      <Checkbox
-        checked={table.getIsAllRowsSelected()}
-        indeterminate={table.getIsSomeRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-        tabIndex={-1}
-      />,
+    header: ({ table }) => <SelectAllCheckbox table={table} />,
+    cell: ({ row }) => <SelectRowCheckbox row={row} />,
+    meta: { width: 40 },
   }),
   columnHelper.accessor('date', {
     header: 'Date',
-    cell: info => info.getValue()
+    cell: info => (
+      <span className="tabular-nums text-muted-foreground" title={info.getValue()}>
+        {formatShortDate(info.getValue())}
+      </span>
+    ),
+    meta: { width: 96 },
   }),
   columnHelper.accessor('month', {
     header: 'Month',
-    cell: info => info.getValue(),
+    cell: info => info.getValue() || <EmptyCell />,
     meta: {
       filterVariant: 'select'
     }
   }),
   columnHelper.accessor('merchant_name', {
-
     header: 'Merchant',
     cell: info => {
+      const transaction = info.row.original
+      const merchant = info.getValue() || transaction.name
       const isAmazon = info.getValue()?.toLowerCase() === 'amazon'
 
       return (
-        <div className="flex items-center space-x-4">
-          {info.row.original.logo_url &&
-            <Image
-              src={info.row.original.logo_url}
-              alt="logo"
-              width={30}
-              height={30}
-            />
+        <div className="flex min-w-0 items-center gap-2.5">
+          <MerchantLogo src={transaction.logo_url} name={merchant} />
+          <span
+            className={cn("truncate font-medium", transaction.pending && "text-muted-foreground")}
+            title={merchant}
+          >
+            {merchant}
+          </span>
+          {transaction.pending &&
+            <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">Pending</Badge>
           }
-
-          <div>
-            {info.getValue()}
-          </div>
-
           {isAmazon &&
-            <AmazonOrderLink transaction={info.row.original} />
+            <AmazonOrderLink transaction={transaction} />
           }
         </div>
       )
-    }
+    },
+    meta: { truncate: true },
   }),
   columnHelper.accessor('name', {
     header: 'Description',
-    cell: info => info.getValue()
+    cell: info => <span className="text-muted-foreground">{info.getValue() || <EmptyCell />}</span>,
+    meta: { truncate: true },
   }),
   columnHelper.accessor(accountLabel, {
     id: 'account',
     header: 'Account',
-    cell: info => info.getValue(),
+    cell: info => <span className="text-muted-foreground">{info.getValue()}</span>,
     meta: {
-      filterVariant: 'select'
+      filterVariant: 'select',
+      truncate: true,
     }
   }),
   columnHelper.accessor(accountSubtype, {
     id: 'accountSubtype',
     header: 'Account Type',
-    cell: info => <span className="capitalize">{info.getValue()}</span>,
+    cell: info => <span className="capitalize text-muted-foreground">{info.getValue()}</span>,
     meta: {
       filterVariant: 'select'
     }
@@ -106,20 +125,21 @@ const columns: ColumnDef<Transaction, any>[] = [
   columnHelper.accessor('personal_finance_category', {
     header: 'Category',
     cell: info => {
+      const primary = info.getValue()?.primary
+      if (!primary) return <EmptyCell />
 
       return (
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-2 text-muted-foreground">
           {info.row.original.personal_finance_category_icon_url &&
             <Image
               src={info.row.original.personal_finance_category_icon_url}
-              alt="logo"
-              width={30}
-              height={30}
+              alt=""
+              width={20}
+              height={20}
+              className="size-5 shrink-0"
             />
           }
-          <div>
-            {info.getValue()?.primary}
-          </div>
+          <span>{humanizeEnum(primary)}</span>
         </div>
       )
     }
@@ -140,17 +160,13 @@ const columns: ColumnDef<Transaction, any>[] = [
   }),
   columnHelper.accessor('pending', {
     header: 'Status',
-    cell: info => info.getValue() ? 'Pending' : 'Posted'
+    cell: info => info.getValue() ? 'Pending' : 'Posted',
+    meta: { width: 96 },
   }),
   columnHelper.accessor('amount', {
     header: 'Amount',
-    cell: info => {
-      const amount = info.getValue() ?? 0
-      const style: CSSProperties = {
-        color: amount < 0 ? '	#00d062' : 'inherit'
-      }
-      return <span style={style}>{toCurrency(amount)}</span>
-    },
+    meta: { align: 'right', width: 120 },
+    cell: info => <Amount value={info.getValue() ?? 0} />,
     footer: (props) => {
       const total = props.table.getRowModel().rows.reduce((sum, row) => {
         const value: number = row.getValue('amount')
@@ -159,15 +175,16 @@ const columns: ColumnDef<Transaction, any>[] = [
 
       return (
         <div className="flex flex-col space-y-1">
-          <div>Total: </div>
-          <div className="font-bold">{toCurrency(total)}</div>
+          <div className="text-xs text-muted-foreground">Total</div>
+          <Amount value={total} className="font-semibold" />
         </div>
       )
     }
   }),
   columnHelper.display({
     id: 'acitions',
-    cell: ({ row }) => <TransactionActions transaction={row.original} />
+    cell: ({ row }) => <TransactionActions transaction={row.original} />,
+    meta: { width: 48 },
   })
 ]
 

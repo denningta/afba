@@ -14,10 +14,17 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import BudgetNavigator from "./BudgetNavigator";
 import BudgetAccountsPicker from "./BudgetAccountsPicker";
+import PageHeader from "../common/PageHeader";
 
 
 
 
+
+// The month is already in the page header; Type is implied by the row.
+const DEFAULT_COLUMN_VISIBILITY = {
+  date: false,
+  type: false,
+}
 
 interface CategoriesTableProps {
 }
@@ -47,13 +54,16 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
 
   return (
     <div className="space-y-6">
-      <div className="mx-4 flex items-center justify-between">
-        <div className="text-2xl">Budget</div>
-        <BudgetAccountsPicker />
-      </div>
-
-      <BudgetNavigator />
-
+      <PageHeader
+        className="mb-0"
+        title="Budget"
+        actions={
+          <>
+            <BudgetNavigator />
+            <BudgetAccountsPicker />
+          </>
+        }
+      />
 
 
       <div className="flex flex-col md:flex space-y-5 max-w-fit">
@@ -80,7 +90,7 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
                 <div className="uppercase">DIFFERENCE</div>
                 <div
                   style={{
-                    color: plannedDiff.value > 0 ? '#00d062' : 'red'
+                    color: plannedDiff.value >= 0 ? 'var(--positive)' : 'var(--negative)'
                   }}
                   className={`font-bold md:text-3xl h-8`}
                 >
@@ -102,19 +112,19 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
                   {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualIncome.value)}
                 </div>
               </div>
-              <div className="font-bold md:text-3xl pt-5"> + </div>
+              <div className="font-bold md:text-3xl pt-5"> - </div>
               <div>
                 <div className="uppercase">{actualSpent.name}</div>
                 <div className="font-bold md:text-3xl h-8">
                   {isLoading ? <Skeleton className="h-full w-full" /> : toCurrency(actualSpent.value)}
                 </div>
               </div>
-              <div className="font-bold text-gray-600 md:text-3xl pt-5"> = </div>
+              <div className="font-bold md:text-3xl pt-5"> = </div>
               <div>
                 <div className="uppercase">DIFFERENCE</div>
                 <div
                   style={{
-                    color: actualDiff.value > 0 ? '#00d062' : 'red'
+                    color: actualDiff.value >= 0 ? 'var(--positive)' : 'var(--negative)'
                   }}
                   className={`font-bold md:text-3xl h-8`}
                 >
@@ -143,6 +153,8 @@ export default function CategoriesTable({ }: CategoriesTableProps) {
             data={data ?? []}
             columns={categoryColumns}
             isLoading={isLoading}
+            columnVisibilityStorageKey="afba:budget-columns"
+            defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
           />
           <SnackbarProvider />
         </div>

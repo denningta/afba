@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } 
 import { Button } from "@/components/ui/button"
 import { PlusIcon } from "lucide-react"
 import { useMemo } from "react"
+import PageHeader from "../common/PageHeader"
 
 // Everything not listed stays visible (date, merchant, description, account
 // type, user category, amount, and the select/actions columns).
@@ -41,27 +42,28 @@ export default function TransactionsTable({
 
 
   return (
-    <div className="m-2">
-      <div className="text-2xl mx-4 mb-8">Transactions</div>
-      <div className="flex items-center space-x-6 mb-4">
-        <div className="grow"></div>
-
-        <AssignCategoriesButton />
-
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <PlusIcon />
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogTitle>Add Transaction</DialogTitle>
-            <DialogDescription>Use this form to add a transaction to the table.</DialogDescription>
-            <TransactionForm onSubmit={handleAddTransaction} />
-          </DialogContent>
-        </Dialog>
-
-      </div>
+    <div>
+      <PageHeader
+        title="Transactions"
+        actions={
+          <>
+            <AssignCategoriesButton />
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusIcon />
+                  Add transaction
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogTitle>Add Transaction</DialogTitle>
+                <DialogDescription>Use this form to add a transaction to the table.</DialogDescription>
+                <TransactionForm onSubmit={handleAddTransaction} />
+              </DialogContent>
+            </Dialog>
+          </>
+        }
+      />
 
       <DataTable
         data={stableData ?? []}

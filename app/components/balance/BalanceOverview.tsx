@@ -335,8 +335,6 @@ export default function BalanceOverview() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Account Balance</h1>
-
       <div className="flex flex-wrap items-center gap-2">
         {(Object.keys(PRESET_LABELS) as (keyof typeof PRESET_LABELS)[]).map((key) => (
           <Button
@@ -596,7 +594,7 @@ export default function BalanceOverview() {
               {selectedDateDelta !== null ? (
                 <>
                   Balance {selectedDateDelta >= 0 ? "increased" : "decreased"} by{" "}
-                  <span className={selectedDateDelta >= 0 ? "text-[#00d062]" : "text-foreground"}>
+                  <span className={selectedDateDelta >= 0 ? "text-positive" : "text-foreground"}>
                     {toCurrency(Math.abs(selectedDateDelta))}
                   </span>{" "}
                   this day.
@@ -629,7 +627,7 @@ export default function BalanceOverview() {
                   </div>
                   <div
                     className="shrink-0 text-sm font-medium"
-                    style={{ color: t.amount < 0 ? "#00d062" : "inherit" }}
+                    style={{ color: t.amount < 0 ? "var(--positive)" : "inherit" }}
                   >
                     {toCurrency(t.amount)}
                   </div>

@@ -1,0 +1,154 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useTheme } from "next-themes"
+import {
+  ArrowLeftRightIcon,
+  CalendarClockIcon,
+  ChartColumnIcon,
+  LandmarkIcon,
+  LayoutDashboardIcon,
+  LineChartIcon,
+  MonitorIcon,
+  MoonIcon,
+  SunIcon,
+  UploadIcon,
+  WalletIcon,
+} from "lucide-react"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
+} from "@/components/ui/sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import useTransactions from "../hooks/useTransactions"
+import { dateToYYYYMM } from "../helpers/helperFunctions"
+
+interface NavLink {
+  title: string
+  href: string
+  icon: React.ComponentType
+  isActive: (pathname: string) => boolean
+}
+
+const mainNav: NavLink[] = [
+  { title: "Dashboard", href: "/", icon: LayoutDashboardIcon, isActive: p => p === "/" },
+  // href is filled in at render time with the current month.
+  { title: "Budget", href: "/budget/", icon: WalletIcon, isActive: p => p.startsWith("/budget/") },
+  { title: "Trends", href: "/budget", icon: ChartColumnIcon, isActive: p => p === "/budget" },
+  { title: "Transactions", href: "/transactions", icon: ArrowLeftRightIcon, isActive: p => p.startsWith("/transactions") },
+  { title: "Forecast", href: "/calendar", icon: CalendarClockIcon, isActive: p => p.startsWith("/calendar") },
+  { title: "Balances", href: "/balance", icon: LineChartIcon, isActive: p => p.startsWith("/balance") },
+]
+
+const manageNav: NavLink[] = [
+  { title: "Accounts", href: "/connect", icon: LandmarkIcon, isActive: p => p.startsWith("/connect") },
+  { title: "Import", href: "/upload", icon: UploadIcon, isActive: p => p.startsWith("/upload") },
+]
+
+function NavGroup({ label, items, badges = {} }: { label: string, items: NavLink[], badges?: Record<string, number> }) {
+  const pathname = usePathname()
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map(item => {
+            const href = item.title === "Budget" ? `/budget/${dateToYYYYMM(new Date())}` : item.href
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild isActive={item.isActive(pathname)} tooltip={item.title}>
+                  <Link href={href} onClick={() => isMobile && setOpenMobile(false)}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+                {!!badges[item.title] &&
+                  <SidebarMenuBadge>{badges[item.title]}</SidebarMenuBadge>
+                }
+              </SidebarMenuItem>
+            )
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  )
+}
+
+function ThemeMenu() {
+  const { setTheme } = useTheme()
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton tooltip="Theme">
+              <SunIcon className="dark:hidden" />
+              <MoonIcon className="hidden dark:block" />
+              <span>Theme</span>
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" align="end">
+            <DropdownMenuItem onClick={() => setTheme("light")}><SunIcon /> Light</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("dark")}><MoonIcon /> Dark</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("system")}><MonitorIcon /> System</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  )
+}
+
+export default function AppSidebar() {
+  // Transactions still waiting for a category, surfaced as a nav badge.
+  const { data: needsCategory } = useTransactions({ needsCategory: 'true' })
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
+                  a
+                </div>
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="font-semibold">afba</span>
+                  <span className="text-xs text-muted-foreground">Budgeting</span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <NavGroup label="Overview" items={mainNav} badges={{ Transactions: needsCategory?.length ?? 0 }} />
+        <NavGroup label="Manage" items={manageNav} />
+      </SidebarContent>
+      <SidebarFooter>
+        <ThemeMenu />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  )
+}

@@ -1,15 +1,16 @@
-
 import { Suspense } from "react";
 import ForecastCalendar from "../components/calendar/ForecastCalendar";
-import CreatePlaidLink from "../components/Plaid/PlaidLink";
+import PageHeader from "../components/common/PageHeader";
 
 export default async function CalendarPage() {
 
   return (
-    <Suspense>
-      <ForecastCalendar />
-    </Suspense>
-
+    <>
+      <PageHeader title="Forecast" description="Projected balance from recurring transactions." />
+      <Suspense>
+        <ForecastCalendar />
+      </Suspense>
+    </>
   )
 
 }

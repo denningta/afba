@@ -1,13 +1,12 @@
-import Upload from "./components/Upload";
 import BudgetNavigator from "./components/budget/BudgetNavigator";
-import BudgetOverviewComponent from "./components/budget/BudgetOverview";
+import PageHeader from "./components/common/PageHeader";
 
 export default function Home() {
   return (
-    <>
-      <div className="">
-        <BudgetNavigator />
-      </div>
-    </>
+    <PageHeader
+      title="Dashboard"
+      description="Pick a month to open its budget."
+      actions={<BudgetNavigator />}
+    />
   );
 }

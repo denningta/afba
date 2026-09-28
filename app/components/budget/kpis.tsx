@@ -53,9 +53,11 @@ export default function getBudgetKpis(data: Category[] | undefined) {
       name: 'Budget Difference',
       value: plannedIncome - budget
     },
+    // Transaction amounts follow Plaid's convention (positive = money out), so
+    // income sums negative. Flip it so the card reads income - spending = diff.
     actualIncome: {
       name: 'Actual Income',
-      value: actualIncome
+      value: -actualIncome
     },
     actualSpent: {
       name: 'Spending',
@@ -63,7 +65,7 @@ export default function getBudgetKpis(data: Category[] | undefined) {
     },
     actualDiff: {
       name: 'Spending Difference',
-      value: actualIncome + totalSpent
+      value: -actualIncome - totalSpent
     }
   }
 }

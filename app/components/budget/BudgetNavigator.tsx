@@ -23,19 +23,19 @@ const BudgetNavigator = () => {
 
   const handleNextMonth = () => {
     const nextMonth = getPrevMonth(date, -1)
-    route.push(nextMonth)
+    route.push(`/budget/${nextMonth}`)
   }
 
   const handlePreviousMonth = () => {
     const prevMonth = getPrevMonth(date, 1)
-    route.push(prevMonth)
+    route.push(`/budget/${prevMonth}`)
   }
 
 
   return (
 
-    <div className="flex space-x-4 items-center">
-      <Button variant="ghost"
+    <div className="flex items-center gap-1">
+      <Button variant="ghost" size="icon" aria-label="Previous month"
         onClick={handlePreviousMonth}
       >
         <ChevronLeftIcon />
@@ -46,7 +46,7 @@ const BudgetNavigator = () => {
         onValueChange={(date) => route.push(`/budget/${dateToYYYYMM(date)}`)}
       />
 
-      <Button variant="ghost"
+      <Button variant="ghost" size="icon" aria-label="Next month"
         onClick={handleNextMonth}
       >
         <ChevronRightIcon />

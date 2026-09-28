@@ -1,10 +1,14 @@
 import { Suspense } from "react";
 import BalanceOverview from "../components/balance/BalanceOverview";
+import PageHeader from "../components/common/PageHeader";
 
 export default async function BalancePage() {
   return (
-    <Suspense>
-      <BalanceOverview />
-    </Suspense>
+    <>
+      <PageHeader title="Balances" description="Account balances over time." />
+      <Suspense>
+        <BalanceOverview />
+      </Suspense>
+    </>
   )
 }

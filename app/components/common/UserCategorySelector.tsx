@@ -52,18 +52,21 @@ export function UserCategorySelector({
     <div className="flex items-center space-x-4">
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" className="w-[150px] justify-start">
+          <Button variant="ghost" size="sm" className="h-7 max-w-[12rem] justify-start px-1">
             {value ? (
               needsReview ? (
-                <Badge variant="secondary" className="gap-1">
-                  <TriangleAlert className="h-3 w-3" />
-                  {value.name}
+                <Badge variant="outline" className="max-w-full gap-1 border-warning/50 bg-warning/10" title="Auto-assigned — not reviewed yet">
+                  <TriangleAlert className="size-3 text-warning" />
+                  <span className="truncate">{value.name}</span>
                 </Badge>
               ) : (
-                <Badge>{value.name}</Badge>
+                <Badge variant="secondary" className="max-w-full"><span className="truncate">{value.name}</span></Badge>
               )
-            ) : <div className="text-accent">+</div>}
-            {!value && isLoading && <div className="transition ease-in-out animate-spin w-full flex justify-center"><LoaderCircle /></div>}
+            ) : isLoading ? (
+              <LoaderCircle className="animate-spin text-muted-foreground" />
+            ) : (
+              <Badge variant="outline" className="border-dashed font-normal text-muted-foreground">Uncategorized</Badge>
+            )}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="p-0" side="right" align="start">

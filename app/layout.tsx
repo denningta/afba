@@ -1,37 +1,36 @@
 import type { Metadata } from "next";
-import { Roboto, Geist } from "next/font/google"
+import { Geist } from "next/font/google"
+import { cookies } from "next/headers";
 import "./globals.css";
-import Sidebar from "./components/Sidebar";
+import AppSidebar from "./components/AppSidebar";
+import AppHeader from "./components/AppHeader";
 import DialogProvider from "./components/common/DialogProvider";
 import { CategoryProvider } from "./context/CategoryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { MenuIcon } from "lucide-react";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const roboto = Roboto({
-  weight: '300',
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-roboto'
-})
 
 export const metadata: Metadata = {
   title: "Budget",
   description: "Another Funky Budgeting App",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // The sidebar writes its expanded/collapsed state to this cookie; reading it
+  // here keeps the server render matching what the user last chose.
+  const sidebarOpen = (await cookies()).get("sidebar_state")?.value !== "false"
+
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
-      <body className={cn(roboto.className, "mb-10")}>
+    <html lang="en" className={cn("font-sans antialiased", geist.variable)} suppressHydrationWarning>
+      <body>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -40,12 +39,17 @@ export default function RootLayout({
         >
           <DialogProvider>
             <CategoryProvider>
-              <Sidebar />
-              {/* Mobile top padding matches the fixed bar's actual height:
-                  h-14 (3.5rem) plus whatever safe-area inset it added on top. */}
-              <div className="pt-[calc(env(safe-area-inset-top,0px)+3.5rem)] md:ml-20 md:p-5 space-x-3 space-y-3 max-w-7xl mx-auto">
-                {children}
-              </div>
+              <TooltipProvider delayDuration={0}>
+                <SidebarProvider defaultOpen={sidebarOpen}>
+                  <AppSidebar />
+                  <SidebarInset>
+                    <AppHeader />
+                    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
+                      {children}
+                    </div>
+                  </SidebarInset>
+                </SidebarProvider>
+              </TooltipProvider>
               <Toaster />
             </CategoryProvider>
           </DialogProvider>

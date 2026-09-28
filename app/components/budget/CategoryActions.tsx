@@ -65,8 +65,10 @@ export default function CategoryActions({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
-            size="sm"
+            size="icon-sm"
             variant="ghost"
+            className="text-muted-foreground"
+            aria-label="Category actions"
           >
             <DotsHorizontalIcon />
           </Button>

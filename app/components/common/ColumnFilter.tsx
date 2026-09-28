@@ -3,6 +3,7 @@ import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { Badge } from "@/components/ui/badge"
 import { Column, RowData } from "@tanstack/react-table"
 import { PlusCircle } from "lucide-react"
 import { useMemo } from "react"
@@ -56,17 +57,15 @@ const ColumnFilter = <TData, TValue>({ column }: ColumnFilterProps<TData, TValue
       <div>
         <Popover modal={false}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="font-normal text-xs">
-              <div className="space-x-2 flex items-center h-full">
-                <PlusCircle size={15} />
-                <span>{column.columnDef.header as string}</span>
-                {column.getFilterValue() as string &&
-                  <>
-                    <Separator orientation="vertical" />
-                    <div className="bg-accent p-1 px-2 rounded">{column.getFilterValue() as string}</div>
-                  </>
-                }
-              </div>
+            <Button variant="outline" className="border-dashed font-normal">
+              <PlusCircle />
+              <span>{column.columnDef.header as string}</span>
+              {column.getFilterValue() as string &&
+                <>
+                  <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
+                  <Badge variant="secondary" className="rounded-sm font-normal">{column.getFilterValue() as string}</Badge>
+                </>
+              }
             </Button>
           </PopoverTrigger>
           <PopoverContent align="start">

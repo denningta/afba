@@ -15,7 +15,7 @@ import RecurringTransactionsTable from "./RecurringTransactionsTable"
 const chartConfig = {
   balance: {
     label: "Balance",
-    color: "#2563eb",
+    color: "var(--chart-1)",
   },
 } satisfies ChartConfig
 
