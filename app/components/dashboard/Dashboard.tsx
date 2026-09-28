@@ -12,11 +12,11 @@ import { dateToYYYYMM, formatShortDate, parseDisplayDate, toCurrency, YYYYMMToDa
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import PageHeader from "../common/PageHeader"
 import BudgetKpiCards from "../budget/BudgetKpiCards"
+import CategoryProgressRow from "../budget/CategoryProgressRow"
 import { Amount, MerchantLogo } from "../transactions/TransactionCells"
 
 const LIABILITY_TYPES = new Set(["credit", "loan"])
@@ -132,26 +132,7 @@ function TopCategoriesCard({ month }: { month: string }) {
         {!isLoading && top.length === 0 &&
           <p className="text-sm text-muted-foreground">No spending recorded this month yet.</p>
         }
-        {top.map(category => {
-          const spent = category.spent ?? 0
-          const budget = category.budget ?? 0
-          const percent = budget > 0 ? Math.round((spent / budget) * 100) : 100
-          return (
-            <div key={category.name} className="space-y-1.5">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="truncate font-medium">{category.name}</span>
-                <span className="shrink-0 tabular-nums text-muted-foreground">
-                  <span className="text-foreground">{toCurrency(spent)}</span> / {toCurrency(budget)}
-                </span>
-              </div>
-              <Progress
-                className="h-2"
-                value={Math.min(percent, 100)}
-                indicatorClassName={spent <= budget ? 'bg-positive' : 'bg-negative'}
-              />
-            </div>
-          )
-        })}
+        {top.map(category => <CategoryProgressRow key={category.name} category={category} />)}
       </CardContent>
     </Card>
   )

@@ -13,6 +13,10 @@ import BudgetAccountsPicker from "./BudgetAccountsPicker";
 import PageHeader from "../common/PageHeader";
 import BudgetKpiCards from "./BudgetKpiCards";
 import { Category } from "@/app/interfaces/categories";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import CategoryProgressRow from "./CategoryProgressRow";
+import CategoryActions from "./CategoryActions";
 
 // The month is already in the page header; Type is implied by the section.
 const DEFAULT_COLUMN_VISIBILITY = {
@@ -31,6 +35,35 @@ function SectionHeading({ title, rows }: { title: string, rows: Category[] }) {
         {toCurrency(actual)} of {toCurrency(budget)}
       </span>
     </div>
+  )
+}
+
+// Phone layout: the Top-categories style list (name, actual / budget, bar)
+// in place of the table, keeping each row's actions menu.
+function MobileSection({ title, rows, isLoading }: { title: string, rows: Category[], isLoading?: boolean }) {
+  const budget = rows.reduce((sum, c) => sum + (c.budget ?? 0), 0)
+  const actual = rows.reduce((sum, c) => sum + actualAmount(c), 0)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription className="tabular-nums">{toCurrency(actual)} of {toCurrency(budget)}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading && Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
+        {!isLoading && rows.length === 0 &&
+          <p className="text-sm text-muted-foreground">No categories yet.</p>
+        }
+        {rows.map((category, i) => (
+          <CategoryProgressRow
+            key={category._id?.toString() ?? `${category.name}-${i}`}
+            category={category}
+            action={<CategoryActions category={category} />}
+          />
+        ))}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -60,7 +93,16 @@ export default function CategoriesTable() {
 
       <BudgetKpiCards data={data} isLoading={isLoading} />
 
-      <section className="space-y-3">
+      <div className="space-y-4 md:hidden">
+        <div className="grid grid-cols-2 gap-2 [&_button]:w-full">
+          <CategoryDialog category={{ date: currentDate }} />
+          <CopyBudgetDialog />
+        </div>
+        <MobileSection title="Income" rows={income} isLoading={isLoading} />
+        <MobileSection title="Expenses" rows={expenses} isLoading={isLoading} />
+      </div>
+
+      <section className="hidden space-y-3 md:block">
         <SectionHeading title="Income" rows={income} />
         <DataTable
           variant="minimal"
@@ -72,7 +114,7 @@ export default function CategoriesTable() {
         />
       </section>
 
-      <section className="space-y-3">
+      <section className="hidden space-y-3 md:block">
         <SectionHeading title="Expenses" rows={expenses} />
         <DataTable
           data={expenses}
