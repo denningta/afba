@@ -17,9 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Ellipsis, Loader2Icon, PencilIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogContent, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
-import { DataTable } from "../common/DataTable/DataTable";
-import columns from "../transactions/transactionsColDefs";
-import { Progress } from "@/components/ui/progress";
+import Link from "next/link";
+import { categoryTransactionsHref } from "@/app/helpers/helperFunctions";
 
 interface EditCategoryProps {
   category: Category
@@ -36,8 +35,6 @@ export default function CategoryActions({
 
   const handleDialogMenu = (): React.JSX.Element | null => {
     switch (dialogMenu) {
-      case "view-transactions":
-        return <ViewTransactionsDialog category={category} />
       case "edit":
         return <EditDialog
           category={category}
@@ -73,11 +70,13 @@ export default function CategoryActions({
         <DropdownMenuContent align="end">
           <DropdownMenuGroup>
 
-            <DialogTrigger asChild>
-              <DropdownMenuItem onSelect={() => setDialogMenu("view-transactions")}>
-                <SearchIcon /> View Transactions
+            {category._id && category.date &&
+              <DropdownMenuItem asChild>
+                <Link href={categoryTransactionsHref(category)}>
+                  <SearchIcon /> View Transactions
+                </Link>
               </DropdownMenuItem>
-            </DialogTrigger>
+            }
             <DropdownMenuSeparator />
 
             <DialogTrigger asChild>
@@ -158,45 +157,4 @@ function EditDialog({ category, onClose }: EditDialogProps) {
       <CategoryForm category={category} onSubmitted={() => onClose()} onCancel={() => onClose()} />
     </DialogContent>
   )
-}
-
-interface ViewTransactionsDialogProps {
-  category: Category
-}
-
-function ViewTransactionsDialog({ category }: ViewTransactionsDialogProps) {
-  let percent: number = 0
-  if (category.budget && category.spent) percent = Math.round(((Math.abs(category.spent)) / category.budget) * 100)
-
-  console.log(category)
-
-  return (
-    <DialogContent className="max-w-fit max-h-screen overflow-auto">
-      <DialogHeader>
-        <DialogTitle>
-          Transactions for {category.name}
-        </DialogTitle>
-      </DialogHeader>
-
-      <div className="flex items-center space-x-4">
-        <div>Budget: {category.budget}</div>
-        <div>Spent: {category.spent}</div>
-        <div className="grow">
-          Progress: {
-
-            <div className="flex w-full items-center space-x-2">
-              <Progress value={percent} />
-              <span className="min-w-[40px] text-xs">{percent}%</span>
-            </div>
-          }
-        </div>
-      </div>
-      <DataTable
-        columns={columns}
-        data={category.transactions ?? []}
-      />
-    </DialogContent>
-
-  )
-
 }

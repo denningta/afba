@@ -42,3 +42,37 @@ export async function deleteTransaction(query: any) {
   return res
 }
 
+
+export interface TransactionCategoryUpdate {
+  _id: string
+  userCategory?: Transaction['userCategory']
+  categorySource?: Transaction['categorySource']
+  categoryConfirmed?: boolean
+}
+
+// Sets only the category fields, so a reassignment can't clobber anything
+// else on the document the way a full replaceOne from stale client data could.
+export async function updateTransactionCategories(updates: TransactionCategoryUpdate[]) {
+  if (!updates.length) return null
+
+  const res = await transactions.bulkWrite(updates.map(({ _id, ...fields }) => {
+    const $set: Record<string, unknown> = {}
+    const $unset: Record<string, ''> = {}
+    for (const key of ['userCategory', 'categorySource', 'categoryConfirmed'] as const) {
+      if (fields[key] === undefined) $unset[key] = ''
+      else $set[key] = fields[key]
+    }
+
+    return {
+      updateOne: {
+        filter: { _id: new ObjectId(_id) },
+        update: {
+          ...Object.keys($set).length ? { $set } : {},
+          ...Object.keys($unset).length ? { $unset } : {},
+        }
+      }
+    }
+  }))
+
+  return res
+}

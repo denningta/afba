@@ -5,7 +5,14 @@ import { Category } from "@/app/interfaces/categories"
 import Transaction from "@/app/interfaces/transaction"
 import { CellContext } from "@tanstack/react-table"
 import { UserCategorySelector } from "../common/UserCategorySelector"
-import { useState } from "react"
+import { createContext, useContext, useState } from "react"
+
+// Lets a page take over what a category change does (e.g. moving the row out
+// of a list filtered to one category). Without a provider the cell saves the
+// transaction itself.
+export const CategoryChangeContext = createContext<
+  ((transaction: Transaction, category: Category | undefined) => Promise<void>) | null
+>(null)
 
 const UserCategoryCell = (info: CellContext<Transaction, Category | undefined>) => {
   const defaultDate = dateToYYYYMM(new Date(info.row.getValue('date')))
@@ -13,11 +20,14 @@ const UserCategoryCell = (info: CellContext<Transaction, Category | undefined>) 
   const [date, setDate] = useState(defaultDate)
   const { data } = useCategories({ date: date })
   const { upsertRecord } = useTransactions()
+  const onCategoryChange = useContext(CategoryChangeContext)
   const [isLoading, setIsLoading] = useState(false)
 
   const updateTransaction = async (
     category: Category | undefined
   ) => {
+    if (onCategoryChange) return onCategoryChange(info.row.original, category)
+
     setIsLoading(true)
     const transaction: Transaction = {
       ...info.row.original,

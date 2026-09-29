@@ -33,6 +33,15 @@ function getCrumbs(pathname: string): Crumb[] {
     ]
   }
 
+  const budgetCategory = pathname.match(/^\/budget\/(\d{4}-\d{2})\/[^/]+$/)
+  if (budgetCategory) {
+    return [
+      { label: "Budget" },
+      { label: format(YYYYMMToDate(budgetCategory[1]), "MMMM yyyy"), href: `/budget/${budgetCategory[1]}` },
+      { label: "Category" },
+    ]
+  }
+
   if (pathname === "/transactions/assign") {
     return [{ label: "Transactions", href: "/transactions" }, { label: "Assign categories" }]
   }

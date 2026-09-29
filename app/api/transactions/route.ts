@@ -1,6 +1,7 @@
 import Transaction from '@/app/interfaces/transaction'
 import { database } from '@/app/lib/mongodb'
 import { listTransactions } from '@/app/queries/transactions'
+import { TransactionCategoryUpdate, updateTransactionCategories } from '@/app/queries/transaction'
 
 export async function GET(request: Request) {
   try {
@@ -27,4 +28,14 @@ export async function POST(request: Request) {
   }
 }
 
+// Reassigns categories on one or more transactions (also used to undo a move).
+export async function PATCH(request: Request) {
+  const { updates }: { updates?: TransactionCategoryUpdate[] } = await request.json()
 
+  if (!Array.isArray(updates) || updates.some(u => !u._id)) {
+    return Response.json({ message: 'Expected { updates: [{ _id, ... }] }' }, { status: 400 })
+  }
+
+  const res = await updateTransactionCategories(updates)
+  return Response.json(res)
+}

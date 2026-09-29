@@ -272,3 +272,8 @@ export function joinArraysOnDate<T extends DateObject, U extends DateObject>(arr
 
   return result;
 }
+
+// The page listing one budget category's transactions for its month.
+export function categoryTransactionsHref({ _id, date }: { _id?: unknown, date?: string }) {
+  return `/budget/${date}/${String(_id)}`
+}

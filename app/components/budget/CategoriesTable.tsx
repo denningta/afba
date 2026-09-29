@@ -61,6 +61,7 @@ function MobileSection({ title, rows, isLoading }: { title: string, rows: Catego
           <CategoryProgressRow
             key={category._id?.toString() ?? `${category.name}-${i}`}
             category={category}
+            link
             action={<CategoryActions category={category} />}
           />
         ))}

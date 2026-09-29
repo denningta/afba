@@ -1,17 +1,21 @@
 import { transactions } from "@/app/lib/mongodb";
 import Transaction from "../interfaces/transaction";
-import { accountJoinStages } from "./accounts";
+import { accountJoinStages, getBudgetAccountMatch } from "./accounts";
 
 export interface TransactionsFilter {
   userCategoryId?: string
   // 'true' when present - query params arrive from the URL as strings.
   needsCategory?: string
+  // 'true' to leave out accounts excluded from the budget, so a category's
+  // list adds up to its Actual on the budget page.
+  budgetOnly?: string
 }
 
 export async function listTransactions(searchParams: URLSearchParams) {
   const {
     userCategoryId,
-    needsCategory
+    needsCategory,
+    budgetOnly
   }: TransactionsFilter = Object.fromEntries(searchParams)
 
   const query: any[] = [
@@ -79,6 +83,7 @@ export async function listTransactions(searchParams: URLSearchParams) {
     },
   )
 
+  if (budgetOnly === 'true') query.unshift(...await getBudgetAccountMatch())
 
   const res = await transactions
     .aggregate<Transaction>(query).toArray()

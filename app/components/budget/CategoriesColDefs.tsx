@@ -2,7 +2,8 @@ import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
 import { EmptyCell, SelectAllCheckbox, SelectRowCheckbox } from "../common/DataTable/cells"
 import { Category } from "@/app/interfaces/categories"
 import CategoryActions from "./CategoryActions"
-import { toCurrency } from "@/app/helpers/helperFunctions"
+import { categoryTransactionsHref, toCurrency } from "@/app/helpers/helperFunctions"
+import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
 
 const columnHelper = createColumnHelper<Category>()
@@ -21,7 +22,15 @@ const categoryColumns: ColumnDef<Category, any>[] = [
   }),
   columnHelper.accessor('name', {
     header: 'Name',
-    cell: info => <span className="font-medium">{info.getValue()}</span>,
+    cell: info => {
+      const category = info.row.original
+      if (!category._id || !category.date) return <span className="font-medium">{info.getValue()}</span>
+      return (
+        <Link href={categoryTransactionsHref(category)} className="font-medium hover:underline">
+          {info.getValue()}
+        </Link>
+      )
+    },
     meta: { truncate: true },
     footer: () => <span className="text-xs font-medium text-muted-foreground">Total</span>
   }),
