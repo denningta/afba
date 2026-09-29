@@ -5,3 +5,8 @@ build
 .git
 .github
 *.log
+# Secrets and database dumps never belong in an image. Next's standalone
+# output copies .env into the final stage; the server supplies these at run
+# time through docker-compose's env_file instead.
+.env*
+backup
