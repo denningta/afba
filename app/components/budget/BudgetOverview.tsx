@@ -68,7 +68,7 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
     <Tabs defaultValue="overview" className="w-full space-y-4">
       <TabsList>
         <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="actual">Actual vs Savings</TabsTrigger>
+        <TabsTrigger value="actual">Budget vs actual</TabsTrigger>
       </TabsList>
       <TabsContent value="overview" className="space-y-6">
         <Card>

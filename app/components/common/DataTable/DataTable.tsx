@@ -51,6 +51,7 @@ import ColumnFilter from "../ColumnFilter"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
+import useColumnVisibility from "@/app/hooks/useColumnVisibility"
 
 declare module '@tanstack/react-table' {
   interface FilterFns {
@@ -95,6 +96,10 @@ interface DataTableProps<TData, TValue> {
   columnVisibilityStorageKey?: string
   // Applied until the user changes a column; saved choices win for the columns they cover.
   defaultColumnVisibility?: VisibilityState
+  // Controlled visibility, for tables that share column choices (see
+  // useColumnVisibility). When set, the storage key/defaults above are ignored.
+  columnVisibility?: VisibilityState
+  onColumnVisibilityChange?: OnChangeFn<VisibilityState>
   // Extra buttons shown in the toolbar, left of the View menu.
   toolbarActions?: React.ReactNode
   // 'minimal' drops the toolbar and the row-count/pagination bar, for short
@@ -134,11 +139,18 @@ export function DataTable<TData, TValue>({
   defaultColumnVisibility = {},
   toolbarActions,
   variant = 'full',
+  columnVisibility: controlledVisibility,
+  onColumnVisibilityChange,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(defaultColumnVisibility)
-  const [firstRender, setFirstRender] = useState(true)
+  const controlled = controlledVisibility !== undefined
+  const [ownVisibility, setOwnVisibility] = useColumnVisibility(
+    controlled ? null : columnVisibilityStorageKey,
+    defaultColumnVisibility
+  )
+  const columnVisibility = controlledVisibility ?? ownVisibility
+  const setColumnVisibility = onColumnVisibilityChange ?? setOwnVisibility
   const [mounted, setMounted] = useState(false)
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
@@ -164,24 +176,6 @@ export function DataTable<TData, TValue>({
     setMounted(true)
   }, [])
 
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(columnVisibilityStorageKey) || '{}')
-      setColumnVisibility({ ...defaultColumnVisibility, ...saved })
-    } catch {
-      // Storage unavailable or corrupt - fall back to the defaults already in state.
-    }
-    setFirstRender(false)
-  }, [])
-
-  useEffect(() => {
-    if (firstRender) return
-    try {
-      localStorage.setItem(columnVisibilityStorageKey, JSON.stringify(columnVisibility))
-    } catch {
-      // Storage unavailable - column choices just won't persist.
-    }
-  }, [columnVisibility])
 
 
 

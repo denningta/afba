@@ -53,8 +53,10 @@ export const listDatesWithData = [
 export async function getBudgetVsActual({ date }: BudgetVsActualQuery) {
   if (!date) throw new Error('Date undefined in budget vs acual query params')
 
-  const month = new Date(date).getMonth()
-  const year = new Date(date).getFullYear()
+  // date is YYYY-MM. Read the parts directly: Mongo's $month is 1-based, and
+  // new Date('YYYY-MM') is UTC midnight, which can land in the prior month locally.
+  const [year, month] = date.split('-').map(Number)
+  if (!year || !month) throw new Error(`Invalid budget vs actual date "${date}", expected YYYY-MM`)
   const budgetMatch = await getBudgetAccountMatch()
 
   const res = await categories.aggregate([

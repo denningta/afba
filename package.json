@@ -9,7 +9,7 @@
     "docker": "docker compose -f docker-compose.dev.yml up",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "publish": "docker compose build && docker push denningta/afba:latest",
     "db:sync": "bash scripts/sync-db.sh",
     "db:restore": "bash scripts/sync-db.sh --restore"

@@ -21,8 +21,8 @@ export async function POST(request: Request) {
     } = await request.json() as TransactionsSyncParams
 
     const user = await listUser({ userId })
-    if (!user) return Response.json({ message: 'User does not exist', status: 400 })
-    if (!account_id) return Response.json({ message: 'account_id is missing and is a required parameter', status: 500 })
+    if (!user) return Response.json({ message: 'User does not exist' }, { status: 400 })
+    if (!account_id) return Response.json({ message: 'account_id is missing and is a required parameter' }, { status: 400 })
 
     // Each account belongs to one item; its token is the only one Plaid will accept.
     const account = await accounts.findOne({ account_id })
@@ -47,13 +47,10 @@ export async function POST(request: Request) {
         options: { account_id }
       }
 
-      console.log(req)
-
       if (count) req.count = count
 
       const response = await plaidClient.transactionsSync(req)
       const data = response.data
-      console.log(data)
 
       added = added.concat(data.added)
       modified = modified.concat(data.modified)
@@ -121,7 +118,10 @@ export async function POST(request: Request) {
     return Response.json(syncResponse)
 
   } catch (error: any) {
-    throw new Error(error)
+    // Plaid errors carry a readable message in the response body.
+    const message = error?.response?.data?.error_message ?? error?.message ?? 'Transaction sync failed'
+    console.error('Transaction sync failed:', message)
+    return Response.json({ message }, { status: 500 })
   }
 }
 

@@ -29,6 +29,9 @@ services:
   afba-database:
     container_name: mongodb
     image: mongo:7.0
+    # Come back after a Docker daemon restart like the app does; otherwise the
+    # app returns without its database and every API call fails.
+    restart: always
     volumes:
       - afba_data:/data/db
     ports:

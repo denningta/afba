@@ -12,6 +12,7 @@ import {
   LineChartIcon,
   MonitorIcon,
   MoonIcon,
+  RefreshCwIcon,
   SunIcon,
   UploadIcon,
   WalletIcon,
@@ -38,6 +39,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import useTransactions from "../hooks/useTransactions"
+import useAccounts from "../hooks/useAccounts"
+import useSyncTransactions from "../hooks/useSyncTransactions"
 import { dateToYYYYMM } from "../helpers/helperFunctions"
 
 interface NavLink {
@@ -93,11 +96,32 @@ function NavGroup({ label, items, badges = {} }: { label: string, items: NavLink
   )
 }
 
+function SyncAllButton() {
+  const { data: accounts } = useAccounts()
+  const { syncAll, loading } = useSyncTransactions()
+  // Only Plaid-linked accounts sync; the manual pseudo-account has no item.
+  const linked = accounts?.filter(account => account.item_id) ?? []
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        tooltip="Sync all accounts"
+        disabled={loading || !accounts}
+        onClick={() => syncAll(linked)}
+      >
+        <RefreshCwIcon className={loading ? "animate-spin" : undefined} />
+        <span>{loading ? "Syncing…" : "Sync all accounts"}</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  )
+}
+
 function ThemeMenu() {
   const { setTheme } = useTheme()
 
   return (
     <SidebarMenu>
+      <SyncAllButton />
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

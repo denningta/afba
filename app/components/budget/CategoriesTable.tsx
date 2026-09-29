@@ -13,6 +13,7 @@ import BudgetAccountsPicker from "./BudgetAccountsPicker";
 import PageHeader from "../common/PageHeader";
 import BudgetKpiCards from "./BudgetKpiCards";
 import { Category } from "@/app/interfaces/categories";
+import useColumnVisibility from "@/app/hooks/useColumnVisibility";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import CategoryProgressRow from "./CategoryProgressRow";
@@ -72,6 +73,9 @@ export default function CategoriesTable() {
   const currentDate = pathname.split('/').pop()
 
   const { data, isLoading } = useCategories({ date: currentDate })
+  // One saved column choice drives both tables, so a toggle in Expenses'
+  // View menu updates Income immediately.
+  const [columnVisibility, setColumnVisibility] = useColumnVisibility('afba:budget-columns', DEFAULT_COLUMN_VISIBILITY)
 
   const { income, expenses } = useMemo(() => ({
     income: (data ?? []).filter(c => c.type === 'income'),
@@ -109,8 +113,8 @@ export default function CategoriesTable() {
           data={income}
           columns={categoryColumns}
           isLoading={isLoading}
-          columnVisibilityStorageKey="afba:budget-columns"
-          defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
         />
       </section>
 
@@ -120,8 +124,8 @@ export default function CategoriesTable() {
           data={expenses}
           columns={categoryColumns}
           isLoading={isLoading}
-          columnVisibilityStorageKey="afba:budget-columns"
-          defaultColumnVisibility={DEFAULT_COLUMN_VISIBILITY}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
           toolbarActions={
             <>
               <CategoryDialog category={{ date: currentDate }} />
