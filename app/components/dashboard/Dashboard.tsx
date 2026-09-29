@@ -15,6 +15,7 @@ import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import PageHeader from "../common/PageHeader"
+import { EmptyState, ErrorState } from "../common/StateMessage"
 import BudgetKpiCards from "../budget/BudgetKpiCards"
 import CategoryProgressRow from "../budget/CategoryProgressRow"
 import { Amount, MerchantLogo } from "../transactions/TransactionCells"
@@ -36,7 +37,7 @@ function ViewAll({ href, label }: { href: string, label: string }) {
 
 function NetBalanceCard() {
   const today = new Date()
-  const { data, isLoading } = useBalanceHistory(
+  const { data, isLoading, error } = useBalanceHistory(
     format(subDays(today, BALANCE_DAYS), "yyyy-MM-dd"),
     format(today, "yyyy-MM-dd"),
   )
@@ -61,12 +62,13 @@ function NetBalanceCard() {
       <CardHeader>
         <CardDescription>Net balance</CardDescription>
         <CardTitle className="text-2xl font-semibold tracking-tight">
-          {isLoading ? <Skeleton className="h-8 w-36" /> : toCurrency(current)}
+          {isLoading ? <Skeleton className="h-8 w-36" /> : error ? '—' : toCurrency(current)}
         </CardTitle>
         <CardAction><ViewAll href="/balance" label="Balances" /></CardAction>
       </CardHeader>
       <CardContent className="space-y-3">
-        {!isLoading &&
+        {error && <ErrorState title="Couldn't load balances" error={error} className="py-6" />}
+        {!isLoading && !error &&
           <div className="text-sm text-muted-foreground">
             <span className={cn("font-medium", change >= 0 ? "text-positive" : "text-negative")}>
               {change >= 0 ? '+' : '−'}{toCurrency(Math.abs(change))}
@@ -74,7 +76,7 @@ function NetBalanceCard() {
             {' '}over the last {BALANCE_DAYS} days
           </div>
         }
-        {isLoading ? <Skeleton className="h-48 w-full" /> :
+        {error ? null : isLoading ? <Skeleton className="h-48 w-full" /> :
           <ChartContainer config={balanceChartConfig} className="h-48 w-full">
             <AreaChart data={series} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
               <defs>
@@ -113,7 +115,7 @@ function NetBalanceCard() {
 }
 
 function TopCategoriesCard({ month }: { month: string }) {
-  const { data, isLoading } = useCategories({ date: month })
+  const { data, isLoading, error, mutate } = useCategories({ date: month })
 
   const top = useMemo(() => (data ?? [])
     .filter(c => (c.type === undefined || c.type === 'deduction') && ((c.spent ?? 0) > 0 || (c.budget ?? 0) > 0))
@@ -129,8 +131,13 @@ function TopCategoriesCard({ month }: { month: string }) {
       </CardHeader>
       <CardContent className="space-y-4">
         {isLoading && Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
-        {!isLoading && top.length === 0 &&
-          <p className="text-sm text-muted-foreground">No spending recorded this month yet.</p>
+        {error && <ErrorState title="Couldn't load categories" error={error} onRetry={() => mutate()} className="py-6" />}
+        {!isLoading && !error && top.length === 0 &&
+          <EmptyState
+            className="py-6"
+            title="No spending yet this month"
+            action={<Button variant="outline" asChild><Link href={`/budget/${month}`}>Plan this month</Link></Button>}
+          />
         }
         {top.map(category => <CategoryProgressRow key={category.name} category={category} />)}
       </CardContent>
@@ -139,7 +146,7 @@ function TopCategoriesCard({ month }: { month: string }) {
 }
 
 function RecentTransactionsCard() {
-  const { data, isLoading } = useTransactions()
+  const { data, isLoading, error, mutate } = useTransactions()
 
   const recent = useMemo(() => [...(data ?? [])]
     .map(transaction => ({ transaction, time: parseDisplayDate(transaction.date)?.getTime() ?? 0 }))
@@ -155,8 +162,14 @@ function RecentTransactionsCard() {
       </CardHeader>
       <CardContent>
         {isLoading && <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}</div>}
-        {!isLoading && recent.length === 0 &&
-          <p className="text-sm text-muted-foreground">No transactions yet.</p>
+        {error && <ErrorState title="Couldn't load transactions" error={error} onRetry={() => mutate()} className="py-6" />}
+        {!isLoading && !error && recent.length === 0 &&
+          <EmptyState
+            className="py-6"
+            title="No transactions yet"
+            description="Link a bank account or import a CSV to get started."
+            action={<Button variant="outline" asChild><Link href="/connect">Link an account</Link></Button>}
+          />
         }
         <ul className="divide-y divide-border/60">
           {recent.map(transaction => {
@@ -187,7 +200,7 @@ function RecentTransactionsCard() {
 
 export default function Dashboard() {
   const month = dateToYYYYMM(new Date())
-  const { data, isLoading } = useCategories({ date: month })
+  const { data, isLoading, error, mutate } = useCategories({ date: month })
 
   return (
     <div className="space-y-6">
@@ -201,7 +214,10 @@ export default function Dashboard() {
           </Button>
         }
       />
-      <BudgetKpiCards data={data} isLoading={isLoading} />
+      {error
+        ? <Card><ErrorState title="Couldn't load this month's budget" error={error} onRetry={() => mutate()} /></Card>
+        : <BudgetKpiCards data={data} isLoading={isLoading} />
+      }
       <div className="grid gap-4 lg:grid-cols-3">
         <NetBalanceCard />
         <TopCategoriesCard month={month} />

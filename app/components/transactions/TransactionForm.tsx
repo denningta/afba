@@ -2,11 +2,12 @@ import Transaction from "@/app/interfaces/transaction"
 import { useForm } from "react-hook-form"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+import { DialogClose, DialogFooter } from "@/components/ui/dialog"
 
 export interface TransactionFormProps {
   onSubmit: (value: any) => void
@@ -44,7 +45,7 @@ export default function TransactionForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-8"
+        className="space-y-5"
       >
         <FormField
           control={form.control}
@@ -52,14 +53,14 @@ export default function TransactionForm({
           render={({ field }) => {
             return (
               <FormItem>
-                <div>
-                  <FormLabel>Date</FormLabel>
-                </div>
+                <FormLabel>Date</FormLabel>
                 <FormControl>
-                  <DatePicker
-                    date={new Date(field.value)}
-                    onDateChange={field.onChange}
-                  />
+                  <div>
+                    <DatePicker
+                      date={new Date(field.value)}
+                      onDateChange={field.onChange}
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -117,21 +118,28 @@ export default function TransactionForm({
             <FormItem>
               <FormLabel>Amount</FormLabel>
               <FormControl>
-                <Input
-                  {...form.register('amount', {
-                    valueAsNumber: true
-                  })}
-                />
+                <InputGroup>
+                  <InputGroupAddon><InputGroupText>$</InputGroupText></InputGroupAddon>
+                  <InputGroupInput
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    {...form.register('amount', {
+                      valueAsNumber: true
+                    })}
+                  />
+                </InputGroup>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Separator />
-        <div className="flex justify-end space-x-6">
-          <Button variant="secondary" tabIndex={-1} onClick={onClose}>Cancel</Button>
-          <Button type="submit">Save</Button>
-        </div>
+        <DialogFooter>
+          {/* type="button" so Cancel doesn't submit; DialogClose closes the surrounding dialog. */}
+          <DialogClose asChild>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+          </DialogClose>
+          <Button type="submit">Save transaction</Button>
+        </DialogFooter>
       </form>
     </Form>
   )

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Info, TriangleAlert } from "lucide-react"
+import { CheckCircle2, Info, TriangleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -11,19 +11,23 @@ import { Separator } from "@/components/ui/separator"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import useTransactions from "@/app/hooks/useTransactions"
 import useCategories from "@/app/hooks/useCategories"
-import { dateToYYYYMM, toCurrency } from "@/app/helpers/helperFunctions"
+import { dateToYYYYMM, formatShortDate } from "@/app/helpers/helperFunctions"
 import Transaction from "@/app/interfaces/transaction"
 import { Category } from "@/app/interfaces/categories"
 import { CategoryPicker } from "@/app/components/common/CategoryPicker"
 import AmazonOrderLink from "@/app/components/transactions/AmazonOrderLink"
 import { TransactionDetailsDialog } from "@/app/components/transactions/TransactionActions"
+import { Amount, MerchantLogo } from "@/app/components/transactions/TransactionCells"
+import PageHeader from "@/app/components/common/PageHeader"
+import { EmptyState, ErrorState } from "@/app/components/common/StateMessage"
+import { Skeleton } from "@/components/ui/skeleton"
 
 type Decision =
   | { type: 'assigned'; category: Category | undefined }
   | { type: 'skipped' }
 
 export default function AssignQueue() {
-  const { data, upsertRecord } = useTransactions({ needsCategory: 'true' })
+  const { data, upsertRecord, error, mutate } = useTransactions({ needsCategory: 'true' })
   const [queue, setQueue] = useState<Transaction[] | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [decisions, setDecisions] = useState<Map<string, Decision>>(new Map())
@@ -135,8 +139,26 @@ export default function AssignQueue() {
     setDetailsOpen(false)
   }, [currentIndex])
 
+  if (error && queue === null) {
+    return (
+      <Shell>
+        <Card><ErrorState title="Couldn't load transactions" error={error} onRetry={() => mutate()} /></Card>
+      </Shell>
+    )
+  }
+
   if (queue === null) {
-    return <div className="m-4 text-muted-foreground">Loading…</div>
+    return (
+      <Shell>
+        <Card>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-2 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </CardContent>
+        </Card>
+      </Shell>
+    )
   }
 
   if (currentIndex >= queue.length) {
@@ -144,28 +166,29 @@ export default function AssignQueue() {
     const skippedCount = [...decisions.values()].filter(d => d.type === 'skipped').length
 
     return (
-      <div className="flex justify-center md:m-4">
-        <Card className="w-full rounded-none md:max-w-md md:rounded-xl">
-          <CardHeader>
-            <div className="text-xl">All caught up</div>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="text-muted-foreground">
-              Assigned {assignedCount} · Skipped {skippedCount}
-            </div>
-            <div className="flex gap-2">
-              <Link href="/transactions" className="flex-1">
-                <Button variant="outline" className="w-full">Back to Transactions</Button>
-              </Link>
-              {skippedCount > 0 && (
-                <Button className="flex-1" onClick={handleReviewSkipped}>
-                  Review skipped ({skippedCount})
+      <Shell>
+        <Card>
+          <EmptyState
+            icon={<CheckCircle2 />}
+            title={queue.length === 0 ? "Nothing to assign" : "All caught up"}
+            description={queue.length === 0
+              ? "Every transaction already has a category."
+              : `Assigned ${assignedCount} · Skipped ${skippedCount}`}
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button variant="outline" asChild>
+                  <Link href="/transactions">Back to Transactions</Link>
                 </Button>
-              )}
-            </div>
-          </CardContent>
+                {skippedCount > 0 && (
+                  <Button onClick={handleReviewSkipped}>
+                    Review skipped ({skippedCount})
+                  </Button>
+                )}
+              </div>
+            }
+          />
         </Card>
-      </div>
+      </Shell>
     )
   }
 
@@ -188,50 +211,54 @@ export default function AssignQueue() {
     : transaction
 
   return (
-    <div className="flex justify-center md:m-4">
-      <Card className="w-full rounded-none md:max-w-md md:rounded-xl">
+    <Shell>
+      <Card>
         <CardHeader className="flex flex-col gap-2">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>{currentIndex + 1} of {queue.length}</span>
-            <span className="hidden md:inline">Enter to assign · Esc to skip · [ / ] to navigate</span>
+            <span className="tabular-nums">{currentIndex + 1} of {queue.length}</span>
+            <span className="hidden items-center gap-1 text-xs md:flex">
+              <Kbd>Enter</Kbd> assign <Kbd>Esc</Kbd> skip <Kbd>[</Kbd><Kbd>]</Kbd> navigate
+            </span>
           </div>
-          <Progress value={((currentIndex + 1) / queue.length) * 100} />
+          <Progress className="h-1.5" value={((currentIndex + 1) / queue.length) * 100} />
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="text-lg font-medium">{description}</div>
-              <div className="flex items-center">
-                {isAmazon && <AmazonOrderLink transaction={displayTransaction} />}
-                <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon-sm" title="View all transaction details">
-                      <Info />
-                    </Button>
-                  </DialogTrigger>
-                  <TransactionDetailsDialog
-                    transaction={displayTransaction}
-                    onClose={() => setDetailsOpen(false)}
-                  />
-                </Dialog>
+          <div className="flex items-start gap-3">
+            <MerchantLogo src={transaction.logo_url} name={description} />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-lg font-medium leading-tight" title={description}>{description}</div>
+              <div className="truncate text-sm text-muted-foreground">
+                {formatShortDate(transaction.date)}
+                {transaction.merchant_name && transaction.name !== transaction.merchant_name && ` · ${transaction.name}`}
               </div>
             </div>
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span>{transaction.date}</span>
-              <span>{toCurrency(transaction.amount ?? 0)}</span>
+            <div className="flex shrink-0 items-center gap-1">
+              <Amount value={transaction.amount ?? 0} className="text-lg" />
+              {isAmazon && <AmazonOrderLink transaction={displayTransaction} />}
+              <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" className="text-muted-foreground" title="View all transaction details" aria-label="Transaction details">
+                    <Info />
+                  </Button>
+                </DialogTrigger>
+                <TransactionDetailsDialog
+                  transaction={displayTransaction}
+                  onClose={() => setDetailsOpen(false)}
+                />
+              </Dialog>
             </div>
           </div>
 
           <Separator />
 
-          <div className="flex flex-col gap-2 mb-10">
+          <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium">Category</div>
               {currentValue && (
                 needsReview ? (
                   <Badge
-                    variant="secondary"
-                    className="gap-1 cursor-pointer"
+                    variant="outline"
+                    className="cursor-pointer gap-1 border-warning/50 bg-warning/10"
                     role="button"
                     tabIndex={0}
                     onClick={handleConfirm}
@@ -243,11 +270,11 @@ export default function AssignQueue() {
                     }}
                     title="Tap to confirm this category"
                   >
-                    <TriangleAlert className="h-3 w-3" />
+                    <TriangleAlert className="size-3 text-warning" />
                     {currentValue.name}
                   </Badge>
                 ) : (
-                  <Badge>{currentValue.name}</Badge>
+                  <Badge variant="secondary">{currentValue.name}</Badge>
                 )
               )}
             </div>
@@ -276,7 +303,7 @@ export default function AssignQueue() {
 
           <div className="flex gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="lg"
               className="flex-1"
               onClick={handleBack}
@@ -295,6 +322,25 @@ export default function AssignQueue() {
           </div>
         </CardContent>
       </Card>
+    </Shell>
+  )
+}
+
+// Page header plus a centered, readable-width column for the queue card.
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto max-w-xl">
+      <PageHeader
+        title="Assign categories"
+        description="Review transactions that still need a category, one at a time."
+      />
+      {children}
     </div>
+  )
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded border bg-muted px-1.5 py-0.5 font-mono text-[0.7rem] text-foreground">{children}</kbd>
   )
 }

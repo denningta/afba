@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import AppSidebar from "./components/AppSidebar";
 import AppHeader from "./components/AppHeader";
+import SWRProvider from "./components/SWRProvider";
 import { CategoryProvider } from "./context/CategoryProvider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,7 +15,11 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "Budget",
+  // Pages set their own title; the tab reads e.g. "Transactions · afba".
+  title: {
+    template: "%s · afba",
+    default: "afba",
+  },
   description: "Another Funky Budgeting App",
 };
 
@@ -36,20 +41,22 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CategoryProvider>
-            <TooltipProvider delayDuration={0}>
-              <SidebarProvider defaultOpen={sidebarOpen}>
-                <AppSidebar />
-                <SidebarInset>
-                  <AppHeader />
-                  <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
-                    {children}
-                  </div>
-                </SidebarInset>
-              </SidebarProvider>
-            </TooltipProvider>
-            <Toaster />
-          </CategoryProvider>
+          <SWRProvider>
+            <CategoryProvider>
+              <TooltipProvider delayDuration={0}>
+                <SidebarProvider defaultOpen={sidebarOpen}>
+                  <AppSidebar />
+                  <SidebarInset>
+                    <AppHeader />
+                    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
+                      {children}
+                    </div>
+                  </SidebarInset>
+                </SidebarProvider>
+              </TooltipProvider>
+              <Toaster />
+            </CategoryProvider>
+          </SWRProvider>
         </ThemeProvider>
       </body>
     </html>

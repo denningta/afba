@@ -14,6 +14,7 @@ import MonthRangePicker from "@/components/ui/month-range-picker"
 import { DataTable } from "../common/DataTable/DataTable"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import BudgetVsActual from "./BudgetVsActual"
+import { ErrorState } from "../common/StateMessage"
 import BudgetAccountsPicker from "./BudgetAccountsPicker"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowRight } from "lucide-react"
@@ -50,7 +51,7 @@ const getDefaultEnd = () => {
 
 
 const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
-  const { data } = useBudgetOverview()
+  const { data, error, mutate } = useBudgetOverview()
   const [start, setStart] = useState(getDefaultStart())
   const [end, setEnd] = useState(getDefaultEnd())
   const [transactionData, setTransactionData] = useState<Transaction[]>([])
@@ -90,6 +91,7 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
             </div>
           </CardHeader>
           <CardContent>
+            {error ? <ErrorState title="Couldn't load budget history" error={error} onRetry={() => mutate()} /> :
             <div className="h-[420px]">
               <ParentSize>
                 {({ width, height }) =>
@@ -104,6 +106,7 @@ const BudgetOverviewComponent = ({ }: BudgetOverviewProps) => {
                 }
               </ParentSize>
             </div>
+            }
           </CardContent>
         </Card>
 

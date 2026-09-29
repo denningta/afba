@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button";
-import { Ellipsis, PencilIcon, SearchIcon, Trash2Icon } from "lucide-react";
+import { Ellipsis, Loader2Icon, PencilIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogContent, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { DataTable } from "../common/DataTable/DataTable";
@@ -32,9 +32,6 @@ export default function CategoryActions({
   const currentDate = pathname.split('/').pop()
   const [dialogMenu, setDialogMenu] = useState<string>('none')
 
-  let percent: number = 0
-  if (category.budget && category.spent) percent = Math.round(((Math.abs(category.spent)) / category.budget) * 100)
-
   const { deleteRecord } = useCategories({ date: currentDate })
 
   const handleDialogMenu = (): React.JSX.Element | null => {
@@ -48,6 +45,7 @@ export default function CategoryActions({
         />
       case "delete":
         return <DeleteDialog
+          name={category.name}
           onSubmit={async () => {
             await deleteRecord(category)
             setDialogMenu('none')
@@ -104,25 +102,41 @@ export default function CategoryActions({
 }
 
 interface DeleteDialogProps {
-  onSubmit: () => void
+  name?: string
+  onSubmit: () => Promise<void>
   onClose: () => void
 }
 
-function DeleteDialog({ onSubmit, onClose }: DeleteDialogProps) {
+function DeleteDialog({ name, onSubmit, onClose }: DeleteDialogProps) {
+  const [deleting, setDeleting] = useState(false)
+
   return (
-    <DialogContent>
+    <DialogContent className="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle>Are you sure?</DialogTitle>
+        <DialogTitle>Delete {name ?? 'this category'}?</DialogTitle>
         <DialogDescription>
-          Are you sure you want to delete this category?
+          This removes the category from this month&apos;s budget. Its transactions stay, but they&apos;ll no longer count toward it.
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <Button onClick={() => onClose()} variant="secondary">Cancel</Button>
-        <Button onClick={() => onSubmit()} variant="destructive">Confirm</Button>
+        <Button variant="outline" onClick={() => onClose()} disabled={deleting}>Cancel</Button>
+        <Button
+          variant="destructive"
+          disabled={deleting}
+          onClick={async () => {
+            setDeleting(true)
+            try {
+              await onSubmit()
+            } finally {
+              setDeleting(false)
+            }
+          }}
+        >
+          {deleting && <Loader2Icon className="animate-spin" />}
+          Delete category
+        </Button>
       </DialogFooter>
     </DialogContent>
-
   )
 }
 
@@ -136,12 +150,12 @@ function EditDialog({ category, onClose }: EditDialogProps) {
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Edit Category</DialogTitle>
+        <DialogTitle>Edit category</DialogTitle>
         <DialogDescription>
-          Make changes to this budget category.
+          Change the name, budgeted amount or type.
         </DialogDescription>
       </DialogHeader>
-      <CategoryForm category={category} onSubmitted={() => onClose()} />
+      <CategoryForm category={category} onSubmitted={() => onClose()} onCancel={() => onClose()} />
     </DialogContent>
   )
 }

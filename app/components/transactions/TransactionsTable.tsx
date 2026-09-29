@@ -6,11 +6,13 @@ import AssignCategoriesButton from "./AssignCategoriesButton"
 import useTransactions from "@/app/hooks/useTransactions"
 import { TransactionsFilter } from "@/app/queries/transactions"
 import { DataTable } from "../common/DataTable/DataTable"
-import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { PlusIcon } from "lucide-react"
 import { useMemo } from "react"
 import PageHeader from "../common/PageHeader"
+import { EmptyState } from "../common/StateMessage"
+import Link from "next/link"
 
 // Everything not listed stays visible (date, merchant, description, account
 // type, user category, amount, and the select/actions columns).
@@ -33,6 +35,9 @@ export default function TransactionsTable({
 
   const {
     data,
+    error,
+    isLoading,
+    mutate,
   } = useTransactions(searchParams ?? {})
 
   const stableData = useMemo(() => data ?? [], [data])
@@ -56,8 +61,10 @@ export default function TransactionsTable({
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogTitle>Add Transaction</DialogTitle>
-                <DialogDescription>Use this form to add a transaction to the table.</DialogDescription>
+                <DialogHeader>
+                  <DialogTitle>Add transaction</DialogTitle>
+                  <DialogDescription>Record a transaction by hand, e.g. cash spending.</DialogDescription>
+                </DialogHeader>
                 <TransactionForm onSubmit={handleAddTransaction} />
               </DialogContent>
             </Dialog>
@@ -68,6 +75,21 @@ export default function TransactionsTable({
       <DataTable
         data={stableData ?? []}
         columns={columns}
+        isLoading={isLoading}
+        error={error}
+        onRetry={() => mutate()}
+        emptyState={
+          <EmptyState
+            title="No transactions yet"
+            description="Link a bank account to sync transactions, or import them from a CSV file."
+            action={
+              <div className="flex gap-2">
+                <Button variant="outline" asChild><Link href="/connect">Link an account</Link></Button>
+                <Button variant="outline" asChild><Link href="/upload">Import CSV</Link></Button>
+              </div>
+            }
+          />
+        }
         columnVisibilityStorageKey="afba:transactions-columns"
         defaultColumnVisibility={DEFAULT_TRANSACTION_COLUMN_VISIBILITY}
       />

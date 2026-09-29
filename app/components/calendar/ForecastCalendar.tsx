@@ -3,6 +3,7 @@
 import { dateToYYYYMM, formatShortDate, generateMonthDates, joinArraysOnDate, toCurrency } from "@/app/helpers/helperFunctions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import PageHeader from "../common/PageHeader"
+import { ErrorState } from "../common/StateMessage"
 import useGetAccounts from "@/app/hooks/useGetAccounts"
 import useGetUser from "@/app/hooks/useGetUser"
 import useRecurringTransactions from "@/app/hooks/useRecurringTransactions"
@@ -28,7 +29,7 @@ export type TransactionStreamBalance = TransactionStream & {
 const ForecastCalendar = () => {
   const userRes = useGetUser({ userId: 'root-user' })
   const { transactions, loading } = useRecurringTransactions({ access_token: userRes.user?.items[0].plaidAccessToken })
-  const { items } = useGetAccounts({ userId: 'root-user' })
+  const { items, error: accountsError, refresh } = useGetAccounts({ userId: 'root-user' })
   const [selectedAccount, setSelectedAccount] = useState<AccountBase | null>(null)
 
   useEffect(() => {
@@ -80,6 +81,11 @@ const ForecastCalendar = () => {
           />
         }
       />
+      {accountsError &&
+        <Card>
+          <ErrorState title="Couldn't load accounts" error={accountsError} onRetry={refresh} />
+        </Card>
+      }
       <Card>
         <CardHeader>
           <CardTitle>Projected balance</CardTitle>

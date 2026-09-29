@@ -6,22 +6,26 @@ import { listCategories } from "@/app/queries/categories";
 export async function POST(request: Request, props: { params: Promise<{ date: string }> }) {
   const params = await props.params;
   try {
-    const body = await request.json()
-    const { currentDate } = body
-    const date = params.date
+    const { currentDate } = await request.json()
+    if (!currentDate) return Response.json({ message: 'currentDate is required' }, { status: 400 })
 
-    const categories = await listCategories({ date: date })
+    const categories = await listCategories({ date: params.date })
 
-    const updatedCategories: Category[] = categories.map(({ _id, ...rest }) => ({
-      ...rest,
+    // Copy only the plan. listCategories also returns computed fields (spent,
+    // transactions, id) that would otherwise be stored as stale copies.
+    const copies: Category[] = categories.map(({ name, budget, type }) => ({
+      name,
+      budget,
+      type,
       date: currentDate
     }))
 
-    const transactions = database.collection<Category>('categories')
-    const res = transactions.insertMany(updatedCategories)
-    return Response.json(res)
+    if (!copies.length) return Response.json({ inserted: 0 })
+
+    const res = await database.collection<Category>('categories').insertMany(copies)
+    return Response.json({ inserted: res.insertedCount })
 
   } catch (error: any) {
-    throw new Error(error)
+    return Response.json({ message: error?.message ?? 'Copy failed' }, { status: 500 })
   }
 }

@@ -52,6 +52,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import useColumnVisibility from "@/app/hooks/useColumnVisibility"
+import { EmptyState, ErrorState } from "../StateMessage"
 
 declare module '@tanstack/react-table' {
   interface FilterFns {
@@ -100,8 +101,19 @@ interface DataTableProps<TData, TValue> {
   // useColumnVisibility). When set, the storage key/defaults above are ignored.
   columnVisibility?: VisibilityState
   onColumnVisibilityChange?: OnChangeFn<VisibilityState>
+  // A failed load replaces the table with an error message (and Retry when
+  // onRetry is given) instead of an empty table that looks like "no data".
+  error?: unknown
+  onRetry?: () => void
+  // Shown when there are no rows at all (as opposed to rows hidden by filters).
+  emptyState?: React.ReactNode
   // Extra buttons shown in the toolbar, left of the View menu.
   toolbarActions?: React.ReactNode
+  // Buttons acting on the selected rows, shown in the toolbar while any are selected.
+  selectionActions?: (rows: TData[], clearSelection: () => void) => React.ReactNode
+  // Stable row ids keep the selection on the same rows when others are removed
+  // (without it, selection is by index).
+  getRowId?: (row: TData) => string
   // 'minimal' drops the toolbar and the row-count/pagination bar, for short
   // tables that sit alongside a full one.
   variant?: 'full' | 'minimal'
@@ -138,9 +150,14 @@ export function DataTable<TData, TValue>({
   columnVisibilityStorageKey = 'colVis',
   defaultColumnVisibility = {},
   toolbarActions,
+  selectionActions,
+  getRowId,
   variant = 'full',
   columnVisibility: controlledVisibility,
   onColumnVisibilityChange,
+  error,
+  onRetry,
+  emptyState,
 }: DataTableProps<TData, TValue>) {
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState<SortingState>([])
@@ -194,6 +211,7 @@ export function DataTable<TData, TValue>({
       fuzzy: fuzzyFilter
     },
     autoResetPageIndex: false,
+    getRowId: getRowId ? (row) => getRowId(row) : undefined,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -252,6 +270,12 @@ export function DataTable<TData, TValue>({
         }
 
         <div className="ml-auto flex items-center gap-2">
+        {selectionActions && selectedCount > 0 &&
+          selectionActions(
+            table.getSelectedRowModel().rows.map(row => row.original),
+            () => table.resetRowSelection()
+          )
+        }
         {toolbarActions}
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
@@ -287,7 +311,7 @@ export function DataTable<TData, TValue>({
       }
 
       <div className="overflow-hidden rounded-lg border bg-card">
-        {isLoading ?
+        {error ? <ErrorState error={error} onRetry={onRetry} /> : isLoading ?
           <div className="flex flex-col space-y-3 p-4">
             <Skeleton className="h-7 w-full" />
             <Skeleton className="h-7 w-full" />
@@ -377,8 +401,19 @@ export function DataTable<TData, TValue>({
                 ))
               ) : (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={table.getVisibleLeafColumns().length} className="h-24 text-center text-muted-foreground">
-                    No results.
+                  <TableCell colSpan={table.getVisibleLeafColumns().length} className="p-0 whitespace-normal">
+                    {data.length === 0
+                      ? emptyState ?? <EmptyState title="Nothing here yet" />
+                      : <EmptyState
+                        title="No matching rows"
+                        description="Nothing matches the current search or filters."
+                        action={
+                          <Button variant="outline" onClick={() => { setGlobalFilter(''); setColumnFilters([]) }}>
+                            Clear search and filters
+                          </Button>
+                        }
+                      />
+                    }
                   </TableCell>
                 </TableRow>
               )}

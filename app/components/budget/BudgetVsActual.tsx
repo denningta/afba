@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardAction }
 import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import MonthPicker from "@/components/ui/month-picker";
+import { EmptyState, ErrorState } from "../common/StateMessage";
 
 const chartConfig = {
   budget: {
@@ -25,7 +26,7 @@ const ROW_HEIGHT = 44
 
 export default function BudgetVsActual() {
   const [month, setMonth] = useState(() => dateToYYYYMM(new Date()))
-  const { data, isLoading } = useBudgetVsActual(month)
+  const { data, isLoading, error, mutate } = useBudgetVsActual(month)
   const categories = data?.find(el => el.date === month)?.categories ?? []
 
   return (
@@ -41,11 +42,12 @@ export default function BudgetVsActual() {
         </CardAction>
       </CardHeader>
       <CardContent>
+        {error && <ErrorState error={error} onRetry={() => mutate()} />}
         {isLoading && <Skeleton className="h-72 w-full" />}
-        {!isLoading && categories.length === 0 &&
-          <p className="py-12 text-center text-sm text-muted-foreground">No budget categories for this month.</p>
+        {!isLoading && !error && categories.length === 0 &&
+          <EmptyState title="No budget categories for this month" description="Pick another month, or plan this one on the Budget page." />
         }
-        {!isLoading && categories.length > 0 &&
+        {!isLoading && !error && categories.length > 0 &&
           <ChartContainer
             config={chartConfig}
             className="aspect-auto w-full"

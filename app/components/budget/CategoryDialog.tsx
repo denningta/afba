@@ -26,9 +26,9 @@ const CategoryDialog = ({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Category</DialogTitle>
+          <DialogTitle>Add category</DialogTitle>
           <DialogDescription>
-            Budget categories are used to group transactions.
+            Categories group transactions and set how much you plan to spend or earn.
           </DialogDescription>
         </DialogHeader>
         <BudgetCategoryForm

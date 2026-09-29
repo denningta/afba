@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from "react"
-import { format, subDays, startOfYear, subYears } from "date-fns"
+import { format, parseISO, subDays, startOfYear, subYears } from "date-fns"
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import useBalanceHistory from "@/app/hooks/useBalanceHistory"
 import useCategories from "@/app/hooks/useCategories"
 import { toCurrency } from "@/app/helpers/helperFunctions"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card, CardAction, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import {
   ChartConfig,
   ChartContainer,
@@ -35,6 +35,10 @@ import {
 } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { EmptyState, ErrorState } from "../common/StateMessage"
+import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
+import { Amount, MerchantLogo } from "../transactions/TransactionCells"
 import {
   Dialog,
   DialogContent,
@@ -327,214 +331,268 @@ export default function BalanceOverview() {
   if (error) {
     return (
       <Card>
-        <CardContent className="pt-6 text-destructive">
-          Failed to load balance history. Make sure a Plaid item is linked.
-        </CardContent>
+        <ErrorState title="Couldn't load balance history" error={error} />
       </Card>
     )
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Segmented range control; a custom range leaves no preset selected. */}
-        <Tabs value={preset} onValueChange={(value) => setPreset(value as RangePreset)}>
-          <TabsList aria-label="Date range">
-            {(Object.keys(PRESET_LABELS) as (keyof typeof PRESET_LABELS)[]).map((key) => (
-              <TabsTrigger key={key} value={key} className="px-3">
-                {PRESET_LABELS[key]}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+  const categoriesMenu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline">
+          Categories{selectedCategoryNames.size > 0 && ` (${selectedCategoryNames.size})`}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-h-80 w-64 overflow-y-auto">
+        <DropdownMenuLabel>Compare monthly spending</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {categoryNames.map((name) => (
+          <DropdownMenuCheckboxItem
+            key={name}
+            checked={selectedCategoryNames.has(name)}
+            onCheckedChange={() => toggleCategory(name)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            {name}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
 
-        <div className="flex items-center gap-1">
-          <DatePicker
-            date={customStart}
-            onDateChange={(date) => {
-              setCustomStart(date)
-              setPreset("custom")
-            }}
-          />
-          <span className="text-sm text-muted-foreground">to</span>
-          <DatePicker
-            date={customEnd}
-            onDateChange={(date) => {
-              setCustomEnd(date)
-              setPreset("custom")
-            }}
-          />
+  const includedAccounts = data?.accounts.filter((a) => includedAccountIds?.has(a.account_id)) ?? []
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Segmented range control; a custom range leaves no preset selected. */}
+          <Tabs value={preset} onValueChange={(value) => setPreset(value as RangePreset)}>
+            <TabsList aria-label="Date range">
+              {(Object.keys(PRESET_LABELS) as (keyof typeof PRESET_LABELS)[]).map((key) => (
+                <TabsTrigger key={key} value={key} className="px-3">
+                  {PRESET_LABELS[key]}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          <div className="flex items-center gap-1">
+            <DatePicker
+              date={customStart}
+              onDateChange={(date) => {
+                setCustomStart(date)
+                setPreset("custom")
+              }}
+            />
+            <span className="text-sm text-muted-foreground">to</span>
+            <DatePicker
+              date={customEnd}
+              onDateChange={(date) => {
+                setCustomEnd(date)
+                setPreset("custom")
+              }}
+            />
+          </div>
         </div>
 
-        <Select value={drillDownAccountId} onValueChange={setDrillDownAccountId}>
-          <SelectTrigger className="w-[220px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All accounts (combined)</SelectItem>
-            {data?.accounts.map((a) => (
-              <SelectItem key={a.account_id} value={a.account_id}>
-                {a.name}{a.mask ? ` ••${a.mask}` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              Accounts ({includedAccountIds?.size ?? 0}/{data?.accounts.length ?? 0})
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64">
-            <DropdownMenuLabel>Filter list</DropdownMenuLabel>
-            <div className="flex flex-wrap gap-1 px-2 pb-2">
-              <Badge
-                variant={typeFilter === "all" ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => setTypeFilter("all")}
-              >
-                All types
-              </Badge>
-              {accountTypes.map((type) => (
-                <Badge
-                  key={type}
-                  variant={typeFilter === type ? "default" : "outline"}
-                  className="cursor-pointer capitalize"
-                  onClick={() => setTypeFilter(type)}
-                >
-                  {type}
-                </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={drillDownAccountId} onValueChange={setDrillDownAccountId}>
+            <SelectTrigger className="w-[220px]" aria-label="Account to chart">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All accounts (combined)</SelectItem>
+              {data?.accounts.map((a) => (
+                <SelectItem key={a.account_id} value={a.account_id}>
+                  {a.name}{a.mask ? ` ••${a.mask}` : ""}
+                </SelectItem>
               ))}
-            </div>
-            {institutions.length > 1 && (
+            </SelectContent>
+          </Select>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Accounts ({includedAccountIds?.size ?? 0}/{data?.accounts.length ?? 0})
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Filter list</DropdownMenuLabel>
               <div className="flex flex-wrap gap-1 px-2 pb-2">
                 <Badge
-                  variant={institutionFilter === "all" ? "default" : "outline"}
+                  variant={typeFilter === "all" ? "default" : "outline"}
                   className="cursor-pointer"
-                  onClick={() => setInstitutionFilter("all")}
+                  onClick={() => setTypeFilter("all")}
                 >
-                  All institutions
+                  All types
                 </Badge>
-                {institutions.map((inst) => (
+                {accountTypes.map((type) => (
                   <Badge
-                    key={inst.id}
-                    variant={institutionFilter === inst.id ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => setInstitutionFilter(inst.id)}
+                    key={type}
+                    variant={typeFilter === type ? "default" : "outline"}
+                    className="cursor-pointer capitalize"
+                    onClick={() => setTypeFilter(type)}
                   >
-                    {inst.name}
+                    {type}
                   </Badge>
                 ))}
               </div>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Include in total</DropdownMenuLabel>
-            {visibleAccounts.map((a) => (
-              <DropdownMenuCheckboxItem
-                key={a.account_id}
-                checked={includedAccountIds?.has(a.account_id) ?? false}
-                onCheckedChange={() => toggleAccount(a.account_id)}
-                onSelect={(e) => e.preventDefault()}
-              >
-                {a.name}{a.mask ? ` ••${a.mask}` : ""}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {institutions.length > 1 && (
+                <div className="flex flex-wrap gap-1 px-2 pb-2">
+                  <Badge
+                    variant={institutionFilter === "all" ? "default" : "outline"}
+                    className="cursor-pointer"
+                    onClick={() => setInstitutionFilter("all")}
+                  >
+                    All institutions
+                  </Badge>
+                  {institutions.map((inst) => (
+                    <Badge
+                      key={inst.id}
+                      variant={institutionFilter === inst.id ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => setInstitutionFilter(inst.id)}
+                    >
+                      {inst.name}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Include in total</DropdownMenuLabel>
+              {visibleAccounts.map((a) => (
+                <DropdownMenuCheckboxItem
+                  key={a.account_id}
+                  checked={includedAccountIds?.has(a.account_id) ?? false}
+                  onCheckedChange={() => toggleAccount(a.account_id)}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {a.name}{a.mask ? ` ••${a.mask}` : ""}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              Categories ({selectedCategoryNames.size})
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64">
-            <DropdownMenuLabel>Compare monthly spending by category</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {categoryNames.map((name) => (
-              <DropdownMenuCheckboxItem
-                key={name}
-                checked={selectedCategoryNames.has(name)}
-                onCheckedChange={() => toggleCategory(name)}
-                onSelect={(e) => e.preventDefault()}
-              >
-                {name}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardDescription>{drillDownAccountName}</CardDescription>
+            <CardTitle className="text-2xl font-semibold tracking-tight">
+              {isLoading || !data ? <Skeleton className="h-8 w-40" /> : toCurrency(currentBalance)}
+            </CardTitle>
+            {!isLoading && data &&
+              <div className="text-sm text-muted-foreground">
+                <span className={cn("font-medium", delta >= 0 ? "text-positive" : "text-negative")}>
+                  {delta >= 0 ? "+" : "−"}{toCurrency(Math.abs(delta))}
+                </span>
+                {" "}over the selected period
+              </div>
+            }
+          </CardHeader>
+          <CardContent>
+            {isLoading || !data ? (
+              <Skeleton className="h-80 w-full" />
+            ) : (
+              <ChartContainer config={chartConfig} className="h-80 w-full [&_.recharts-surface]:cursor-pointer">
+                <LineChart data={chartData} onClick={handleChartClick} margin={{ left: 4, right: 8 }}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={32}
+                    tickFormatter={(value) => format(parseISO(value), "MMM d")}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    width={80}
+                    tickFormatter={(value) => toCurrency(value).replace(/\.\d\d$/, "")}
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        indicator="line"
+                        labelFormatter={(value) => format(parseISO(String(value)), "PPP")}
+                        formatter={(value) => (
+                          <span className="font-mono font-medium tabular-nums">{toCurrency(Number(value))}</span>
+                        )}
+                      />
+                    }
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="balance"
+                    stroke="var(--color-balance)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ChartContainer>
+            )}
+            {!isLoading && data && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Click a point on the chart to see the transactions behind that day&apos;s change.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Accounts</CardTitle>
+            <CardDescription>Current balances included in the total</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading || !data ? (
+              <div className="space-y-3">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
+            ) : includedAccounts.length === 0 ? (
+              <EmptyState className="py-6" title="No accounts selected" description="Use the Accounts menu to choose which balances to include." />
+            ) : (
+              <ul className="divide-y divide-border/60">
+                {includedAccounts.map((a) => (
+                  <li key={a.account_id} className="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">
+                        {a.name}{a.mask && <span className="ml-1 font-normal text-muted-foreground">••{a.mask}</span>}
+                      </div>
+                      <div className="truncate text-xs capitalize text-muted-foreground">
+                        {[a.institutionName, a.subtype ?? a.type].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-sm font-medium tabular-nums">
+                      {LIABILITY_TYPES.has(a.type) && a.currentBalance ? "−" : ""}{toCurrency(Math.abs(a.currentBalance ?? 0))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{drillDownAccountName}: {toCurrency(currentBalance)}</CardTitle>
-          <CardDescription>
-            {delta >= 0 ? "+" : ""}{toCurrency(delta)} over selected period
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading || !data ? (
-            <div className="h-96 animate-pulse rounded-md bg-muted" />
-          ) : (
-            <ChartContainer config={chartConfig} className="h-96 w-full [&_.recharts-surface]:cursor-pointer">
-              <LineChart data={chartData} onClick={handleChartClick}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="date"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  minTickGap={32}
-                  tickFormatter={(value) => format(new Date(value), "MMM d")}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  width={90}
-                  tickFormatter={(value) => toCurrency(value)}
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) => format(new Date(value), "PPP")}
-                    />
-                  }
-                />
-                <ChartLegend content={<ChartLegendContent />} />
-                <Line
-                  type="monotone"
-                  dataKey="balance"
-                  stroke="var(--color-balance)"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ChartContainer>
-          )}
-          {!isLoading && data && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              Click a point on the chart to see the transactions behind that day&apos;s change.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Category Spending by Month</CardTitle>
+          <CardTitle>Category spending by month</CardTitle>
           <CardDescription>
             How spending in each selected category has changed over time
           </CardDescription>
+          <CardAction>{categoriesMenu}</CardAction>
         </CardHeader>
         <CardContent>
           {selectedCategoryNames.size === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Pick one or more categories from the Categories menu above to compare their monthly spending.
-            </p>
+            <EmptyState
+              title="No categories selected"
+              description="Choose one or more categories to compare their monthly spending."
+              action={categoriesMenu}
+            />
           ) : isLoading || !data ? (
-            <div className="h-72 animate-pulse rounded-md bg-muted" />
+            <Skeleton className="h-72 w-full" />
           ) : (
             <ChartContainer config={categorySpendChartConfig} className="h-72 w-full">
               <BarChart data={categorySpendChartData}>
@@ -544,19 +602,19 @@ export default function BalanceOverview() {
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  tickFormatter={(value) => format(new Date(`${value}-01`), "MMM yyyy")}
+                  tickFormatter={(value) => format(parseISO(`${value}-01`), "MMM yyyy")}
                 />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  width={90}
-                  tickFormatter={(value) => toCurrency(value)}
+                  width={80}
+                  tickFormatter={(value) => toCurrency(value).replace(/\.\d\d$/, "")}
                 />
                 <ChartTooltip
                   content={
                     <ChartTooltipContent
-                      labelFormatter={(value) => format(new Date(`${value}-01`), "MMMM yyyy")}
+                      labelFormatter={(value) => format(parseISO(`${value}-01`), "MMMM yyyy")}
                     />
                   }
                 />
@@ -575,27 +633,17 @@ export default function BalanceOverview() {
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-2">
-        {data?.accounts
-          .filter((a) => includedAccountIds?.has(a.account_id))
-          .map((a) => (
-            <Badge key={a.account_id} variant="secondary">
-              {a.name}: {toCurrency(a.currentBalance)}
-            </Badge>
-          ))}
-      </div>
-
       <Dialog open={selectedDate !== null} onOpenChange={(open) => !open && setSelectedDate(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {selectedDate ? format(new Date(selectedDate), "PPP") : ""}
+              {selectedDate ? format(parseISO(selectedDate), "PPP") : ""}
             </DialogTitle>
             <DialogDescription>
               {selectedDateDelta !== null ? (
                 <>
                   Balance {selectedDateDelta >= 0 ? "increased" : "decreased"} by{" "}
-                  <span className={selectedDateDelta >= 0 ? "text-positive" : "text-foreground"}>
+                  <span className={cn("font-medium", selectedDateDelta >= 0 ? "text-positive" : "text-negative")}>
                     {toCurrency(Math.abs(selectedDateDelta))}
                   </span>{" "}
                   this day.
@@ -606,36 +654,27 @@ export default function BalanceOverview() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="max-h-80 space-y-2 overflow-y-auto">
-            {transactionsForSelectedDate.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No transactions on this date for the account(s) shown.
-              </p>
-            ) : (
-              transactionsForSelectedDate.map((t) => (
-                <div
-                  key={t._id}
-                  className="flex items-center justify-between gap-3 rounded-md border p-2"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">
-                      {t.merchant_name ?? t.name}
+          {transactionsForSelectedDate.length === 0 ? (
+            <EmptyState className="py-6" title="No transactions this day" description="Nothing posted for the account(s) shown." />
+          ) : (
+            <ul className="max-h-80 divide-y divide-border/60 overflow-y-auto">
+              {transactionsForSelectedDate.map((t) => {
+                const merchant = t.merchant_name ?? t.name
+                return (
+                  <li key={t._id} className="flex items-center gap-3 py-2.5">
+                    <MerchantLogo name={merchant} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{merchant}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {t.categoryName ?? "Uncategorized"}{t.pending && " · Pending"}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      {t.categoryName && <Badge variant="outline">{t.categoryName}</Badge>}
-                      {t.pending && <Badge variant="secondary">Pending</Badge>}
-                    </div>
-                  </div>
-                  <div
-                    className="shrink-0 text-sm font-medium"
-                    style={{ color: t.amount < 0 ? "var(--positive)" : "inherit" }}
-                  >
-                    {toCurrency(t.amount)}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                    <Amount value={t.amount} className="text-sm" />
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </DialogContent>
       </Dialog>
     </div>

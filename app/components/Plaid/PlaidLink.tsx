@@ -7,6 +7,7 @@ import useGetAccounts from "../../hooks/useGetAccounts"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PlusIcon } from "lucide-react"
 import PageHeader from "../common/PageHeader"
+import { EmptyState, ErrorState } from "../common/StateMessage"
 import AccountCard from "./AccountCard"
 import UpdatePlaidLink from "./UpdatePlaidLink"
 import { AccountBase } from "plaid"
@@ -28,7 +29,7 @@ const isItemError = (item: object): item is ItemError => 'error' in item && !('a
 
 const CreatePlaidLink = () => {
   const [linkToken, setLinkToken] = useState<string | null>(null)
-  const { items, refresh } = useGetAccounts({ userId: client_user_id })
+  const { items, refresh, error, loading } = useGetAccounts({ userId: client_user_id })
   const { mutate } = useSWRConfig()
   // Read through a ref so onSuccess (and the Plaid Link config) stays stable.
   const refreshRef = useRef(refresh)
@@ -111,6 +112,22 @@ const CreatePlaidLink = () => {
           </Button>
         }
       />
+
+      {error &&
+        <Card>
+          <ErrorState title="Couldn't load linked accounts" error={error} onRetry={refresh} />
+        </Card>
+      }
+
+      {!error && !loading && Array.isArray(items) && items.length === 0 &&
+        <Card>
+          <EmptyState
+            title="No bank accounts linked"
+            description="Link an account to sync its transactions and balances automatically."
+            action={<Button onClick={() => open()} disabled={!ready}><PlusIcon />Link account</Button>}
+          />
+        </Card>
+      }
 
       {items && Array.isArray(items) && items.map((item, i) => (
         isItemError(item)

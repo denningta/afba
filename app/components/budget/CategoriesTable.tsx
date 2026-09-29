@@ -18,6 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import CategoryProgressRow from "./CategoryProgressRow";
 import CategoryActions from "./CategoryActions";
+import { EmptyState, ErrorState } from "../common/StateMessage";
 
 // The month is already in the page header; Type is implied by the section.
 const DEFAULT_COLUMN_VISIBILITY = {
@@ -72,7 +73,7 @@ export default function CategoriesTable() {
   const pathname = usePathname()
   const currentDate = pathname.split('/').pop()
 
-  const { data, isLoading } = useCategories({ date: currentDate })
+  const { data, isLoading, error, mutate } = useCategories({ date: currentDate })
   // One saved column choice drives both tables, so a toggle in Expenses'
   // View menu updates Income immediately.
   const [columnVisibility, setColumnVisibility] = useColumnVisibility('afba:budget-columns', DEFAULT_COLUMN_VISIBILITY)
@@ -95,45 +96,68 @@ export default function CategoriesTable() {
         }
       />
 
-      <BudgetKpiCards data={data} isLoading={isLoading} />
+      {error ? (
+        <Card>
+          <ErrorState title="Couldn't load this budget" error={error} onRetry={() => mutate()} />
+        </Card>
+      ) : !isLoading && data?.length === 0 ? (
+        <Card>
+          <EmptyState
+            title="No budget for this month yet"
+            description="Add categories one at a time, or copy them from a month you've already planned."
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <CategoryDialog category={{ date: currentDate }} />
+                <CopyBudgetDialog />
+              </div>
+            }
+          />
+        </Card>
+      ) : (
+        <>
+          <BudgetKpiCards data={data} isLoading={isLoading} />
 
-      <div className="space-y-4 md:hidden">
-        <div className="grid grid-cols-2 gap-2 [&_button]:w-full">
-          <CategoryDialog category={{ date: currentDate }} />
-          <CopyBudgetDialog />
-        </div>
-        <MobileSection title="Income" rows={income} isLoading={isLoading} />
-        <MobileSection title="Expenses" rows={expenses} isLoading={isLoading} />
-      </div>
-
-      <section className="hidden space-y-3 md:block">
-        <SectionHeading title="Income" rows={income} />
-        <DataTable
-          variant="minimal"
-          data={income}
-          columns={categoryColumns}
-          isLoading={isLoading}
-          columnVisibility={columnVisibility}
-          onColumnVisibilityChange={setColumnVisibility}
-        />
-      </section>
-
-      <section className="hidden space-y-3 md:block">
-        <SectionHeading title="Expenses" rows={expenses} />
-        <DataTable
-          data={expenses}
-          columns={categoryColumns}
-          isLoading={isLoading}
-          columnVisibility={columnVisibility}
-          onColumnVisibilityChange={setColumnVisibility}
-          toolbarActions={
-            <>
+          <div className="space-y-4 md:hidden">
+            <div className="grid grid-cols-2 gap-2 [&_button]:w-full">
               <CategoryDialog category={{ date: currentDate }} />
               <CopyBudgetDialog />
-            </>
-          }
-        />
-      </section>
+            </div>
+            <MobileSection title="Income" rows={income} isLoading={isLoading} />
+            <MobileSection title="Expenses" rows={expenses} isLoading={isLoading} />
+          </div>
+
+          <section className="hidden space-y-3 md:block">
+            <SectionHeading title="Income" rows={income} />
+            <DataTable
+              variant="minimal"
+              data={income}
+              columns={categoryColumns}
+              isLoading={isLoading}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              emptyState={<EmptyState title="No income categories" description="Add one to plan this month's income." />}
+            />
+          </section>
+
+          <section className="hidden space-y-3 md:block">
+            <SectionHeading title="Expenses" rows={expenses} />
+            <DataTable
+              data={expenses}
+              columns={categoryColumns}
+              isLoading={isLoading}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              emptyState={<EmptyState title="No expense categories" description="Add one to start budgeting spending." />}
+              toolbarActions={
+                <>
+                  <CategoryDialog category={{ date: currentDate }} />
+                  <CopyBudgetDialog />
+                </>
+              }
+            />
+          </section>
+        </>
+      )}
     </div>
   )
 }
