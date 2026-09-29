@@ -23,7 +23,6 @@ interface Crumb {
 
 function getCrumbs(pathname: string): Crumb[] {
   if (pathname === "/") return [{ label: "Dashboard" }]
-  if (pathname === "/budget") return [{ label: "Trends" }]
 
   const budgetMonth = pathname.match(/^\/budget\/(\d{4}-\d{2})$/)
   if (budgetMonth) {

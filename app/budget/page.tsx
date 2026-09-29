@@ -1,18 +1,9 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import BudgetOverviewComponent from "../components/budget/BudgetOverview";
-import PageHeader from "../components/common/PageHeader";
+import { redirect } from "next/navigation";
+import { dateToYYYYMM } from "../helpers/helperFunctions";
 
-export const metadata: Metadata = { title: "Trends" }
+// The old Trends page lived here; send /budget to this month's budget instead.
+export const dynamic = "force-dynamic";
 
-export default async function Budget() {
-
-  return (
-    <>
-      <PageHeader title="Trends" description="Budget and spending across months." />
-      <Suspense>
-        <BudgetOverviewComponent />
-      </Suspense>
-    </>
-  )
+export default function Budget() {
+  redirect(`/budget/${dateToYYYYMM(new Date())}`)
 }

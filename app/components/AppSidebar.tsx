@@ -6,7 +6,6 @@ import { useTheme } from "next-themes"
 import {
   ArrowLeftRightIcon,
   CalendarClockIcon,
-  ChartColumnIcon,
   LandmarkIcon,
   LayoutDashboardIcon,
   LineChartIcon,
@@ -54,7 +53,6 @@ const mainNav: NavLink[] = [
   { title: "Dashboard", href: "/", icon: LayoutDashboardIcon, isActive: p => p === "/" },
   // href is filled in at render time with the current month.
   { title: "Budget", href: "/budget/", icon: WalletIcon, isActive: p => p.startsWith("/budget/") },
-  { title: "Trends", href: "/budget", icon: ChartColumnIcon, isActive: p => p === "/budget" },
   { title: "Transactions", href: "/transactions", icon: ArrowLeftRightIcon, isActive: p => p.startsWith("/transactions") },
   { title: "Forecast", href: "/calendar", icon: CalendarClockIcon, isActive: p => p.startsWith("/calendar") },
   { title: "Balances", href: "/balance", icon: LineChartIcon, isActive: p => p.startsWith("/balance") },
@@ -73,7 +71,7 @@ function NavGroup({ label, items, badges = {} }: { label: string, items: NavLink
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu>
+        <SidebarMenu className="gap-1">
           {items.map(item => {
             const href = item.title === "Budget" ? `/budget/${dateToYYYYMM(new Date())}` : item.href
             return (
@@ -120,7 +118,7 @@ function ThemeMenu() {
   const { setTheme } = useTheme()
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className="gap-1">
       <SyncAllButton />
       <SidebarMenuItem>
         <DropdownMenu>

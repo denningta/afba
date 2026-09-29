@@ -2,7 +2,6 @@ import useSWR, { KeyedMutator, MutatorOptions, useSWRConfig } from "swr";
 import axios from "axios";
 import { ObjectId } from "mongodb";
 import defaultFetcher from "@/app/lib/fetcher";
-import _ from "lodash";
 import { toast } from "sonner";
 
 export interface DataHook<T> {

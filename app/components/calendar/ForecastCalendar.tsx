@@ -1,157 +1,350 @@
 "use client"
 
-import { dateToYYYYMM, formatShortDate, generateMonthDates, joinArraysOnDate, toCurrency } from "@/app/helpers/helperFunctions"
+import { useMemo, useState } from "react"
+import Link from "next/link"
+import { addDays, format, parseISO } from "date-fns"
+import { Area, AreaChart, CartesianGrid, ReferenceDot, ReferenceLine, XAxis, YAxis } from "recharts"
+import { CheckIcon, PlusIcon } from "lucide-react"
+import useAccounts from "@/app/hooks/useAccounts"
+import useForecast from "@/app/hooks/useForecast"
+import { buildForecast, ForecastPoint } from "@/app/lib/forecast"
+import { toCurrency } from "@/app/helpers/helperFunctions"
+import { ForecastSource, ForecastStream, ScheduledTransaction } from "@/app/interfaces/forecast"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
 import PageHeader from "../common/PageHeader"
-import { ErrorState } from "../common/StateMessage"
-import useGetAccounts from "@/app/hooks/useGetAccounts"
-import useGetUser from "@/app/hooks/useGetUser"
-import useRecurringTransactions from "@/app/hooks/useRecurringTransactions"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import { AccountBase, TransactionStream } from "plaid"
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import AccountSelect from "./AccountSelect"
-import { useEffect, useState } from "react"
-import RecurringTransactionsTable from "./RecurringTransactionsTable"
+import { EmptyState, ErrorState } from "../common/StateMessage"
+import { Amount } from "../transactions/TransactionCells"
+import UpcomingList from "./UpcomingList"
+import ScheduledItemDialog from "./ScheduledItemDialog"
+import StreamOverrideDialog from "./StreamOverrideDialog"
 
-const chartConfig = {
-  balance: {
-    label: "Balance",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig
+const HORIZONS = [30, 60, 90] as const
 
-export type TransactionStreamBalance = TransactionStream & {
-  balance?: number
-  date?: string | null
+const SOURCE_LABELS: Record<ForecastSource, string> = {
+  recurring: 'Recurring',
+  budget: 'Budgeted spending',
+  scheduled: 'Scheduled',
 }
 
+const chartConfig = {
+  balance: { label: "Projected balance", color: "var(--chart-1)" },
+} satisfies ChartConfig
+
+function StatCard({ label, value, detail, tone }: {
+  label: string
+  value: React.ReactNode
+  detail?: React.ReactNode
+  tone?: 'negative'
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardDescription>{label}</CardDescription>
+        <CardTitle className={cn("text-2xl font-semibold tracking-tight tabular-nums", tone === 'negative' && "text-negative")}>
+          {value}
+        </CardTitle>
+      </CardHeader>
+      {detail && <CardContent className="text-sm text-muted-foreground">{detail}</CardContent>}
+    </Card>
+  )
+}
+
+// Projected balance for one account, from what's known to be coming: Plaid's
+// recurring bills and paychecks, the unspent budget, and items you add.
 const ForecastCalendar = () => {
-  const userRes = useGetUser({ userId: 'root-user' })
-  const { transactions, loading } = useRecurringTransactions({ access_token: userRes.user?.items[0].plaidAccessToken })
-  const { items, error: accountsError, refresh } = useGetAccounts({ userId: 'root-user' })
-  const [selectedAccount, setSelectedAccount] = useState<AccountBase | null>(null)
+  const { data: accounts, error: accountsError } = useAccounts()
+  // Plaid-linked checking/savings accounts, checking first.
+  const linked = useMemo(() => (accounts ?? [])
+    .filter(a => a.item_id && a.type === 'depository')
+    .sort((a, b) => Number(b.subtype === 'checking') - Number(a.subtype === 'checking')), [accounts])
 
-  useEffect(() => {
-    if (!items) return
-    setSelectedAccount(items[0]?.accounts[0] ?? [])
-  }, [items])
+  const [chosenAccountId, setChosenAccountId] = useState<string | null>(null)
+  const accountId = chosenAccountId ?? linked[0]?.account_id ?? null
 
-  const testData: TransactionStreamBalance[] = [
-    ...(transactions?.outflow_streams || []),
-    ...(transactions?.inflow_streams || [])
-  ].sort((a, b) => {
+  const [days, setDays] = useState<number>(30)
+  const [sources, setSources] = useState<Record<ForecastSource, boolean>>({ recurring: true, budget: true, scheduled: true })
 
-    if (!a.predicted_next_date && !b.predicted_next_date) return 0
-    if (!a.predicted_next_date === undefined) return 1
-    if (!b.predicted_next_date === undefined) return -1
+  const { data, error, isLoading, mutate, saveScheduled, deleteScheduled, saveOverride, resetOverride } = useForecast(accountId)
 
-    const dateA = new Date(a.predicted_next_date as string)
-    const dateB = new Date(b.predicted_next_date as string)
+  const [scheduledDialog, setScheduledDialog] = useState<{ open: boolean, item?: ScheduledTransaction }>({ open: false })
+  const [editingStream, setEditingStream] = useState<ForecastStream | null>(null)
+  const [deleting, setDeleting] = useState<ScheduledTransaction | null>(null)
 
-    return dateA.getTime() - dateB.getTime()
-  }).filter(el => el.account_id === selectedAccount?.account_id)
+  const forecast = useMemo(() => {
+    if (!data) return null
+    const to = format(addDays(parseISO(data.from), days), 'yyyy-MM-dd')
+    return buildForecast({
+      startBalance: data.startBalance,
+      events: data.events.filter(e => sources[e.source] && e.date <= to),
+      from: data.from,
+      days,
+    })
+  }, [data, days, sources])
 
-  testData.map(el => el.date = el.predicted_next_date)
+  const hasBudget = data?.events.some(e => e.source === 'budget') ?? false
+  const change = forecast && data ? forecast.end - data.startBalance : 0
 
-  const chartData = joinArraysOnDate(generateMonthDates(dateToYYYYMM(new Date())), testData)
-
-  let currentBalance = selectedAccount?.balances.current ?? 0
-
-  chartData.forEach(el => {
-    el.balance = currentBalance - (el?.average_amount?.amount ?? 0)
-    currentBalance = el.balance
-  })
-
-  const handleAccountChange = (account_id: string) => {
-    setSelectedAccount(items && items[0].accounts.filter(el => el.account_id === account_id)[0])
-  }
+  const accountPicker = linked.length > 0 &&
+    <Select value={accountId ?? undefined} onValueChange={setChosenAccountId}>
+      <SelectTrigger className="w-[240px]" aria-label="Account">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {linked.map(a => (
+          <SelectItem key={a.account_id} value={a.account_id}>
+            {a.name}{a.mask ? ` ••${a.mask}` : ''}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
 
   return (
     <div className="space-y-6">
       <PageHeader
-        className="mb-0"
         title="Forecast"
-        description="Projected balance from recurring transactions."
-        actions={items &&
-          <AccountSelect
-            value={selectedAccount?.account_id}
-            accounts={items[0].accounts ?? []}
-            onValueChange={handleAccountChange}
-          />
-        }
+        description="Projected balance from recurring bills and paychecks, your remaining budget, and items you schedule."
+        actions={<>
+          {accountPicker}
+          {accountId &&
+            <Button onClick={() => setScheduledDialog({ open: true })}>
+              <PlusIcon />
+              Add scheduled item
+            </Button>
+          }
+        </>}
       />
+
       {accountsError &&
+        <Card><ErrorState title="Couldn't load accounts" error={accountsError} /></Card>
+      }
+
+      {accounts && linked.length === 0 &&
         <Card>
-          <ErrorState title="Couldn't load accounts" error={accountsError} onRetry={refresh} />
+          <EmptyState
+            title="No bank account to forecast"
+            description="Link a checking or savings account so Plaid can detect your recurring bills and paychecks."
+            action={<Button variant="outline" asChild><Link href="/connect">Link an account</Link></Button>}
+          />
         </Card>
       }
-      <Card>
-        <CardHeader>
-          <CardTitle>Projected balance</CardTitle>
-          <CardDescription>{selectedAccount?.name ?? 'Select an account'} · this month</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfig} className="h-72 w-full">
-            <LineChart accessibilityLayer data={chartData} margin={{ left: 12, right: 12 }}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                minTickGap={24}
-                tickFormatter={(value) => formatShortDate(String(value))}
-              />
-              <YAxis
-                dataKey="balance"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-                width={80}
-                tickFormatter={(value) => toCurrency(Number(value)).replace(/\.\d\d$/, '')}
-              />
-              <ChartTooltip
-                content={<ChartTooltipContent
-                  labelFormatter={(label) => formatShortDate(String(label))}
-                  formatter={(value, name, item) => (
-                    <div className="flex w-full flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-(--color-balance)" />
-                        {chartConfig.balance.label}
-                        <span className="ml-auto font-mono font-medium tabular-nums text-foreground">
-                          {toCurrency(value as number)}
-                        </span>
-                      </div>
-                      {item.payload.account_id &&
-                        <div className="text-muted-foreground">
-                          {item.payload.description} · {toCurrency(item.payload.average_amount?.amount)}
-                        </div>
-                      }
-                    </div>
-                  )}
-                />}
-              />
-              <Line
-                dataKey="balance"
-                type="monotone"
-                stroke="var(--color-balance)"
-                strokeWidth={2}
-                dot={false}
-              />
-            </LineChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
 
-      <RecurringTransactionsTable data={testData} />
+      {accountId && <>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Tabs value={String(days)} onValueChange={(v) => setDays(Number(v))}>
+            <TabsList aria-label="Forecast length">
+              {HORIZONS.map(h => <TabsTrigger key={h} value={String(h)} className="px-3">{h} days</TabsTrigger>)}
+            </TabsList>
+          </Tabs>
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Include in forecast">
+            {(Object.keys(SOURCE_LABELS) as ForecastSource[])
+              .filter(source => source !== 'budget' || hasBudget)
+              .map(source => (
+                <Button
+                  key={source}
+                  size="sm"
+                  variant={sources[source] ? 'secondary' : 'outline'}
+                  aria-pressed={sources[source]}
+                  className={cn(!sources[source] && "text-muted-foreground")}
+                  onClick={() => setSources(s => ({ ...s, [source]: !s[source] }))}
+                >
+                  {sources[source] && <CheckIcon />}
+                  {SOURCE_LABELS[source]}
+                </Button>
+              ))}
+          </div>
+        </div>
 
+        {error ? (
+          <Card><ErrorState title="Couldn't build the forecast" error={error} onRetry={() => mutate()} /></Card>
+        ) : isLoading || !data || !forecast ? (
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
+            </div>
+            <Skeleton className="h-80 w-full" />
+          </div>
+        ) : <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              label="Today"
+              value={toCurrency(data.startBalance)}
+              detail={data.balanceSource === 'available' ? 'Available balance, after pending charges' : 'Current balance'}
+            />
+            <StatCard
+              label={`In ${days} days`}
+              value={toCurrency(forecast.end)}
+              tone={forecast.end < 0 ? 'negative' : undefined}
+              detail={<span className={change >= 0 ? "text-positive" : "text-negative"}>
+                {change >= 0 ? '+' : '−'}{toCurrency(Math.abs(change))} from today
+              </span>}
+            />
+            <StatCard
+              label="Lowest point"
+              value={toCurrency(forecast.low.balance)}
+              tone={forecast.low.balance < 0 ? 'negative' : undefined}
+              detail={forecast.low.balance < 0
+                ? `Overdrawn on ${format(parseISO(forecast.low.date), 'MMM d')}`
+                : `On ${format(parseISO(forecast.low.date), 'MMM d')}`}
+            />
+            <StatCard
+              label="Coming in / going out"
+              value={<span className="text-xl"><span className="text-positive">+{toCurrency(forecast.totalIn)}</span> <span className="text-muted-foreground">/</span> {toCurrency(forecast.totalOut)}</span>}
+              detail={`Over the next ${days} days`}
+            />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Projected balance</CardTitle>
+              <CardDescription>
+                {data.account.name}{data.account.mask ? ` ••${data.account.mask}` : ''} · hover a day to see what&apos;s expected
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ForecastChart points={forecast.points} low={forecast.low} />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming</CardTitle>
+              <CardDescription>What the forecast expects, day by day.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UpcomingList
+                points={forecast.points}
+                streams={data.streams}
+                scheduled={data.scheduled}
+                onEditStream={setEditingStream}
+                onToggleStreamHidden={(stream, hidden) => saveOverride(
+                  { stream_id: stream.streamId, hidden },
+                  hidden ? `${stream.name} hidden from the forecast.` : `${stream.name} is back in the forecast.`,
+                )}
+                onResetStream={(stream) => resetOverride(stream.streamId)}
+                onEditScheduled={(item) => setScheduledDialog({ open: true, item })}
+                onDeleteScheduled={setDeleting}
+              />
+            </CardContent>
+          </Card>
+        </>}
+
+        <ScheduledItemDialog
+          open={scheduledDialog.open}
+          onOpenChange={(open) => setScheduledDialog(s => ({ ...s, open }))}
+          accountId={accountId}
+          item={scheduledDialog.item}
+          onSave={saveScheduled}
+        />
+        <StreamOverrideDialog
+          stream={editingStream}
+          onOpenChange={(open) => !open && setEditingStream(null)}
+          onSave={(override) => saveOverride(override)}
+        />
+        <Dialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete {deleting?.name}?</DialogTitle>
+              <DialogDescription>It&apos;ll be removed from the forecast. This can&apos;t be undone.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (deleting?._id && await deleteScheduled(String(deleting._id))) setDeleting(null)
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>}
     </div>
   )
-
 }
 
+function ForecastChart({ points, low }: { points: ForecastPoint[], low: { date: string, balance: number } }) {
+  const dipsBelowZero = low.balance < 0
 
+  return (
+    <ChartContainer config={chartConfig} className="h-80 w-full">
+      <AreaChart data={points} margin={{ top: 12, left: 4, right: 12 }}>
+        <defs>
+          <linearGradient id="forecast-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-balance)" stopOpacity={0.25} />
+            <stop offset="100%" stopColor="var(--color-balance)" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid vertical={false} />
+        <XAxis
+          dataKey="date"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          minTickGap={32}
+          tickFormatter={(value) => format(parseISO(value), 'MMM d')}
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          width={80}
+          tickFormatter={(value) => toCurrency(Number(value)).replace(/\.\d\d$/, '')}
+        />
+        <ChartTooltip cursor={{ stroke: "var(--border)" }} content={<ForecastTooltip />} />
+        {dipsBelowZero && <ReferenceLine y={0} stroke="var(--negative)" strokeDasharray="4 4" />}
+        {/* Balances change on the day a transaction lands, so draw steps. */}
+        <Area
+          dataKey="balance"
+          type="stepAfter"
+          stroke="var(--color-balance)"
+          strokeWidth={2}
+          fill="url(#forecast-fill)"
+        />
+        <ReferenceDot
+          x={low.date}
+          y={low.balance}
+          r={5}
+          fill={dipsBelowZero ? "var(--negative)" : "var(--color-balance)"}
+          stroke="var(--card)"
+          strokeWidth={2}
+          label={{ value: 'Lowest', position: 'top', fontSize: 11, fill: 'var(--muted-foreground)' }}
+        />
+      </AreaChart>
+    </ChartContainer>
+  )
+}
 
+function ForecastTooltip({ active, payload }: { active?: boolean, payload?: { payload: ForecastPoint }[] }) {
+  const point = payload?.[0]?.payload
+  if (!active || !point) return null
+  const shown = point.events.slice(0, 5)
+
+  return (
+    <div className="grid min-w-52 gap-1.5 rounded-lg border bg-background px-3 py-2 text-xs shadow-xl">
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="font-medium">{format(parseISO(point.date), 'EEE, MMM d')}</span>
+        <span className={cn("font-mono font-medium tabular-nums", point.balance < 0 && "text-negative")}>{toCurrency(point.balance)}</span>
+      </div>
+      {shown.map((event, i) => (
+        <div key={i} className="flex items-baseline justify-between gap-4 text-muted-foreground">
+          <span className="max-w-40 truncate">{event.name}</span>
+          <Amount value={event.amount} className="font-normal" />
+        </div>
+      ))}
+      {point.events.length > shown.length &&
+        <div className="text-muted-foreground">+{point.events.length - shown.length} more</div>
+      }
+    </div>
+  )
+}
 
 export default ForecastCalendar

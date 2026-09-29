@@ -102,7 +102,6 @@ const CreatePlaidLink = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        className="mb-0"
         title="Accounts"
         description="Linked institutions and which accounts count toward your budget."
         actions={

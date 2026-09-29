@@ -1,7 +1,6 @@
 import { Category } from "../interfaces/categories";
 import useData from "./useData";
 import { CategoriesQuery } from "../queries/categories";
-import _ from "lodash";
 
 
 export default function useCategories(query?: CategoriesQuery) {

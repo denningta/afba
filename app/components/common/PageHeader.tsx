@@ -12,7 +12,11 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, description, actions, children, className }: PageHeaderProps) {
   return (
-    <div className={cn("mb-6 space-y-4", className)}>
+    // The gap below the header is padding, and mb-0 opts out of any parent
+    // space-y-* margin, so it's 32px on every page whether or not the parent
+    // spaces its children (Tailwind v4 spaces with a margin that a margin
+    // utility here would silently cancel).
+    <div className={cn("mb-0 space-y-4 pb-8", className)}>
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>

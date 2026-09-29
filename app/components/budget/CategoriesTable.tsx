@@ -87,7 +87,6 @@ export default function CategoriesTable() {
   return (
     <div className="space-y-8">
       <PageHeader
-        className="mb-0"
         title="Budget"
         actions={
           <>

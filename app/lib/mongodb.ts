@@ -15,3 +15,7 @@ export const categories = database.collection('categories')
 export const users = database.collection('users')
 
 export const accounts = database.collection('accounts')
+
+export const scheduledTransactions = database.collection('scheduledTransactions')
+
+export const streamOverrides = database.collection('streamOverrides')

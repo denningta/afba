@@ -1,6 +1,5 @@
 import { categories } from "@/app/lib/mongodb"
 import { Document } from "mongodb"
-import { BudgetOverview } from "../components/budget/BudgetOverview"
 import { accountJoinStages, getBudgetAccountMatch } from "./accounts"
 
 export interface CategoriesQuery {
@@ -182,69 +181,6 @@ export async function listCategories({ date }: CategoriesQuery) {
       }
     }
   ]).toArray()
-  return res
-}
-
-export async function getBudgetOverview() {
-  const budgetMatch = await getBudgetAccountMatch()
-
-  const res = await categories.aggregate<BudgetOverview>([{
-    $addFields: {
-      id: { $toString: "$_id" }
-    }
-  },
-  {
-    $lookup: {
-      from: "transactions",
-      localField: "id",
-      foreignField: "userCategory._id",
-      pipeline: [
-        ...budgetMatch,
-        { $sort: { date: -1 } },
-        { $limit: 10 },
-        { $project: { account_id: 1, date: 1, amount: 1, description: 1 } },
-        ...accountJoinStages
-      ],
-      as: "transactions"
-    }
-  },
-  {
-    // Computed live (not read from the stored doc) so it honours budgetMatch.
-    $lookup: {
-      from: "transactions",
-      localField: "id",
-      foreignField: "userCategory._id",
-      pipeline: [
-        ...budgetMatch,
-        { $group: { _id: null, spent: { $sum: "$amount" } } }
-      ],
-      as: "spent"
-    }
-  },
-  {
-    $addFields: {
-      spent: { $round: [{ $ifNull: [{ $first: "$spent.spent" }, 0] }, 2] }
-    }
-  },
-  {
-    $group: {
-      _id: "$date",
-      date: { $first: "$date" },
-      categories: {
-        $push: {
-          name: "$name",
-          date: "$date",
-          budget: "$budget",
-          spent: "$spent",
-          transactions: "$transactions"
-        }
-      },
-      totalBudget: { $sum: "$budget" },
-      totalSpent: { $sum: "$spent" }
-    }
-  }
-  ]).toArray()
-
   return res
 }
 

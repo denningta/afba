@@ -205,7 +205,6 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <PageHeader
-        className="mb-0"
         title="Dashboard"
         description={format(YYYYMMToDate(month), "MMMM yyyy")}
         actions={
