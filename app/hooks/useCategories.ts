@@ -3,7 +3,7 @@ import useData from "./useData";
 import { CategoriesQuery } from "../queries/categories";
 
 
-export default function useCategories(query?: CategoriesQuery) {
+export default function useCategories(query?: CategoriesQuery, { enabled = true }: { enabled?: boolean } = {}) {
 
   const urlParams = query ? Object.keys(query).reduce((acc, curr, i) => {
     if (!query) return ''
@@ -18,7 +18,8 @@ export default function useCategories(query?: CategoriesQuery) {
       upsertRecord: `/api/category${urlParams}`,
       deleteRecord: `/api/category${urlParams}`,
     },
-    query: query
+    query: query,
+    enabled,
   })
 
 

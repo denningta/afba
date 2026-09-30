@@ -22,18 +22,23 @@ export interface DataHookProps<R = void> {
   },
   query?: R
   fetcher?: (url: string) => Promise<any>
+  // false skips loading the list (e.g. data only needed behind a toggle).
+  enabled?: boolean
 }
 
 export default function useData<T extends { _id?: ObjectId | string }, R = void>({
   endpoint,
-  fetcher
+  fetcher,
+  enabled = true,
 }: DataHookProps<R>): DataHook<T> {
 
-  const url = endpoint.listRecords
+  const url = enabled ? endpoint.listRecords : undefined
 
   const { cache, mutate } = useSWRConfig()
-  const { data, error, isLoading } = useSWR<T[], Error>(
-    url,
+  // `refresh` is bound to this list, so callers' mutate() re-fetches it (the
+  // global mutate from useSWRConfig does nothing without a key).
+  const { data, error, isLoading, mutate: refresh } = useSWR<T[], Error>(
+    url ?? null,
     fetcher ?? defaultFetcher
   )
 
@@ -132,6 +137,6 @@ export default function useData<T extends { _id?: ObjectId | string }, R = void>
     data,
     error,
     isLoading,
-    mutate
+    mutate: refresh
   }
 }
