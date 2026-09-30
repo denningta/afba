@@ -1,39 +1,46 @@
+# Production stack. The copy on the server (~/afba/docker-compose.yml) should
+# match this file minus the `build` section, which is only needed here for
+# `npm run publish` to build and push the image.
 services:
   afba:
     container_name: afba
-    image: denningta/afba
+    image: denningta/afba:latest
     build:
       context: .
       dockerfile: prod.Dockerfile
-    depends_on:
-      - afba-database
-
-    # Set environment variables directly in the docker-compose file
-    environment:
-      ENV_VARIABLE: ${ENV_VARIABLE}
-      NEXT_PUBLIC_ENV_VARIABLE: ${NEXT_PUBLIC_ENV_VARIABLE}
-
-    # Set environment variables based on the .env file
+    # Plaid and Mongo settings come from the server's .env at run time; the
+    # image deliberately contains no .env (see .dockerignore).
     env_file:
       - .env
+    depends_on:
+      - afba-database
     restart: always
     ports:
       - 3000:3000
-      - 9229:9229
-      - 9230:9230
-    networks:
-      - afba_network
- 
-  afba-database:
-    container_name: mongodb
-    image: mongo
-    ports:
-      - 27017:27017
+      # Node inspector ports: reachable only from the server itself.
+      - 127.0.0.1:9229:9229
+      - 127.0.0.1:9230:9230
     networks:
       - afba_network
 
-# Define a network, which allows containers to communicate
-# with each other, by using their container name as a hostname
+  afba-database:
+    container_name: mongodb
+    # Pinned: 7.0 can't open data files written by 8.x, and dev runs 7.0 too.
+    image: mongo:7.0
+    # Come back with the app after a reboot or Docker restart.
+    restart: always
+    # Named, pre-existing volume so `docker compose down` never loses data.
+    # Create it once on a new host: docker volume create afba_data
+    volumes:
+      - afba_data:/data/db
+    # No published port: only the app reaches the database, over afba_network.
+    networks:
+      - afba_network
+
 networks:
   afba_network:
     external: false
+
+volumes:
+  afba_data:
+    external: true

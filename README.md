@@ -49,7 +49,7 @@ Run the image using the command `docker compose -f docker-compose.dev.yml up`
 
 # Production Workflow
 
-Run `npm run publish` to build and push produciton updates
+Run `npm run publish` to build and push production updates
 
 Alternatively:
 
@@ -57,13 +57,19 @@ Run `docker compose build` to build the production image
 
 Run `docker push denningta/afba:latest` to push production image
 
-On the production server pull the latest image and run:
+On the production server (`~/afba`), back up the database, then pull the new image and recreate
+only the app container, which leaves MongoDB running:
 
 ```
-docker compose down
-docker compose pull
-docker compose up -d
+docker exec mongodb mongodump --db afba --archive --gzip > backup/afba-predeploy-$(date +%Y%m%d-%H%M%S).archive.gz
+docker compose pull afba
+docker compose up -d afba
 ```
+
+The server's `docker-compose.yml` should match the one in this repo, minus the `build` section. It
+reads Plaid/Mongo settings from the server's own `.env` (`env_file`); the image contains no `.env`.
+The database lives in the external `afba_data` volume, so `docker compose down`/`up` never loses data
+(on a new host, create it first with `docker volume create afba_data`).
 
 # Sync Production Data to Local Development
 
