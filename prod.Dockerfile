@@ -52,6 +52,8 @@ COPY --from=builder /app/public ./public
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Lockout recovery: docker exec -it afba node scripts/reset-password.mjs <email>
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/reset-password.mjs ./scripts/
 
 # Environment variables must be redefined at run time
 ARG ENV_VARIABLE

@@ -1,4 +1,5 @@
 import useSyncTransactions from "@/app/hooks/useSyncTransactions"
+import useCurrentUser from "@/app/hooks/useCurrentUser"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { EllipsisIcon, RefreshCwIcon } from "lucide-react"
@@ -22,6 +23,7 @@ const AccountCard = ({ account, item_id, institutionName, itemAccounts, onRemove
     syncTransactions,
     loading,
   } = useSyncTransactions()
+  const { isAdmin } = useCurrentUser()
   const [removeOpen, setRemoveOpen] = useState(false)
 
   const { current, available } = account.balances
@@ -58,7 +60,9 @@ const AccountCard = ({ account, item_id, institutionName, itemAccounts, onRemove
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48" align="end">
               <DropdownMenuItem onSelect={() => syncTransactions(account)}>Sync transactions</DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onSelect={() => setRemoveOpen(true)}>Remove</DropdownMenuItem>
+              {isAdmin &&
+                <DropdownMenuItem variant="destructive" onSelect={() => setRemoveOpen(true)}>Remove</DropdownMenuItem>
+              }
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

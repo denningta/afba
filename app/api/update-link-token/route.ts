@@ -1,7 +1,8 @@
+import { requireAdmin } from "@/app/lib/session"
 import plaidClient from "@/app/lib/plaid"
 import { CountryCode, LinkTokenCreateRequest } from "plaid"
 import { listUser, User } from "@/app/queries/users"
-import { USER_ID } from "@/app/queries/accounts"
+import { HOUSEHOLD_ID } from "@/app/lib/household"
 
 export interface UpdateLinkTokenBody {
   item_id?: string
@@ -15,16 +16,20 @@ export interface UpdateLinkTokenBody {
  * is looked up here so it never has to reach the browser.
  */
 export async function POST(req: Request) {
+  // Bank connections and which accounts count are household-wide settings.
+  const denied = await requireAdmin()
+  if (denied) return denied
+
   try {
     const { item_id, accountSelection } = await req.json() as UpdateLinkTokenBody
     if (!item_id) return Response.json({ message: 'item_id is required' }, { status: 400 })
 
-    const user = await listUser({ userId: USER_ID }) as User | null
+    const user = await listUser({ userId: HOUSEHOLD_ID }) as User | null
     const item = user?.items?.find((i) => i.item_id === item_id)
     if (!item) return Response.json({ message: 'Item not found' }, { status: 404 })
 
     const configs: LinkTokenCreateRequest = {
-      user: { client_user_id: USER_ID },
+      user: { client_user_id: HOUSEHOLD_ID },
       client_name: 'afba',
       language: 'en',
       country_codes: [CountryCode.Us],

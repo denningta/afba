@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Upload from "../components/Upload";
-import PageHeader from "../components/common/PageHeader";
+import Upload from "@/app/components/Upload";
+import PageHeader from "@/app/components/common/PageHeader";
 
 export const metadata: Metadata = { title: "Import" }
 

@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/app/lib/session"
 import plaidClient from "@/app/lib/plaid"
 import { listUser, User } from "@/app/queries/users"
 import { removeItem } from "@/app/queries/accounts"
@@ -43,6 +44,10 @@ export interface DeleteItemBody {
 }
 
 export async function DELETE(request: Request) {
+  // Bank connections and which accounts count are household-wide settings.
+  const denied = await requireAdmin()
+  if (denied) return denied
+
   try {
     const { item_id, deleteTransactions } = await request.json() as DeleteItemBody
     if (!item_id) return Response.json({ message: 'item_id is required' }, { status: 400 })

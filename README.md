@@ -71,6 +71,34 @@ reads Plaid/Mongo settings from the server's own `.env` (`env_file`); the image 
 The database lives in the external `afba_data` volume, so `docker compose down`/`up` never loses data
 (on a new host, create it first with `docker volume create afba_data`).
 
+# Sign-in and Users
+
+Everyone in the household signs in with their own email and password and shares the one budget.
+Admins can also add and remove people (**Manage users** in the account menu) and manage bank
+connections; members use the budget.
+
+The server's `.env` needs:
+
+```
+BETTER_AUTH_SECRET=<random, e.g. `openssl rand -base64 32`; changing it signs everyone out>
+BETTER_AUTH_URL=http://<server address>:3000
+BETTER_AUTH_TRUSTED_ORIGINS=http://192.168.1.*:3000   # other addresses people open the app on
+```
+
+**First run:** until an account exists, every page redirects to `/setup`, which creates the first
+admin. Do this right after deploying. Once anyone exists, `/setup` is closed and sign-up is disabled;
+new people are added by an admin, who gives them a temporary password to change under
+**Account settings**.
+
+**Locked out** (e.g. the only admin forgot their password):
+
+```
+docker exec -it afba node scripts/reset-password.mjs you@example.com          # set a new password
+docker exec -it afba node scripts/reset-password.mjs you@example.com --admin  # ...and make admin
+```
+
+It prompts for the password without echoing it and signs that user out everywhere.
+
 # Sync Production Data to Local Development
 
 One-time setup:

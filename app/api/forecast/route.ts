@@ -4,7 +4,7 @@ import { addDays, format, parseISO } from "date-fns"
 import { RecurringTransactionFrequency, TransactionStream } from "plaid"
 import plaidClient from "@/app/lib/plaid"
 import { accounts } from "@/app/lib/mongodb"
-import { USER_ID } from "@/app/queries/accounts"
+import { HOUSEHOLD_ID } from "@/app/lib/household"
 import { listUser, User } from "@/app/queries/users"
 import { listCategories } from "@/app/queries/categories"
 import { getStreamDetails, listScheduled, listStreamOverrides } from "@/app/queries/forecast"
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     const account = await accounts.findOne({ account_id })
     if (!account) return Response.json({ message: `Unknown account ${account_id}` }, { status: 404 })
 
-    const user = await listUser({ userId: USER_ID }) as User | null
+    const user = await listUser({ userId: HOUSEHOLD_ID }) as User | null
     const item = user?.items?.find(i => i.item_id === account.item_id)
     if (!item) {
       return Response.json({ message: 'Forecasts need a Plaid-linked account.' }, { status: 400 })

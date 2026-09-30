@@ -4,8 +4,8 @@ import plaidClient from "@/app/lib/plaid"
 import { accounts, transactions, transactionsSync, users } from "@/app/lib/mongodb"
 import { listUser, User } from "./users"
 import { Account, MANUAL_ACCOUNT_ID } from "../interfaces/account"
+import { HOUSEHOLD_ID } from "../lib/household"
 
-export const USER_ID = 'root-user'
 
 /**
  * Stages that attach `account` (name, mask, type, subtype) to transaction docs
@@ -36,7 +36,7 @@ export const accountJoinStages: Document[] = [
  * user's saved choice.
  */
 export async function refreshAccounts() {
-  const user = await listUser({ userId: USER_ID }) as User | null
+  const user = await listUser({ userId: HOUSEHOLD_ID }) as User | null
   const updatedAt = new Date().toISOString()
 
   const itemResponses = await Promise.all(
@@ -152,7 +152,7 @@ export async function findDuplicateAccounts(
   if (!institution_id) return []
 
   await refreshAccounts()
-  const user = await listUser({ userId: USER_ID }) as User | null
+  const user = await listUser({ userId: HOUSEHOLD_ID }) as User | null
   const linkedItemIds = (user?.items ?? [])
     .map((item) => item.item_id)
     .filter((id) => id !== newItemId)
@@ -174,7 +174,7 @@ const GONE_ITEM_ERRORS = new Set(['ITEM_NOT_FOUND', 'INVALID_ACCESS_TOKEN'])
  * `deleteTransactions` is set, since they usually carry categorisation work.
  */
 export async function removeItem(item_id: string, deleteTransactions = false) {
-  const user = await listUser({ userId: USER_ID }) as User | null
+  const user = await listUser({ userId: HOUSEHOLD_ID }) as User | null
   const item = user?.items?.find((i) => i.item_id === item_id)
   if (!user || !item) return null
 

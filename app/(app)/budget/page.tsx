@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { dateToYYYYMM } from "../helpers/helperFunctions";
+import { dateToYYYYMM } from "@/app/helpers/helperFunctions";
 
 // The old Trends page lived here; send /budget to this month's budget instead.
 export const dynamic = "force-dynamic";

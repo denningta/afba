@@ -15,9 +15,11 @@ import { toast } from "sonner"
 import { useSWRConfig } from "swr"
 import IncludeInBudgetSwitch from "./IncludeInBudgetSwitch"
 import { MANUAL_ACCOUNT_ID } from "@/app/interfaces/account"
+import { HOUSEHOLD_ID } from "@/app/lib/household"
+import useCurrentUser from "@/app/hooks/useCurrentUser"
 
 
-const client_user_id = 'root-user'
+const client_user_id = HOUSEHOLD_ID
 
 interface ItemError {
   item_id: string
@@ -29,6 +31,8 @@ const isItemError = (item: object): item is ItemError => 'error' in item && !('a
 
 const CreatePlaidLink = () => {
   const [linkToken, setLinkToken] = useState<string | null>(null)
+  // Linking, relinking and removing banks is for admins; members can look.
+  const { isAdmin } = useCurrentUser()
   const { items, refresh, error, loading } = useGetAccounts({ userId: client_user_id })
   const { mutate } = useSWRConfig()
   // Read through a ref so onSuccess (and the Plaid Link config) stays stable.
@@ -42,8 +46,8 @@ const CreatePlaidLink = () => {
   }
 
   useEffect(() => {
-    createLinkToken()
-  }, [])
+    if (isAdmin) createLinkToken()
+  }, [isAdmin])
 
   const createLinkToken = async () => {
     try {
@@ -103,8 +107,10 @@ const CreatePlaidLink = () => {
     <div className="space-y-6">
       <PageHeader
         title="Accounts"
-        description="Linked institutions and which accounts count toward your budget."
-        actions={
+        description={isAdmin
+          ? "Linked institutions and which accounts count toward your budget."
+          : "Linked institutions and which accounts count toward your budget. Ask an admin to link, fix or remove a bank connection."}
+        actions={isAdmin &&
           <Button onClick={() => open()} disabled={!ready}>
             <PlusIcon />
             Link account
@@ -123,7 +129,7 @@ const CreatePlaidLink = () => {
           <EmptyState
             title="No bank accounts linked"
             description="Link an account to sync its transactions and balances automatically."
-            action={<Button onClick={() => open()} disabled={!ready}><PlusIcon />Link account</Button>}
+            action={isAdmin && <Button onClick={() => open()} disabled={!ready}><PlusIcon />Link account</Button>}
           />
         </Card>
       }
@@ -137,7 +143,7 @@ const CreatePlaidLink = () => {
                 <CardDescription className="text-destructive">
                   {item.error.display_message ?? item.error.error_message ?? 'This connection needs attention.'}
                 </CardDescription>
-                {item.error.error_code === 'ITEM_LOGIN_REQUIRED' &&
+                {isAdmin && item.error.error_code === 'ITEM_LOGIN_REQUIRED' &&
                   <CardAction>
                     <UpdatePlaidLink item_id={item.item_id} label="Log in again" onSuccess={afterUpdate} />
                   </CardAction>
@@ -152,14 +158,16 @@ const CreatePlaidLink = () => {
                 <CardDescription>
                   {item.accounts?.length ?? 0} account{item.accounts?.length === 1 ? '' : 's'}
                 </CardDescription>
-                <CardAction>
-                  <UpdatePlaidLink
-                    item_id={item.item.item_id}
-                    accountSelection
-                    label="Manage accounts"
-                    onSuccess={afterUpdate}
-                  />
-                </CardAction>
+                {isAdmin &&
+                  <CardAction>
+                    <UpdatePlaidLink
+                      item_id={item.item.item_id}
+                      accountSelection
+                      label="Manage accounts"
+                      onSuccess={afterUpdate}
+                    />
+                  </CardAction>
+                }
               </CardHeader>
               <CardContent>
                 {item?.accounts?.length ? (

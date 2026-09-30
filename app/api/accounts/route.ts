@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/app/lib/session"
 import plaidClient from "@/app/lib/plaid"
 import { listUser, User } from "@/app/queries/users"
 import { listAccounts, refreshAccounts, setIncludeInBudget } from "@/app/queries/accounts"
@@ -61,6 +62,10 @@ export interface PatchAccountBody {
 }
 
 export async function PATCH(request: Request) {
+  // Bank connections and which accounts count are household-wide settings.
+  const denied = await requireAdmin()
+  if (denied) return denied
+
   const { account_id, includeInBudget } = await request.json() as PatchAccountBody
 
   if (!account_id || typeof includeInBudget !== 'boolean') {

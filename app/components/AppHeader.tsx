@@ -51,6 +51,8 @@ function getCrumbs(pathname: string): Crumb[] {
     "/balance": "Balances",
     "/connect": "Accounts",
     "/upload": "Import",
+    "/settings/account": "Account settings",
+    "/settings/users": "Users",
   }
   return [{ label: titles[pathname] ?? "afba" }]
 }

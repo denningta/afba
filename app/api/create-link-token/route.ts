@@ -1,7 +1,12 @@
+import { requireAdmin } from "@/app/lib/session"
 import plaidClient from "@/app/lib/plaid";
 import { CountryCode, LinkTokenCreateRequest, Products } from "plaid";
 
 export async function POST(req: Request) {
+  // Bank connections and which accounts count are household-wide settings.
+  const denied = await requireAdmin()
+  if (denied) return denied
+
   try {
     const { client_user_id } = await req.json()
 

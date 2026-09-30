@@ -1,8 +1,13 @@
+import { requireAdmin } from "@/app/lib/session"
 import plaidClient from "@/app/lib/plaid"
 import { insertUser, listUser, replaceUser, User } from "@/app/queries/users"
 import { findDuplicateAccounts, refreshAccounts } from "@/app/queries/accounts"
 
 export async function POST(req: Request) {
+  // Bank connections and which accounts count are household-wide settings.
+  const denied = await requireAdmin()
+  if (denied) return denied
+
 
   try {
     const { client_user_id, public_token } = await req.json()

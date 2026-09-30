@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import TransactionsTable from "../components/transactions/TransactionsTable";
-import { TransactionsFilter } from "../queries/transactions";
+import TransactionsTable from "@/app/components/transactions/TransactionsTable";
+import { TransactionsFilter } from "@/app/queries/transactions";
 
 export const metadata: Metadata = { title: "Transactions" }
 

@@ -42,6 +42,7 @@ import useTransactionCount from "../hooks/useTransactionCount"
 import useAccounts from "../hooks/useAccounts"
 import useSyncTransactions from "../hooks/useSyncTransactions"
 import { dateToYYYYMM } from "../helpers/helperFunctions"
+import UserMenu from "./UserMenu"
 
 interface NavLink {
   title: string
@@ -175,6 +176,7 @@ export default function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <ThemeMenu />
+        <UserMenu />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

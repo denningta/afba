@@ -1,5 +1,5 @@
 import axios from "axios"
-import { GetItemParams } from "../api/items/route"
+import type { GetItemParams } from "../api/items/route"
 import { useEffect, useState } from "react"
 
 

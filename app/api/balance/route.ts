@@ -1,5 +1,6 @@
 import plaidClient from "@/app/lib/plaid"
 import { listUser, User } from "@/app/queries/users"
+import { HOUSEHOLD_ID } from "@/app/lib/household"
 import {
   buildDateAxis,
   listTransactionsForBalance,
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
     const startDate = searchParams.get('startDate') ?? formatDate(defaultStart)
     const endDate = searchParams.get('endDate') ?? formatDate(today)
 
-    const user = await listUser({ userId: 'root-user' }) as User
+    const user = await listUser({ userId: HOUSEHOLD_ID }) as User
     if (!user || !user.items?.length) {
       return Response.json({ message: 'No linked accounts found', status: 400 })
     }

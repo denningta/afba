@@ -3,6 +3,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { useSWRConfig } from "swr"
 import { TransactionSync } from "../queries/transactionsSync"
+import { HOUSEHOLD_ID } from "../lib/household"
 
 // Just what a sync needs; satisfied by both Plaid's AccountBase and our Account.
 interface SyncableAccount {
@@ -26,7 +27,7 @@ export default function useSyncTransactions() {
 
   const postSync = async (account: SyncableAccount) => {
     const res = await axios.post<TransactionSync>('/api/transactions/sync', {
-      userId: 'root-user',
+      userId: HOUSEHOLD_ID,
       account_id: account.account_id
     })
     return res.data

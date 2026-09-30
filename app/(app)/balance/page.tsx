@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import BalanceOverview from "../components/balance/BalanceOverview";
-import PageHeader from "../components/common/PageHeader";
+import BalanceOverview from "@/app/components/balance/BalanceOverview";
+import PageHeader from "@/app/components/common/PageHeader";
 
 export const metadata: Metadata = { title: "Balances" }
 

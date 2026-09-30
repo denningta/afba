@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import CreatePlaidLink from "../components/Plaid/PlaidLink";
+import CreatePlaidLink from "@/app/components/Plaid/PlaidLink";
 
 export const metadata: Metadata = { title: "Accounts" }
 

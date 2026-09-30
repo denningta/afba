@@ -17,6 +17,7 @@ npm run lint         # next lint (eslint config: next/core-web-vitals)
 npm run publish      # Build + push production Docker image to denningta/afba:latest
 npm run db:sync [user@host]   # Stream prod MongoDB into the local dev container + save a snapshot in backup/ (host defaults to REMOTE_DB_HOST)
 npm run db:restore            # Restore local DB from the newest backup/ snapshot (or `-- <file>`)
+docker exec -it afba node scripts/reset-password.mjs <email> [--admin]   # Lockout recovery: set a password (and optionally make admin)
 ```
 
 There is no test suite in this repo.
@@ -25,11 +26,12 @@ There is no test suite in this repo.
 
 This is a single Next.js app that combines UI, API, and data access:
 
-- **`app/`** — Next.js App Router. Both server-rendered pages (`page.tsx` under `app/budget`, `app/transactions`, `app/calendar`, `app/balance`, `app/connect`, `app/upload`) and API routes under **`app/api/<resource>/route.ts`** live here. There is no separate backend.
+- **`app/`** — Next.js App Router. Signed-in pages live in the `app/(app)/` route group (sidebar shell: `budget`, `transactions`, `calendar`, `balance`, `connect`, `upload`, `settings`); `/login` and `/setup` are in `app/(auth)/`. API routes under **`app/api/<resource>/route.ts`** live here. There is no separate backend.
 - **`app/api/`** — REST-ish endpoints (transactions, categories, accounts, budget-summary, budget-vs-actual, plus Plaid endpoints: `create-link-token`, `exchange-public-token`, `update-link-token`, `items`, `transactions/sync`).
 - **`app/queries/`** — Mongo aggregation/query logic per resource (`transactions.ts`, `categories.ts`, `budgetVsActual.ts`, …). API route handlers stay thin and delegate here.
 - **`app/lib/mongodb.ts`** — Singleton `MongoClient` connecting to `mongodb://mongodb:27017/afba`. Hostname `mongodb` is the docker-compose service name; running `npm run dev` (not `dev:docker`) requires that hostname to resolve (e.g., via `/etc/hosts` or by editing the URI).
 - **`accounts` collection** (`app/queries/accounts.ts`) — Local cache of Plaid account metadata plus the user's `includeInBudget` flag, refreshed from Plaid by `refreshAccounts()`. Includes a `manual` pseudo-account for transactions without an `account_id`. Every budget aggregation must prepend `getBudgetAccountMatch()` to its transactions `$lookup` pipeline so excluded accounts don't count.
+- **Auth** — Better Auth (`app/lib/auth.ts`, email + password, admin plugin) with its own `authUsers`/`authSessions`/`authAccounts` collections. Household model: every signed-in user shares the one budget; role `admin` also manages users (`/settings/users`) and bank connections, role `member` just uses the budget. `proxy.ts` checks the session on every page and API request (401 JSON for API, redirect to `/login` for pages); admin-only API routes also call `requireAdmin()` from `app/lib/session.ts`. No self sign-up: the first admin is created at `/setup` while no users exist. Plaid data stays under the household id `HOUSEHOLD_ID` (`app/lib/household.ts`), not per person.
 - **`app/lib/plaid.ts`** — Plaid SDK client; environment selected by `PLAID_ENV` (defaults to `sandbox`), credentials from `PLAID_CLIENT_ID` / `PLAID_SECRET`.
 - **`app/hooks/`** — SWR-based data hooks (`useTransactions`, `useBudgetOverview`, `useBudgetVsActual`, `useCategories`, `useSyncTransactions`, …). UI components consume these rather than fetching directly.
 - **`app/components/`** — App-specific React components (Sidebar, budget/calendar/transactions widgets, Plaid Link integration, upload, table filtering UI). Stateful business components.
@@ -55,7 +57,7 @@ Charting uses **Tremor**, **Recharts**, and **visx** (different chart types pick
 ## Environment
 
 - `.env.development` is loaded when running `dev:docker`; `.env` is loaded for the production compose stack.
-- Required vars: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (sandbox/development/production). `REMOTE_DB_HOST` is read by `scripts/sync-db.sh`.
+- Required vars: `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` (sandbox/development/production), `BETTER_AUTH_SECRET` (signs sessions; changing it signs everyone out), `BETTER_AUTH_URL` (the app's main address). Optional: `BETTER_AUTH_TRUSTED_ORIGINS` (comma-separated other addresses people sign in from, wildcards allowed, e.g. `http://192.168.1.*:3000`). `REMOTE_DB_HOST` is read by `scripts/sync-db.sh`.
 
 ## Deployment
 

@@ -1,6 +1,6 @@
 import axios from "axios"
 import { useEffect, useState } from "react"
-import { GetAccountsParams } from "../api/accounts/route"
+import type { GetAccountsParams } from "../api/accounts/route"
 import { AccountsGetResponse, PlaidError } from "plaid"
 import { PlaidLinkError } from "react-plaid-link"
 
