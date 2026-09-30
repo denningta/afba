@@ -115,7 +115,7 @@ export default function CategoriesTable() {
         </Card>
       ) : (
         <>
-          <BudgetKpiCards data={data} isLoading={isLoading} />
+          <BudgetKpiCards data={data} isLoading={isLoading} month={currentDate ?? ""} />
 
           <div className="space-y-4 md:hidden">
             <div className="grid grid-cols-2 gap-2 [&_button]:w-full">

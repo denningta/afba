@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect } from "react"
 import { useTheme } from "next-themes"
 import {
   ArrowLeftRightIcon,
@@ -37,7 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import useTransactions from "../hooks/useTransactions"
+import useTransactionCount from "../hooks/useTransactionCount"
 import useAccounts from "../hooks/useAccounts"
 import useSyncTransactions from "../hooks/useSyncTransactions"
 import { dateToYYYYMM } from "../helpers/helperFunctions"
@@ -142,7 +143,12 @@ function ThemeMenu() {
 
 export default function AppSidebar() {
   // Transactions still waiting for a category, surfaced as a nav badge.
-  const { data: needsCategory } = useTransactions({ needsCategory: 'true' })
+  const { count: needsCategory, refresh: refreshNeedsCategory } = useTransactionCount({ needsCategory: 'true' })
+  // The sidebar never remounts, so also re-check whenever the page changes.
+  const pathname = usePathname()
+  useEffect(() => {
+    refreshNeedsCategory()
+  }, [pathname, refreshNeedsCategory])
 
   return (
     <Sidebar collapsible="icon">
@@ -164,7 +170,7 @@ export default function AppSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavGroup label="Overview" items={mainNav} badges={{ Transactions: needsCategory?.length ?? 0 }} />
+        <NavGroup label="Overview" items={mainNav} badges={{ Transactions: needsCategory ?? 0 }} />
         <NavGroup label="Manage" items={manageNav} />
       </SidebarContent>
       <SidebarFooter>

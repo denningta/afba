@@ -3,11 +3,10 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import useTransactions from "@/app/hooks/useTransactions"
+import useTransactionCount from "@/app/hooks/useTransactionCount"
 
 export default function AssignCategoriesButton() {
-  const { data } = useTransactions({ needsCategory: 'true' })
-  const count = data?.length ?? 0
+  const { count = 0 } = useTransactionCount({ needsCategory: 'true' })
 
   if (count === 0) return null
 

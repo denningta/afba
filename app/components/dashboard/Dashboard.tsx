@@ -215,7 +215,7 @@ export default function Dashboard() {
       />
       {error
         ? <Card><ErrorState title="Couldn't load this month's budget" error={error} onRetry={() => mutate()} /></Card>
-        : <BudgetKpiCards data={data} isLoading={isLoading} />
+        : <BudgetKpiCards data={data} isLoading={isLoading} month={month} />
       }
       <div className="grid gap-4 lg:grid-cols-3">
         <NetBalanceCard />

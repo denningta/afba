@@ -139,6 +139,8 @@ export async function listCategories({ date }: CategoriesQuery) {
               userCategory: "$userCategory",
               merchant_name: "$merchant_name",
               name: "$name",
+              logo_url: "$logo_url",
+              pending: "$pending",
             }
           },
           ...accountJoinStages

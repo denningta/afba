@@ -14,6 +14,10 @@ import { EmptyState } from "../common/StateMessage"
 
 export interface UpcomingListProps {
   points: ForecastPoint[]
+  // Recurring items past their usual date and not seen yet.
+  lateEvents: ForecastEvent[]
+  countLate: boolean
+  onCountLateChange: (count: boolean) => void
   streams: ForecastStream[]
   scheduled: ScheduledTransaction[]
   onEditStream: (stream: ForecastStream) => void
@@ -28,6 +32,9 @@ export interface UpcomingListProps {
 // at the top instead of repeated on each row.
 export default function UpcomingList({
   points,
+  lateEvents,
+  countLate,
+  onCountLateChange,
   streams,
   scheduled,
   onEditStream,
@@ -47,6 +54,43 @@ export default function UpcomingList({
 
   return (
     <div className="space-y-4">
+      {lateEvents.length > 0 &&
+        <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/5 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="text-sm font-medium">
+                {lateEvents.length} late item{lateEvents.length === 1 ? '' : 's'} {countLate ? 'counted today' : 'not counted'}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Past the usual date and not seen yet. If it&apos;s already pending at your bank, it&apos;s probably
+                in today&apos;s balance, so it isn&apos;t counted again unless you choose to.
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => onCountLateChange(!countLate)}>
+              {countLate ? "Don't count" : 'Count in forecast'}
+            </Button>
+          </div>
+          <ul className="divide-y divide-border/60">
+            {lateEvents.map((event, i) => {
+              const stream = event.streamId ? streamById.get(event.streamId) : undefined
+              return (
+                <li key={`${event.streamId ?? event.name}-${i}`} className="flex items-center gap-3 py-2">
+                  <MerchantLogo src={event.logoUrl} name={event.name} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{event.name}</div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {stream ? `Usually ${format(parseISO(stream.nextDate), 'MMM d')}` : 'Late'}
+                      {event.categoryName && ` · ${event.categoryName}`}
+                    </div>
+                  </div>
+                  <Amount value={event.amount} className="text-sm" />
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      }
+
       {budgetTotal > 0 &&
         <p className="rounded-md bg-muted/60 px-3 py-2 text-sm text-muted-foreground">
           Also includes <span className="font-medium text-foreground tabular-nums">{toCurrency(budgetTotal)}</span> of
@@ -127,6 +171,15 @@ function EventRow({ event, stream, scheduledItem, onEditStream, onToggleStreamHi
           <span className="truncate text-sm font-medium" title={event.name}>{event.name}</span>
           {event.source === 'scheduled' && <Badge variant="secondary" className="shrink-0 font-normal">Scheduled</Badge>}
           {stream?.overridden && <Badge variant="secondary" className="shrink-0 font-normal">Edited</Badge>}
+          {event.late &&
+            <Badge
+              variant="outline"
+              className="shrink-0 border-warning/50 bg-warning/10 font-normal"
+              title="Past its usual date and not seen yet - it may be pending at your bank"
+            >
+              Late · expected any day
+            </Badge>
+          }
           {event.confidence === 'low' && event.source === 'recurring' &&
             <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground" title="Plaid has only seen this a few times">Early estimate</Badge>
           }

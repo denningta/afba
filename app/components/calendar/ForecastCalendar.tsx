@@ -24,6 +24,8 @@ import { Amount } from "../transactions/TransactionCells"
 import UpcomingList from "./UpcomingList"
 import ScheduledItemDialog from "./ScheduledItemDialog"
 import StreamOverrideDialog from "./StreamOverrideDialog"
+import ForecastExplainSheet, { ForecastKpiKey } from "./ForecastExplainSheet"
+import { ExplainTrigger } from "../common/ExplainSheet"
 
 const HORIZONS = [30, 60, 90] as const
 
@@ -37,22 +39,25 @@ const chartConfig = {
   balance: { label: "Projected balance", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
-function StatCard({ label, value, detail, tone }: {
+function StatCard({ label, value, detail, tone, onExplain }: {
   label: string
   value: React.ReactNode
   detail?: React.ReactNode
   tone?: 'negative'
+  onExplain: () => void
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardDescription>{label}</CardDescription>
-        <CardTitle className={cn("text-2xl font-semibold tracking-tight tabular-nums", tone === 'negative' && "text-negative")}>
-          {value}
-        </CardTitle>
-      </CardHeader>
-      {detail && <CardContent className="text-sm text-muted-foreground">{detail}</CardContent>}
-    </Card>
+    <ExplainTrigger onClick={onExplain}>
+      <Card className="h-full">
+        <CardHeader>
+          <CardDescription>{label}</CardDescription>
+          <CardTitle className={cn("text-2xl font-semibold tracking-tight tabular-nums", tone === 'negative' && "text-negative")}>
+            {value}
+          </CardTitle>
+        </CardHeader>
+        {detail && <CardContent className="text-sm text-muted-foreground">{detail}</CardContent>}
+  </Card>
+    </ExplainTrigger>
   )
 }
 
@@ -70,23 +75,30 @@ const ForecastCalendar = () => {
 
   const [days, setDays] = useState<number>(30)
   const [sources, setSources] = useState<Record<ForecastSource, boolean>>({ recurring: true, budget: true, scheduled: true })
+  // Late items are usually already pending at the bank, and some banks (USAA)
+  // include pending transactions in the balance Plaid reports - so counting
+  // them by default would double count. The user can opt in.
+  const [countLate, setCountLate] = useState(false)
 
   const { data, error, isLoading, mutate, saveScheduled, deleteScheduled, saveOverride, resetOverride } = useForecast(accountId)
 
   const [scheduledDialog, setScheduledDialog] = useState<{ open: boolean, item?: ScheduledTransaction }>({ open: false })
   const [editingStream, setEditingStream] = useState<ForecastStream | null>(null)
   const [deleting, setDeleting] = useState<ScheduledTransaction | null>(null)
+  const [explaining, setExplaining] = useState<ForecastKpiKey | null>(null)
 
   const forecast = useMemo(() => {
     if (!data) return null
     const to = format(addDays(parseISO(data.from), days), 'yyyy-MM-dd')
     return buildForecast({
       startBalance: data.startBalance,
-      events: data.events.filter(e => sources[e.source] && e.date <= to),
+      events: data.events.filter(e => sources[e.source] && e.date <= to && (!e.late || countLate)),
       from: data.from,
       days,
     })
-  }, [data, days, sources])
+  }, [data, days, sources, countLate])
+
+  const lateEvents = data?.events.filter(e => e.late && sources[e.source]) ?? []
 
   const hasBudget = data?.events.some(e => e.source === 'budget') ?? false
   const change = forecast && data ? forecast.end - data.startBalance : 0
@@ -175,10 +187,14 @@ const ForecastCalendar = () => {
             <StatCard
               label="Today"
               value={toCurrency(data.startBalance)}
-              detail={data.balanceSource === 'available' ? 'Available balance, after pending charges' : 'Current balance'}
+              detail={data.balanceAsOf
+                ? `As reported by your bank ${format(new Date(data.balanceAsOf), "MMM d, h:mm a")}`
+                : 'As reported by your bank'}
+              onExplain={() => setExplaining('today')}
             />
             <StatCard
               label={`In ${days} days`}
+              onExplain={() => setExplaining('end')}
               value={toCurrency(forecast.end)}
               tone={forecast.end < 0 ? 'negative' : undefined}
               detail={<span className={change >= 0 ? "text-positive" : "text-negative"}>
@@ -187,6 +203,7 @@ const ForecastCalendar = () => {
             />
             <StatCard
               label="Lowest point"
+              onExplain={() => setExplaining('low')}
               value={toCurrency(forecast.low.balance)}
               tone={forecast.low.balance < 0 ? 'negative' : undefined}
               detail={forecast.low.balance < 0
@@ -195,6 +212,7 @@ const ForecastCalendar = () => {
             />
             <StatCard
               label="Coming in / going out"
+              onExplain={() => setExplaining('flows')}
               value={<span className="text-xl"><span className="text-positive">+{toCurrency(forecast.totalIn)}</span> <span className="text-muted-foreground">/</span> {toCurrency(forecast.totalOut)}</span>}
               detail={`Over the next ${days} days`}
             />
@@ -220,6 +238,9 @@ const ForecastCalendar = () => {
             <CardContent>
               <UpcomingList
                 points={forecast.points}
+                lateEvents={lateEvents}
+                countLate={countLate}
+                onCountLateChange={setCountLate}
                 streams={data.streams}
                 scheduled={data.scheduled}
                 onEditStream={setEditingStream}
@@ -235,6 +256,16 @@ const ForecastCalendar = () => {
           </Card>
         </>}
 
+        {data && forecast &&
+          <ForecastExplainSheet
+            kpi={explaining}
+            onOpenChange={(open) => !open && setExplaining(null)}
+            data={data}
+            forecast={forecast}
+            days={days}
+            lateCount={countLate ? 0 : lateEvents.length}
+          />
+        }
         <ScheduledItemDialog
           open={scheduledDialog.open}
           onOpenChange={(open) => setScheduledDialog(s => ({ ...s, open }))}

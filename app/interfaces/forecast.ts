@@ -17,6 +17,8 @@ export interface ForecastEvent {
   scheduledId?: string
   categoryName?: string
   logoUrl?: string | null
+  // Past its predicted date but not seen yet: placed on today.
+  late?: boolean
   // Budget events: how the day's amount splits across categories.
   breakdown?: { categoryName: string, amount: number }[]
 }
@@ -33,6 +35,8 @@ export interface ForecastStream {
   logoUrl?: string | null
   hidden: boolean
   overridden: boolean
+  // Date of the stream's most recent transaction Plaid has seen.
+  lastDate?: string | null
 }
 
 // A user-entered upcoming transaction, one-off or repeating.
@@ -66,6 +70,8 @@ export interface ForecastResponse {
   }
   startBalance: number
   balanceSource: 'available' | 'current'
+  // When Plaid last refreshed this account from the bank (ISO timestamp).
+  balanceAsOf?: string | null
   from: string // YYYY-MM-DD (today)
   days: number
   streams: ForecastStream[]

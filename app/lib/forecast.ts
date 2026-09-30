@@ -56,6 +56,21 @@ export function expandOccurrences(
   return dates
 }
 
+// How long past its predicted date a recurring item still counts as "late"
+// (arriving any day) rather than missed.
+export const LATE_GRACE_DAYS = 7
+
+// A recurring item is late when its predicted date has passed, Plaid hasn't
+// seen that occurrence yet (its last transaction predates the prediction), and
+// it's overdue by no more than LATE_GRACE_DAYS. Banks post deposits and bills
+// a day or two off schedule, and a pending one isn't visible through Plaid, so
+// the forecast should still expect it now instead of skipping to next month.
+export function isLate(predicted: string, lastSeen: string | null | undefined, from: string) {
+  if (predicted >= from) return false
+  if (lastSeen && lastSeen >= predicted) return false
+  return differenceInCalendarDays(parseISO(from), parseISO(predicted)) <= LATE_GRACE_DAYS
+}
+
 // Spread each month's remaining budget evenly across its days in range, as
 // one "Budgeted spending" event per day with a per-category breakdown.
 export function spreadBudget(
@@ -142,9 +157,10 @@ export function buildForecast({ startBalance, events, from, days }: {
     points.push({ date, balance, net: round2(net), events: dayEvents })
   }
 
+  // The lowest projected day (today included, after anything due today).
   const low = points.reduce(
     (min, p) => p.balance < min.balance ? { date: p.date, balance: p.balance } : min,
-    { date: from, balance: startBalance },
+    { date: points[0].date, balance: points[0].balance },
   )
 
   return {

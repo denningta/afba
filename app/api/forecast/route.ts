@@ -8,7 +8,7 @@ import { USER_ID } from "@/app/queries/accounts"
 import { listUser, User } from "@/app/queries/users"
 import { listCategories } from "@/app/queries/categories"
 import { getStreamDetails, listScheduled, listStreamOverrides } from "@/app/queries/forecast"
-import { expandOccurrences, spreadBudget } from "@/app/lib/forecast"
+import { expandOccurrences, isLate, spreadBudget } from "@/app/lib/forecast"
 import { Category } from "@/app/interfaces/categories"
 import { ForecastEvent, ForecastFrequency, ForecastResponse, ForecastStream } from "@/app/interfaces/forecast"
 
@@ -51,6 +51,10 @@ export async function GET(request: Request) {
     const balances = balanceRes.data.accounts[0]?.balances
     const balanceSource = balances?.available != null ? 'available' : 'current'
     const startBalance = balances?.available ?? balances?.current ?? 0
+    // Only a bank-supplied balance timestamp is trustworthy: Plaid refreshes
+    // balances separately from transactions, so the item's last transactions
+    // update isn't when this balance was fetched. Many banks (USAA) send none.
+    const balanceAsOf = balances?.last_updated_datetime ?? null
 
     // --- Recurring streams -------------------------------------------------
     const plaidStreams: TransactionStream[] = [
@@ -78,21 +82,27 @@ export async function GET(request: Request) {
         logoUrl: details.get(s.stream_id)?.logoUrl,
         hidden: !!override?.hidden,
         overridden: override?.amount != null || override?.nextDate != null,
+        lastDate: s.last_date,
       }]
     })
 
     const recurringEvents: ForecastEvent[] = streams
       .filter(s => !s.hidden && s.frequency !== RecurringTransactionFrequency.Unknown)
-      .flatMap(s => expandOccurrences(s.nextDate, s.frequency, from, to).map(date => ({
-        date,
-        amount: s.amount,
-        name: s.name,
-        source: 'recurring' as const,
-        confidence: s.confidence,
-        streamId: s.streamId,
-        categoryName: s.categoryName,
-        logoUrl: s.logoUrl,
-      })))
+      .flatMap(s => {
+        const event = {
+          amount: s.amount,
+          name: s.name,
+          source: 'recurring' as const,
+          confidence: s.confidence,
+          streamId: s.streamId,
+          categoryName: s.categoryName,
+          logoUrl: s.logoUrl,
+        }
+        // A late occurrence (e.g. a deposit that's still pending at the bank)
+        // is expected today; later ones follow the normal schedule.
+        const late = isLate(s.nextDate, s.lastDate, from) ? [{ ...event, date: from, late: true }] : []
+        return [...late, ...expandOccurrences(s.nextDate, s.frequency, from, to).map(date => ({ ...event, date }))]
+      })
 
     // --- Remaining budget ---------------------------------------------------
     // Only for a checking/savings account that counts toward the budget:
@@ -124,6 +134,7 @@ export async function GET(request: Request) {
       },
       startBalance,
       balanceSource,
+      balanceAsOf,
       from,
       days,
       streams,
