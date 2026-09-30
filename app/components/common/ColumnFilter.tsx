@@ -1,12 +1,25 @@
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover"
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Column, RowData } from "@tanstack/react-table"
-import { PlusCircle } from "lucide-react"
-import { useMemo } from "react"
+import { ChevronDownIcon, PlusCircle } from "lucide-react"
+import { useMemo, useState } from "react"
+
+export interface FilterOption {
+  // What the column filter is set to; `label` is what the user sees.
+  value: string
+  label: string
+  count: number
+}
+
+export interface FilterOptionGroup {
+  heading?: string
+  options: FilterOption[]
+  // Hidden behind a "Show …" item until expanded or the user searches.
+  collapsed?: boolean
+}
 
 export interface ColumnFilterProps<TData, TValue> {
   column: Column<TData, TValue>
@@ -15,90 +28,115 @@ export interface ColumnFilterProps<TData, TValue> {
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
     filterVariant?: 'text' | 'range' | 'select'
+    // Turns the column's faceted values (value -> row count, already narrowed
+    // by the other filters) into the options offered. Defaults to the distinct
+    // string values in alphabetical order.
+    filterOptions?: (facets: Map<any, number>) => FilterOptionGroup[]
   }
 }
 
+const defaultFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => [{
+  options: Array.from(facets.entries())
+    .filter(([value]) => typeof value === 'string' && value)
+    .map(([value, count]) => ({ value, label: value, count }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
+}]
 
 const ColumnFilter = <TData, TValue>({ column }: ColumnFilterProps<TData, TValue>) => {
-  const columnFilterValue: any = column.getFilterValue()
-  const { filterVariant } = column.columnDef.meta ?? {}
+  const { filterVariant, filterOptions } = column.columnDef.meta ?? {}
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [expanded, setExpanded] = useState(false)
 
-
-
-
-  const sortedUniqueValues = useMemo(() =>
-    filterVariant === 'range'
-      ? []
-      : Array.from(column.getFacetedUniqueValues().keys())
-        .sort()
-        .slice(0, 5000),
-    [column.getFacetedUniqueValues(), filterVariant]
+  const selected = (column.getFilterValue() as string | undefined) || undefined
+  const facets = column.getFacetedUniqueValues()
+  const groups = useMemo(
+    () => filterVariant === 'select' ? (filterOptions ?? defaultFilterOptions)(facets) : [],
+    [facets, filterOptions, filterVariant]
   )
 
-  const userCategoryUniqueValues = useMemo(() => {
-    if (column.id !== 'userCategory') return
-    const facets = column.getFacetedUniqueValues()
-    const nameFacets = new Map()
+  if (filterVariant !== 'select') return null
 
-    facets.forEach((value, key) => {
-      if (key === undefined) {
-        nameFacets.set('unassigned', value)
-      } else {
-        nameFacets.has(key.name)
-          ? nameFacets.set(key.name, nameFacets.get(key.name) + 1)
-          : nameFacets.set(key.name, 1)
-      }
-    })
-    return Array.from(nameFacets.keys()).sort().slice(0, 5000)
-  }, [column.getFacetedUniqueValues(), filterVariant])
+  const title = column.columnDef.header as string
+  const selectedLabel = selected &&
+    (groups.flatMap(group => group.options).find(option => option.value === selected)?.label ?? selected)
 
-  if (filterVariant === 'select') {
-    return (
-      <div>
-        <Popover modal={false}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="border-dashed font-normal">
-              <PlusCircle />
-              <span>{column.columnDef.header as string}</span>
-              {column.getFilterValue() as string &&
-                <>
-                  <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
-                  <Badge variant="secondary" className="rounded-sm font-normal">{column.getFilterValue() as string}</Badge>
-                </>
-              }
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start">
-            <Select
-              onValueChange={value => column.setFilterValue(value === "all" ? "" : value)}
-              value={columnFilterValue?.toString()}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={`Select a ${column.columnDef.header}`}></SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="all">
-                    All
-                  </SelectItem>
-                  {sortedUniqueValues.map((value, i) => {
-                    if (typeof value === 'string') return <SelectItem value={value} key={value}>{value}</SelectItem>
-                  })}
-                  {column.id === 'userCategory' && userCategoryUniqueValues &&
-                    userCategoryUniqueValues.map((value, i) => (
-                      <SelectItem value={value} key={value}>{value}</SelectItem>
-
-                    ))
-
-                  }
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </PopoverContent>
-        </Popover>
-      </div>
-    )
+  const choose = (value: string) => {
+    column.setFilterValue(value === selected ? undefined : value)
+    setOpen(false)
   }
+
+  const onOpenChange = (next: boolean) => {
+    setOpen(next)
+    if (!next) {
+      setSearch('')
+      setExpanded(false)
+    }
+  }
+
+  return (
+    <Popover open={open} onOpenChange={onOpenChange} modal={false}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="border-dashed font-normal">
+          <PlusCircle />
+          <span>{title}</span>
+          {selectedLabel &&
+            <>
+              <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
+              <Badge variant="secondary" className="rounded-sm font-normal">{selectedLabel}</Badge>
+            </>
+          }
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64 p-0">
+        <Command>
+          <CommandInput placeholder={`Search ${title.toLowerCase()}…`} value={search} onValueChange={setSearch} />
+          <CommandList>
+            <CommandEmpty>No matches.</CommandEmpty>
+            {groups.map((group, i) => {
+              if (!group.options.length) return null
+              // Searching always covers every option, collapsed or not.
+              const hidden = group.collapsed && !expanded && !search
+              return (
+                <CommandGroup key={group.heading ?? i} heading={hidden ? undefined : group.heading}>
+                  {hidden
+                    ? (
+                      <CommandItem value={`__show-${group.heading}`} onSelect={() => setExpanded(true)} className="text-muted-foreground">
+                        <ChevronDownIcon />
+                        Show {group.heading?.toLowerCase() ?? 'more'} ({group.options.length})
+                      </CommandItem>
+                    )
+                    : group.options.map(option => (
+                      <CommandItem
+                        key={option.value}
+                        // cmdk matches on `value`; include the label so search finds it.
+                        value={`${option.label} ${option.value}`}
+                        onSelect={() => choose(option.value)}
+                        data-checked={option.value === selected}
+                      >
+                        <span className="truncate">{option.label}</span>
+                        <span className="ml-auto text-xs tabular-nums text-muted-foreground">{option.count}</span>
+                      </CommandItem>
+                    ))
+                  }
+                </CommandGroup>
+              )
+            })}
+            {selected &&
+              <>
+                <CommandSeparator />
+                <CommandGroup>
+                  <CommandItem value="__clear" onSelect={() => { column.setFilterValue(undefined); setOpen(false) }} className="justify-center">
+                    Clear filter
+                  </CommandItem>
+                </CommandGroup>
+              </>
+            }
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
 }
 
 export default ColumnFilter

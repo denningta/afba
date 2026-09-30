@@ -9,6 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { EmptyCell, SelectAllCheckbox, SelectRowCheckbox } from "../common/DataTable/cells"
 import { Amount, MerchantLogo } from "./TransactionCells"
+import { FilterOptionGroup } from "../common/ColumnFilter"
+import { format, subMonths } from "date-fns"
+import { Category } from "@/app/interfaces/categories"
 
 const columnHelper = createColumnHelper<Transaction>()
 
@@ -26,6 +29,63 @@ const accountLabel = ({ account, account_id }: Transaction) => {
 const accountSubtype = ({ account, account_id }: Transaction) => {
   if (account) return account.subtype ?? account.type
   return account_id ? 'unknown' : 'manual'
+}
+
+// `month` is "MM-YYYY", which sorts wrong as text; offer newest first, by year.
+const monthFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => {
+  const months = Array.from(facets.entries())
+    .filter(([value]) => typeof value === 'string' && /^\d{2}-\d{4}$/.test(value))
+    .map(([value, count]: [string, number]) => {
+      const [mm, yyyy] = value.split('-').map(Number)
+      return { value, count, date: new Date(yyyy, mm - 1, 1) }
+    })
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+
+  const byYear = new Map<number, FilterOptionGroup>()
+  for (const { value, count, date } of months) {
+    const year = date.getFullYear()
+    if (!byYear.has(year)) byYear.set(year, { heading: String(year), options: [] })
+    byYear.get(year)!.options.push({ value, label: format(date, 'MMMM yyyy'), count })
+  }
+  return Array.from(byYear.values())
+}
+
+// How far back (from the newest category in view) a category still counts as
+// in use; anything older is tucked away until asked for or searched.
+const RECENT_CATEGORY_MONTHS = 3
+
+// Every month has its own copy of each category, so there's one option per
+// name. Categories are split into ones used recently and retired ones.
+const userCategoryFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => {
+  let unassigned = 0
+  const byName = new Map<string, { count: number, latest: string }>()
+  facets.forEach((count, category: Category | undefined) => {
+    if (!category?.name) {
+      unassigned += count
+      return
+    }
+    const entry = byName.get(category.name) ?? { count: 0, latest: '' }
+    entry.count += count
+    if ((category.date ?? '') > entry.latest) entry.latest = category.date ?? ''
+    byName.set(category.name, entry)
+  })
+
+  const newest = Array.from(byName.values()).reduce((max, { latest }) => latest > max ? latest : max, '')
+  const cutoff = newest
+    ? format(subMonths(new Date(`${newest}-01T00:00:00`), RECENT_CATEGORY_MONTHS - 1), 'yyyy-MM')
+    : ''
+
+  const recent: FilterOptionGroup = { heading: 'Categories', options: [] }
+  const older: FilterOptionGroup = { heading: 'Older categories', options: [], collapsed: true }
+  Array.from(byName.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([name, { count, latest }]) =>
+      (latest >= cutoff ? recent : older).options.push({ value: name, label: name, count })
+    )
+
+  const groups = [recent, older]
+  if (unassigned) groups.unshift({ options: [{ value: 'unassigned', label: 'Unassigned', count: unassigned }] })
+  return groups
 }
 
 const columns: ColumnDef<Transaction, any>[] = [
@@ -50,8 +110,10 @@ const columns: ColumnDef<Transaction, any>[] = [
   columnHelper.accessor('month', {
     header: 'Month',
     cell: info => info.getValue() || <EmptyCell />,
+    filterFn: 'equalsString',
     meta: {
-      filterVariant: 'select'
+      filterVariant: 'select',
+      filterOptions: monthFilterOptions,
     }
   }),
   columnHelper.accessor('merchant_name', {
@@ -137,6 +199,7 @@ const columns: ColumnDef<Transaction, any>[] = [
     },
     meta: {
       filterVariant: 'select',
+      filterOptions: userCategoryFilterOptions,
     }
   }),
   columnHelper.accessor('pending', {
@@ -148,19 +211,6 @@ const columns: ColumnDef<Transaction, any>[] = [
     header: 'Amount',
     meta: { align: 'right', width: 120 },
     cell: info => <Amount value={info.getValue() ?? 0} />,
-    footer: (props) => {
-      const total = props.table.getRowModel().rows.reduce((sum, row) => {
-        const value: number = row.getValue('amount')
-        return sum + value
-      }, 0)
-
-      return (
-        <div className="flex flex-col space-y-1">
-          <div className="text-xs text-muted-foreground">Total</div>
-          <Amount value={total} className="font-semibold" />
-        </div>
-      )
-    }
   }),
   columnHelper.display({
     id: 'acitions',
