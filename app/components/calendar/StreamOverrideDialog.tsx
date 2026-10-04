@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label"
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group"
 import { DatePicker } from "@/components/ui/date-picker"
-import { ForecastStream, StreamOverride } from "@/app/interfaces/forecast"
+import { BillAmountMode, ForecastStream, StreamOverride } from "@/app/interfaces/forecast"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toCurrency } from "@/app/helpers/helperFunctions"
 
 export interface StreamOverrideDialogProps {
   stream: ForecastStream | null
@@ -16,8 +18,9 @@ export interface StreamOverrideDialogProps {
   onSave: (override: StreamOverride) => Promise<boolean>
 }
 
-// Correct Plaid's guess for a recurring bill or paycheck: its amount and the
-// date of the next occurrence. Later occurrences follow from that date.
+// Correct Plaid's guess for a recurring bill or paycheck: how its amount is
+// chosen (fixed, average of recent ones, or the latest) and the date of the
+// next occurrence. Later occurrences follow from that date.
 export default function StreamOverrideDialog({ stream, onOpenChange, onSave }: StreamOverrideDialogProps) {
   return (
     <Dialog open={!!stream} onOpenChange={onOpenChange}>
@@ -49,10 +52,13 @@ function OverrideForm({ stream, onCancel, onSave }: {
   onSave: (override: StreamOverride) => Promise<void>
 }) {
   const income = stream.amount < 0
+  const [mode, setMode] = useState<BillAmountMode>(stream.amountMode)
   const [amount, setAmount] = useState(String(Math.abs(stream.amount)))
   const [nextDate, setNextDate] = useState<Date | undefined>(parseISO(stream.nextDate))
   const [saving, setSaving] = useState(false)
-  const valid = Number(amount) > 0 && !!nextDate
+  const valid = (mode !== 'fixed' || Number(amount) > 0) && !!nextDate
+  const recent = stream.recentAmounts.map(a => Math.abs(a))
+  const average = recent.length ? recent.reduce((sum, a) => sum + a, 0) / recent.length : Math.abs(stream.amount)
 
   return (
     <form
@@ -65,7 +71,9 @@ function OverrideForm({ stream, onCancel, onSave }: {
           const value = Math.abs(Number(amount))
           await onSave({
             stream_id: stream.streamId,
-            amount: income ? -value : value,
+            amountMode: mode,
+            // Only a fixed amount is stored; the others follow posted amounts.
+            amount: mode === 'fixed' ? (income ? -value : value) : null,
             nextDate: format(nextDate, 'yyyy-MM-dd'),
           })
         } finally {
@@ -74,7 +82,24 @@ function OverrideForm({ stream, onCancel, onSave }: {
       }}
     >
       <div className="space-y-2">
-        <Label htmlFor="override-amount">{income ? 'Amount received' : 'Amount paid'}</Label>
+        <Label>{income ? 'Amount received' : 'Amount paid'}</Label>
+        <Tabs value={mode} onValueChange={v => setMode(v as BillAmountMode)}>
+          <TabsList className="w-full">
+            <TabsTrigger value="average">Average of last {Math.max(recent.length, 1)}</TabsTrigger>
+            <TabsTrigger value="last">Latest</TabsTrigger>
+            <TabsTrigger value="fixed">Fixed</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        {mode !== 'fixed' && (
+          <p className="text-sm text-muted-foreground tabular-nums">
+            {mode === 'average'
+              ? <>Uses {toCurrency(average)}{recent.length > 1 && <> (from {recent.map(a => toCurrency(a)).join(', ')})</>}. Steadier for bills that vary.</>
+              : <>Uses the most recent amount{recent[0] != null && <>, {toCurrency(recent[0])}</>}.</>}
+          </p>
+        )}
+      </div>
+      {mode === 'fixed' && <div className="space-y-2">
+        <Label htmlFor="override-amount" className="sr-only">Fixed amount</Label>
         <InputGroup>
           <InputGroupAddon><InputGroupText>$</InputGroupText></InputGroupAddon>
           <InputGroupInput
@@ -87,7 +112,7 @@ function OverrideForm({ stream, onCancel, onSave }: {
             onChange={e => setAmount(e.target.value)}
           />
         </InputGroup>
-      </div>
+      </div>}
       <div className="space-y-2">
         <Label>Next date</Label>
         <div><DatePicker date={nextDate} onDateChange={setNextDate} /></div>

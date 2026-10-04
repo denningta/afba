@@ -4,6 +4,7 @@ import { deleteStreamOverride, listStreamOverrides, upsertStreamOverride } from 
 import { StreamOverride } from "@/app/interfaces/forecast"
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+const AMOUNT_MODES = ['average', 'last', 'fixed']
 
 export async function GET() {
   try {
@@ -13,18 +14,20 @@ export async function GET() {
   }
 }
 
-// Set any of hidden / amount / nextDate for a stream; null clears a field.
+// Set any of hidden / amount / amountMode / nextDate for a stream; null clears a field.
 export async function POST(request: Request) {
   try {
-    const { stream_id, hidden, amount, nextDate } = await request.json() as StreamOverride
+    const { stream_id, hidden, amount, amountMode, nextDate } = await request.json() as StreamOverride
 
     if (!stream_id) return Response.json({ message: 'stream_id is required' }, { status: 400 })
     if (amount != null && (typeof amount !== 'number' || !isFinite(amount))) return Response.json({ message: 'amount must be a number' }, { status: 400 })
+    if (amountMode != null && !AMOUNT_MODES.includes(amountMode)) return Response.json({ message: `amountMode must be one of ${AMOUNT_MODES.join(', ')}` }, { status: 400 })
     if (nextDate != null && !ISO_DATE.test(nextDate)) return Response.json({ message: 'nextDate must be YYYY-MM-DD' }, { status: 400 })
 
     const fields: StreamOverride = { stream_id }
     if (hidden !== undefined) fields.hidden = !!hidden
     if (amount !== undefined) fields.amount = amount
+    if (amountMode !== undefined) fields.amountMode = amountMode
     if (nextDate !== undefined) fields.nextDate = nextDate
     await upsertStreamOverride(fields)
     return Response.json({ stream_id })

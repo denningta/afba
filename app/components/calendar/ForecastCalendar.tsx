@@ -4,24 +4,29 @@ import { useMemo, useState } from "react"
 import Link from "next/link"
 import { addDays, format, parseISO } from "date-fns"
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ReferenceLine, XAxis, YAxis } from "recharts"
-import { CheckIcon, PlusIcon } from "lucide-react"
+import { PlusIcon, Settings2Icon } from "lucide-react"
 import useAccounts from "@/app/hooks/useAccounts"
 import useForecast from "@/app/hooks/useForecast"
 import { buildForecast, ForecastPoint } from "@/app/lib/forecast"
 import { toCurrency } from "@/app/helpers/helperFunctions"
-import { ForecastSource, ForecastStream, ScheduledTransaction } from "@/app/interfaces/forecast"
+import { COMMITTED_SOURCES, ForecastStream, ScheduledTransaction } from "@/app/interfaces/forecast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import PageHeader from "../common/PageHeader"
 import { EmptyState, ErrorState } from "../common/StateMessage"
 import { Amount } from "../transactions/TransactionCells"
-import UpcomingList from "./UpcomingList"
+import BillsList from "./BillsList"
+import ChangesCard from "./ChangesCard"
+import ForecastSettingsDialog from "./ForecastSettingsDialog"
+import SafeToSpendCard from "./SafeToSpendCard"
 import ScheduledItemDialog from "./ScheduledItemDialog"
 import StreamOverrideDialog from "./StreamOverrideDialog"
 import ForecastExplainSheet, { ForecastKpiKey } from "./ForecastExplainSheet"
@@ -29,14 +34,9 @@ import { ExplainTrigger } from "../common/ExplainSheet"
 
 const HORIZONS = [30, 60, 90] as const
 
-const SOURCE_LABELS: Record<ForecastSource, string> = {
-  recurring: 'Recurring',
-  budget: 'Budgeted spending',
-  scheduled: 'Scheduled',
-}
-
 const chartConfig = {
-  balance: { label: "Projected balance", color: "var(--chart-1)" },
+  balance: { label: "Known items", color: "var(--chart-1)" },
+  estimated: { label: "With estimated spending", color: "var(--chart-3)" },
 } satisfies ChartConfig
 
 function StatCard({ label, value, detail, tone, onExplain }: {
@@ -56,13 +56,14 @@ function StatCard({ label, value, detail, tone, onExplain }: {
           </CardTitle>
         </CardHeader>
         {detail && <CardContent className="text-sm text-muted-foreground">{detail}</CardContent>}
-  </Card>
+      </Card>
     </ExplainTrigger>
   )
 }
 
-// Projected balance for one account, from what's known to be coming: Plaid's
-// recurring bills and paychecks, the unspent budget, and items you add.
+// What's known to be coming for one account (recurring bills and paychecks,
+// pay schedules, items you add) and how much is safe to spend before payday.
+// Budget-based estimates are optional and never affect the headline numbers.
 const ForecastCalendar = () => {
   const { data: accounts, error: accountsError } = useAccounts()
   // Plaid-linked checking/savings accounts, checking first.
@@ -74,31 +75,32 @@ const ForecastCalendar = () => {
   const accountId = chosenAccountId ?? linked[0]?.account_id ?? null
 
   const [days, setDays] = useState<number>(30)
-  const [sources, setSources] = useState<Record<ForecastSource, boolean>>({ recurring: true, budget: true, scheduled: true })
-  // Late items are usually already pending at the bank, and some banks (USAA)
-  // include pending transactions in the balance Plaid reports - so counting
-  // them by default would double count. The user can opt in.
-  const [countLate, setCountLate] = useState(false)
+  const [showEstimates, setShowEstimates] = useState(false)
 
-  const { data, error, isLoading, mutate, saveScheduled, deleteScheduled, saveOverride, resetOverride } = useForecast(accountId)
+  const {
+    data, error, isLoading, mutate,
+    saveScheduled, deleteScheduled, saveOverride, resetOverride,
+    savePaySchedule, deletePaySchedule, saveSettings,
+  } = useForecast(accountId)
 
   const [scheduledDialog, setScheduledDialog] = useState<{ open: boolean, item?: ScheduledTransaction }>({ open: false })
   const [editingStream, setEditingStream] = useState<ForecastStream | null>(null)
   const [deleting, setDeleting] = useState<ScheduledTransaction | null>(null)
   const [explaining, setExplaining] = useState<ForecastKpiKey | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
-  const forecast = useMemo(() => {
-    if (!data) return null
+  const { forecast, estimated, committedEvents } = useMemo(() => {
+    if (!data) return { forecast: null, estimated: null, committedEvents: [] }
     const to = format(addDays(parseISO(data.from), days), 'yyyy-MM-dd')
-    return buildForecast({
-      startBalance: data.startBalance,
-      events: data.events.filter(e => sources[e.source] && e.date <= to && (!e.late || countLate)),
-      from: data.from,
-      days,
-    })
-  }, [data, days, sources, countLate])
-
-  const lateEvents = data?.events.filter(e => e.late && sources[e.source]) ?? []
+    const inRange = data.events.filter(e => e.date <= to)
+    const committedEvents = inRange.filter(e => COMMITTED_SOURCES.includes(e.source))
+    const build = (events: typeof inRange) => buildForecast({ startBalance: data.startBalance, events, from: data.from, days })
+    return {
+      forecast: build(committedEvents),
+      estimated: showEstimates ? build(inRange) : null,
+      committedEvents,
+    }
+  }, [data, days, showEstimates])
 
   const hasBudget = data?.events.some(e => e.source === 'budget') ?? false
   const change = forecast && data ? forecast.end - data.startBalance : 0
@@ -121,15 +123,19 @@ const ForecastCalendar = () => {
     <div className="space-y-6">
       <PageHeader
         title="Forecast"
-        description="Projected balance from recurring bills and paychecks, your remaining budget, and items you schedule."
+        description="Known bills and paychecks ahead, and how much is safe to spend before your next payday."
         actions={<>
           {accountPicker}
-          {accountId &&
+          {accountId && <>
+            <Button variant="outline" onClick={() => setSettingsOpen(true)} disabled={!data}>
+              <Settings2Icon />
+              Settings
+            </Button>
             <Button onClick={() => setScheduledDialog({ open: true })}>
               <PlusIcon />
               Add scheduled item
             </Button>
-          }
+          </>}
         </>}
       />
 
@@ -148,59 +154,19 @@ const ForecastCalendar = () => {
       }
 
       {accountId && <>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Tabs value={String(days)} onValueChange={(v) => setDays(Number(v))}>
-            <TabsList aria-label="Forecast length">
-              {HORIZONS.map(h => <TabsTrigger key={h} value={String(h)} className="px-3">{h} days</TabsTrigger>)}
-            </TabsList>
-          </Tabs>
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Include in forecast">
-            {(Object.keys(SOURCE_LABELS) as ForecastSource[])
-              .filter(source => source !== 'budget' || hasBudget)
-              .map(source => (
-                <Button
-                  key={source}
-                  size="sm"
-                  variant={sources[source] ? 'secondary' : 'outline'}
-                  aria-pressed={sources[source]}
-                  className={cn(!sources[source] && "text-muted-foreground")}
-                  onClick={() => setSources(s => ({ ...s, [source]: !s[source] }))}
-                >
-                  {sources[source] && <CheckIcon />}
-                  {SOURCE_LABELS[source]}
-                </Button>
-              ))}
-          </div>
-        </div>
-
         {error ? (
           <Card><ErrorState title="Couldn't build the forecast" error={error} onRetry={() => mutate()} /></Card>
         ) : isLoading || !data || !forecast ? (
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
+              <Skeleton className="h-36 w-full sm:col-span-2" />
+              {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-36 w-full" />)}
             </div>
             <Skeleton className="h-80 w-full" />
           </div>
         ) : <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="Today"
-              value={toCurrency(data.startBalance)}
-              detail={data.balanceAsOf
-                ? `As reported by your bank ${format(new Date(data.balanceAsOf), "MMM d, h:mm a")}`
-                : 'As reported by your bank'}
-              onExplain={() => setExplaining('today')}
-            />
-            <StatCard
-              label={`In ${days} days`}
-              onExplain={() => setExplaining('end')}
-              value={toCurrency(forecast.end)}
-              tone={forecast.end < 0 ? 'negative' : undefined}
-              detail={<span className={change >= 0 ? "text-positive" : "text-negative"}>
-                {change >= 0 ? '+' : '−'}{toCurrency(Math.abs(change))} from today
-              </span>}
-            />
+            <SafeToSpendCard safe={data.safeToSpend} onExplain={() => setExplaining('safe')} className="sm:col-span-2" />
             <StatCard
               label="Lowest point"
               onExplain={() => setExplaining('low')}
@@ -208,39 +174,35 @@ const ForecastCalendar = () => {
               tone={forecast.low.balance < 0 ? 'negative' : undefined}
               detail={forecast.low.balance < 0
                 ? `Overdrawn on ${format(parseISO(forecast.low.date), 'MMM d')}`
-                : `On ${format(parseISO(forecast.low.date), 'MMM d')}`}
+                : `On ${format(parseISO(forecast.low.date), 'MMM d')}, from known items`}
             />
             <StatCard
-              label="Coming in / going out"
-              onExplain={() => setExplaining('flows')}
-              value={<span className="text-xl"><span className="text-positive">+{toCurrency(forecast.totalIn)}</span> <span className="text-muted-foreground">/</span> {toCurrency(forecast.totalOut)}</span>}
-              detail={`Over the next ${days} days`}
+              label={`In ${days} days`}
+              onExplain={() => setExplaining('end')}
+              value={toCurrency(forecast.end)}
+              tone={forecast.end < 0 ? 'negative' : undefined}
+              detail={<span className={change >= 0 ? "text-positive" : "text-negative"}>
+                {change >= 0 ? '+' : '−'}{toCurrency(Math.abs(change))} from today&apos;s {toCurrency(data.startBalance)}
+              </span>}
             />
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Projected balance</CardTitle>
-              <CardDescription>
-                {data.account.name}{data.account.mask ? ` ••${data.account.mask}` : ''} · hover a day to see what&apos;s expected
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ForecastChart points={forecast.points} low={forecast.low} />
-            </CardContent>
-          </Card>
+          <ChangesCard since={data.changesSince} changes={data.changes} />
 
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming</CardTitle>
-              <CardDescription>What the forecast expects, day by day.</CardDescription>
+              <CardTitle>Bills &amp; paychecks</CardTitle>
+              <CardDescription>
+                Everything known to be coming in the next {days} days. Anything that already posted moves to Paid.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <UpcomingList
-                points={forecast.points}
-                lateEvents={lateEvents}
-                countLate={countLate}
-                onCountLateChange={setCountLate}
+              <BillsList
+                from={data.from}
+                events={committedEvents}
+                windowEnd={data.safeToSpend.windowEnd}
+                payday={data.safeToSpend.payday}
+                paid={data.paid}
                 streams={data.streams}
                 scheduled={data.scheduled}
                 onEditStream={setEditingStream}
@@ -251,7 +213,42 @@ const ForecastCalendar = () => {
                 onResetStream={(stream) => resetOverride(stream.streamId)}
                 onEditScheduled={(item) => setScheduledDialog({ open: true, item })}
                 onDeleteScheduled={setDeleting}
+                onEditPaySchedules={() => setSettingsOpen(true)}
               />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1.5">
+                <CardTitle>Projected balance</CardTitle>
+                <CardDescription>
+                  {data.account.name}{data.account.mask ? ` ••${data.account.mask}` : ''} · hover a day to see what&apos;s expected
+                </CardDescription>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                {hasBudget &&
+                  <div className="flex items-center gap-2">
+                    <Switch id="show-estimates" checked={showEstimates} onCheckedChange={setShowEstimates} />
+                    <Label htmlFor="show-estimates" className="font-normal">Estimated spending</Label>
+                    <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setExplaining('budget')}>How?</Button>
+                  </div>
+                }
+                <Tabs value={String(days)} onValueChange={(v) => setDays(Number(v))}>
+                  <TabsList aria-label="Forecast length">
+                    {HORIZONS.map(h => <TabsTrigger key={h} value={String(h)} className="px-3">{h} days</TabsTrigger>)}
+                  </TabsList>
+                </Tabs>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ForecastChart points={forecast.points} estimated={estimated?.points} low={forecast.low} />
+              {estimated &&
+                <p className="mt-2 text-xs text-muted-foreground">
+                  The dashed line also spreads your remaining budget over each day. It&apos;s a guess, so it doesn&apos;t
+                  change safe to spend.
+                </p>
+              }
             </CardContent>
           </Card>
         </>}
@@ -262,8 +259,23 @@ const ForecastCalendar = () => {
             onOpenChange={(open) => !open && setExplaining(null)}
             data={data}
             forecast={forecast}
+            allEvents={data.events}
             days={days}
-            lateCount={countLate ? 0 : lateEvents.length}
+            showEstimates={showEstimates}
+            onExplain={setExplaining}
+          />
+        }
+        {data && accountId &&
+          <ForecastSettingsDialog
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            accountId={accountId}
+            settings={data.settings}
+            paySchedules={data.paySchedules}
+            incomeStreams={data.streams.filter(s => s.amount < 0)}
+            onSaveSettings={saveSettings}
+            onSavePaySchedule={savePaySchedule}
+            onDeletePaySchedule={deletePaySchedule}
           />
         }
         <ScheduledItemDialog
@@ -302,12 +314,17 @@ const ForecastCalendar = () => {
   )
 }
 
-function ForecastChart({ points, low }: { points: ForecastPoint[], low: { date: string, balance: number } }) {
-  const dipsBelowZero = low.balance < 0
+function ForecastChart({ points, estimated, low }: {
+  points: ForecastPoint[]
+  estimated?: ForecastPoint[]
+  low: { date: string, balance: number }
+}) {
+  const dipsBelowZero = low.balance < 0 || (estimated?.some(p => p.balance < 0) ?? false)
+  const data = points.map((p, i) => ({ ...p, estimated: estimated?.[i]?.balance }))
 
   return (
     <ChartContainer config={chartConfig} className="h-80 w-full">
-      <AreaChart data={points} margin={{ top: 12, left: 4, right: 12 }}>
+      <AreaChart data={data} margin={{ top: 12, left: 4, right: 12 }}>
         <defs>
           <linearGradient id="forecast-fill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="var(--color-balance)" stopOpacity={0.25} />
@@ -340,11 +357,21 @@ function ForecastChart({ points, low }: { points: ForecastPoint[], low: { date: 
           strokeWidth={2}
           fill="url(#forecast-fill)"
         />
+        {estimated &&
+          <Area
+            dataKey="estimated"
+            type="stepAfter"
+            stroke="var(--color-estimated)"
+            strokeWidth={1.5}
+            strokeDasharray="5 4"
+            fill="none"
+          />
+        }
         <ReferenceDot
           x={low.date}
           y={low.balance}
           r={5}
-          fill={dipsBelowZero ? "var(--negative)" : "var(--color-balance)"}
+          fill={low.balance < 0 ? "var(--negative)" : "var(--color-balance)"}
           stroke="var(--card)"
           strokeWidth={2}
           label={{ value: 'Lowest', position: 'top', fontSize: 11, fill: 'var(--muted-foreground)' }}
@@ -354,7 +381,7 @@ function ForecastChart({ points, low }: { points: ForecastPoint[], low: { date: 
   )
 }
 
-function ForecastTooltip({ active, payload }: { active?: boolean, payload?: { payload: ForecastPoint }[] }) {
+function ForecastTooltip({ active, payload }: { active?: boolean, payload?: { payload: ForecastPoint & { estimated?: number } }[] }) {
   const point = payload?.[0]?.payload
   if (!active || !point) return null
   const shown = point.events.slice(0, 5)
@@ -365,6 +392,12 @@ function ForecastTooltip({ active, payload }: { active?: boolean, payload?: { pa
         <span className="font-medium">{format(parseISO(point.date), 'EEE, MMM d')}</span>
         <span className={cn("font-mono font-medium tabular-nums", point.balance < 0 && "text-negative")}>{toCurrency(point.balance)}</span>
       </div>
+      {point.estimated != null &&
+        <div className="flex items-baseline justify-between gap-4 text-muted-foreground">
+          <span>With estimated spending</span>
+          <span className="font-mono tabular-nums">{toCurrency(point.estimated)}</span>
+        </div>
+      }
       {shown.map((event, i) => (
         <div key={i} className="flex items-baseline justify-between gap-4 text-muted-foreground">
           <span className="max-w-40 truncate">{event.name}</span>

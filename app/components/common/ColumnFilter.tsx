@@ -11,7 +11,9 @@ export interface FilterOption {
   // What the column filter is set to; `label` is what the user sees.
   value: string
   label: string
-  count: number
+  count?: number
+  // Shown in place of the count, e.g. a formatted total.
+  detail?: string
 }
 
 export interface FilterOptionGroup {
@@ -44,9 +46,6 @@ const defaultFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => 
 
 const ColumnFilter = <TData, TValue>({ column }: ColumnFilterProps<TData, TValue>) => {
   const { filterVariant, filterOptions } = column.columnDef.meta ?? {}
-  const [open, setOpen] = useState(false)
-  const [search, setSearch] = useState('')
-  const [expanded, setExpanded] = useState(false)
 
   const selected = (column.getFilterValue() as string | undefined) || undefined
   const facets = column.getFacetedUniqueValues()
@@ -57,13 +56,44 @@ const ColumnFilter = <TData, TValue>({ column }: ColumnFilterProps<TData, TValue
 
   if (filterVariant !== 'select') return null
 
-  const title = column.columnDef.header as string
-  const selectedLabel = selected &&
-    (groups.flatMap(group => group.options).find(option => option.value === selected)?.label ?? selected)
+  return (
+    <FilterPopover
+      title={column.columnDef.header as string}
+      groups={groups}
+      selected={selected ? [selected] : []}
+      onSelect={value => column.setFilterValue(value === selected ? undefined : value)}
+      onClear={() => column.setFilterValue(undefined)}
+    />
+  )
+}
+
+export interface FilterPopoverProps {
+  title: string
+  groups: FilterOptionGroup[]
+  selected: string[]
+  // Called with the option picked; the caller decides whether that replaces
+  // or toggles the selection.
+  onSelect: (value: string) => void
+  onClear: () => void
+  // Keep the list open after a pick, for choosing several values.
+  multiple?: boolean
+  align?: 'start' | 'end'
+}
+
+// The dashed "+ Title" button and searchable, grouped option list used by the
+// table toolbars. Works without a table, e.g. to pick a chart's series.
+export function FilterPopover({ title, groups, selected, onSelect, onClear, multiple, align = 'start' }: FilterPopoverProps) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [expanded, setExpanded] = useState(false)
+
+  const labelFor = (value: string) =>
+    groups.flatMap(group => group.options).find(option => option.value === value)?.label ?? value
+  const isSelected = (value: string) => selected.includes(value)
 
   const choose = (value: string) => {
-    column.setFilterValue(value === selected ? undefined : value)
-    setOpen(false)
+    onSelect(value)
+    if (!multiple) setOpen(false)
   }
 
   const onOpenChange = (next: boolean) => {
@@ -80,15 +110,22 @@ const ColumnFilter = <TData, TValue>({ column }: ColumnFilterProps<TData, TValue
         <Button variant="outline" className="border-dashed font-normal">
           <PlusCircle />
           <span>{title}</span>
-          {selectedLabel &&
+          {selected.length > 0 &&
             <>
               <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-4" />
-              <Badge variant="secondary" className="rounded-sm font-normal">{selectedLabel}</Badge>
+              {selected.length > 2
+                ? <Badge variant="secondary" className="rounded-sm font-normal">{selected.length} selected</Badge>
+                : selected.map(value => (
+                  <Badge key={value} variant="secondary" className="max-w-32 rounded-sm font-normal">
+                    <span className="truncate">{labelFor(value)}</span>
+                  </Badge>
+                ))
+              }
             </>
           }
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64 p-0">
+      <PopoverContent align={align} className="w-64 p-0">
         <Command>
           <CommandInput placeholder={`Search ${title.toLowerCase()}…`} value={search} onValueChange={setSearch} />
           <CommandList>
@@ -112,22 +149,22 @@ const ColumnFilter = <TData, TValue>({ column }: ColumnFilterProps<TData, TValue
                         // cmdk matches on `value`; include the label so search finds it.
                         value={`${option.label} ${option.value}`}
                         onSelect={() => choose(option.value)}
-                        data-checked={option.value === selected}
+                        data-checked={isSelected(option.value)}
                       >
                         <span className="truncate">{option.label}</span>
-                        <span className="ml-auto text-xs tabular-nums text-muted-foreground">{option.count}</span>
+                        <span className="ml-auto text-xs tabular-nums text-muted-foreground">{option.detail ?? option.count}</span>
                       </CommandItem>
                     ))
                   }
                 </CommandGroup>
               )
             })}
-            {selected &&
+            {selected.length > 0 &&
               <>
                 <CommandSeparator />
                 <CommandGroup>
-                  <CommandItem value="__clear" onSelect={() => { column.setFilterValue(undefined); setOpen(false) }} className="justify-center">
-                    Clear filter
+                  <CommandItem value="__clear" onSelect={() => { onClear(); setOpen(false) }} className="justify-center">
+                    {multiple ? 'Clear selection' : 'Clear filter'}
                   </CommandItem>
                 </CommandGroup>
               </>

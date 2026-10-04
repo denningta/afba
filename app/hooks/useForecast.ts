@@ -3,7 +3,7 @@ import axios from "axios"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import fetcher from "@/app/lib/fetcher"
-import { ForecastResponse, ScheduledTransaction, StreamOverride } from "@/app/interfaces/forecast"
+import { ForecastResponse, ForecastSettings, PaySchedule, ScheduledTransaction, StreamOverride } from "@/app/interfaces/forecast"
 
 // Always fetch the longest horizon; the page trims it client-side, so switching
 // 30/60/90 days is instant.
@@ -50,6 +50,15 @@ export default function useForecast(accountId: string | null) {
   const resetOverride = (stream_id: string) =>
     run(() => axios.delete('/api/stream-overrides', { params: { stream_id } }), "Restored Plaid's values.", "Couldn't reset the recurring item.")
 
+  const savePaySchedule = (schedule: PaySchedule) =>
+    run(() => axios.post('/api/pay-schedules', schedule), schedule._id ? 'Pay schedule updated.' : 'Pay schedule added.', "Couldn't save the pay schedule.")
+
+  const deletePaySchedule = (id: string) =>
+    run(() => axios.delete('/api/pay-schedules', { params: { id } }), 'Pay schedule removed.', "Couldn't remove the pay schedule.")
+
+  const saveSettings = (settings: ForecastSettings) =>
+    run(() => axios.post('/api/forecast-settings', settings), 'Forecast settings saved.', "Couldn't save the settings.")
+
   return {
     data,
     error,
@@ -59,5 +68,8 @@ export default function useForecast(accountId: string | null) {
     deleteScheduled,
     saveOverride,
     resetOverride,
+    savePaySchedule,
+    deletePaySchedule,
+    saveSettings,
   }
 }

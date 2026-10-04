@@ -1,7 +1,7 @@
 // Pure forecast math: no I/O, so the server can build events and the client
 // can rebuild the balance line instantly when sources are toggled.
-import { addDays, addMonths, addYears, differenceInCalendarDays, endOfMonth, format, getDaysInMonth, parseISO, setDate } from "date-fns"
-import type { ForecastEvent, ForecastFrequency } from "../interfaces/forecast"
+import { addDays, addMonths, addYears, differenceInCalendarDays, endOfMonth, format, getDay, getDaysInMonth, parseISO, setDate } from "date-fns"
+import type { ForecastChange, ForecastEvent, ForecastFrequency, PaySchedule, SafeToSpend } from "../interfaces/forecast"
 
 const ISO = 'yyyy-MM-dd'
 const toISO = (date: Date) => format(date, ISO)
@@ -109,6 +109,208 @@ export function spreadBudget(
   }
 
   return [...byDate.values()]
+}
+
+// --- Matching posted transactions to expected occurrences --------------------
+
+// A synced transaction, reduced to what matching needs. Date is YYYY-MM-DD.
+export interface PostedTransaction {
+  transaction_id?: string
+  date: string
+  amount: number
+  name: string
+}
+
+// How far from the expected date a posted transaction still counts as that
+// occurrence: bills often post a few days early, deposits a day or two late.
+export const MATCH_DAYS_EARLY = 5
+export const MATCH_DAYS_LATE = 7
+// How far a matched amount may differ from the expected one (variable bills).
+export const MATCH_AMOUNT_TOLERANCE = 0.25
+
+export const normalizeName = (name: string | null | undefined) =>
+  (name ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+
+// The posted transaction that is this occurrence, if it has already happened:
+// one of the stream's own transactions, or one with the same name, within the
+// date window and amount tolerance (any amount for the stream's own ids).
+// `used` stops one transaction from paying two occurrences.
+export function matchOccurrence({ expectedDate, expectedAmount, names, transactionIds, today, posted, used }: {
+  expectedDate: string
+  expectedAmount: number
+  names: string[]
+  transactionIds?: Set<string>
+  today: string
+  posted: PostedTransaction[]
+  used?: Set<string>
+}): PostedTransaction | undefined {
+  const earliest = toISO(addDays(parseISO(expectedDate), -MATCH_DAYS_EARLY))
+  const latestByRule = toISO(addDays(parseISO(expectedDate), MATCH_DAYS_LATE))
+  const latest = latestByRule < today ? latestByRule : today
+  const wanted = names.map(normalizeName).filter(Boolean)
+
+  const candidates = posted.filter(t => {
+    if (t.date < earliest || t.date > latest) return false
+    if (t.transaction_id && used?.has(t.transaction_id)) return false
+    if (Math.sign(t.amount) !== Math.sign(expectedAmount)) return false
+    if (t.transaction_id && transactionIds?.has(t.transaction_id)) return true
+    const name = normalizeName(t.name)
+    const sameName = !!name && wanted.some(w => name === w || name.includes(w) || w.includes(name))
+    const closeAmount = Math.abs(t.amount - expectedAmount) <= Math.abs(expectedAmount) * MATCH_AMOUNT_TOLERANCE
+    return sameName && closeAmount
+  })
+
+  const distance = (t: PostedTransaction) => Math.abs(differenceInCalendarDays(parseISO(t.date), parseISO(expectedDate)))
+  return candidates.sort((a, b) => distance(a) - distance(b))[0]
+}
+
+// --- Pay schedules ------------------------------------------------------------
+
+// Moves a weekend date to the Friday before or the Monday after.
+export function shiftForWeekend(date: string, rule: PaySchedule['weekendRule']) {
+  if (rule === 'none') return date
+  const day = getDay(parseISO(date)) // 0 Sunday, 6 Saturday
+  if (day !== 0 && day !== 6) return date
+  const shift = rule === 'before' ? (day === 6 ? -1 : -2) : (day === 6 ? 2 : 1)
+  return toISO(addDays(parseISO(date), shift))
+}
+
+// Paydays in [from, to], after the weekend rule. Starts a cycle early so a
+// payday pulled back from a weekend into the range isn't missed.
+export function expandPaySchedule(schedule: PaySchedule, from: string, to: string): string[] {
+  const lookbackFrom = toISO(addDays(parseISO(from), -3))
+  let dates: string[]
+  if (schedule.frequency === 'SEMI_MONTHLY' || schedule.frequency === 'MONTHLY') {
+    // Fixed days of the month (capped at the month's last day), so the 31st
+    // stays the 31st instead of drifting after a short month.
+    const days = schedule.frequency === 'MONTHLY'
+      ? [parseISO(schedule.anchorDate).getDate()]
+      : schedule.semiMonthlyDays ?? [1, 15]
+    dates = []
+    for (let month = parseISO(`${lookbackFrom.slice(0, 7)}-01`); month <= parseISO(to); month = addMonths(month, 1)) {
+      for (const day of days) {
+        dates.push(toISO(setDate(month, Math.min(day, getDaysInMonth(month)))))
+      }
+    }
+  } else {
+    // Walk back from the anchor so paydays before it are included too.
+    const step = schedule.frequency === 'WEEKLY' ? 7 : 14
+    let start = parseISO(schedule.anchorDate)
+    while (toISO(start) > lookbackFrom) start = addDays(start, -step)
+    dates = expandOccurrences(toISO(start), schedule.frequency, lookbackFrom, toISO(addDays(parseISO(to), 3)))
+  }
+  return [...new Set(dates.map(d => shiftForWeekend(d, schedule.weekendRule)))]
+    .filter(d => d >= from && d <= to)
+    .sort()
+}
+
+// --- Safe to spend ------------------------------------------------------------
+
+// What can be spent before the next payday without dipping below the cushion:
+//   balance − known outflows before payday + known inflows before payday − cushion
+// Paychecks mark the window and aren't counted. With no payday known, the
+// window is the rest of the month.
+export function safeToSpend({ startBalance, events, from, cushion }: {
+  startBalance: number
+  events: ForecastEvent[] // committed only
+  from: string
+  cushion: number
+}): SafeToSpend {
+  const nextPaycheck = events
+    .filter(e => e.paycheck && e.date > from)
+    .sort((a, b) => a.date.localeCompare(b.date))[0]
+  const windowEnd = nextPaycheck
+    ? toISO(addDays(parseISO(nextPaycheck.date), -1))
+    : toISO(endOfMonth(parseISO(from)))
+
+  const inWindow = events.filter(e => !e.paycheck && e.date >= from && e.date <= windowEnd)
+  const outflows = inWindow.filter(e => e.amount > 0)
+  const inflows = inWindow.filter(e => e.amount < 0)
+  const out = outflows.reduce((sum, e) => sum + e.amount, 0)
+  const income = inflows.reduce((sum, e) => sum - e.amount, 0)
+  const amount = round2(startBalance - out + income - cushion)
+  const days = differenceInCalendarDays(parseISO(windowEnd), parseISO(from)) + 1
+
+  return {
+    amount,
+    perDay: round2(days > 0 ? amount / days : amount),
+    payday: nextPaycheck?.date ?? null,
+    paydayName: nextPaycheck?.name,
+    windowEnd,
+    days,
+    startBalance,
+    cushion,
+    outflows,
+    inflows,
+  }
+}
+
+// --- What changed since the last snapshot -------------------------------------
+
+export interface SnapshotItem {
+  key: string // stream/schedule/item id; one entry per item (its next occurrence)
+  name: string
+  date: string
+  amount: number
+  late?: boolean
+}
+
+export interface ForecastSnapshot {
+  date: string
+  startBalance: number
+  safeToSpend: number
+  items: SnapshotItem[]
+  // "key@postedDate" for each paid occurrence, so a later cycle reads as new.
+  paidKeys: string[]
+}
+
+// Plain-language differences between two snapshots, most important first.
+export function diffSnapshots(before: ForecastSnapshot, after: ForecastSnapshot): ForecastChange[] {
+  const changes: ForecastChange[] = []
+  const money = (n: number) => `$${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const day = (d: string) => format(parseISO(d), 'MMM d')
+  const signed = (n: number) => `${n >= 0 ? '+' : '−'}${money(n)}`
+
+  const balanceDelta = round2(after.startBalance - before.startBalance)
+  if (Math.abs(balanceDelta) >= 0.01) {
+    changes.push({ kind: 'balance', amount: balanceDelta, text: `Balance ${balanceDelta >= 0 ? 'up' : 'down'} ${money(balanceDelta)} (${money(before.startBalance)} → ${money(after.startBalance)})` })
+  }
+  const safeDelta = round2(after.safeToSpend - before.safeToSpend)
+  if (Math.abs(safeDelta) >= 0.01) {
+    changes.push({ kind: 'safeToSpend', amount: safeDelta, text: `Safe to spend ${signed(safeDelta)}` })
+  }
+
+  const beforeByKey = new Map(before.items.map(i => [i.key, i]))
+  const afterByKey = new Map(after.items.map(i => [i.key, i]))
+  const paidNow = new Set(after.paidKeys.filter(k => !before.paidKeys.includes(k)).map(k => k.split('@')[0]))
+
+  for (const [key, was] of beforeByKey) {
+    const now = afterByKey.get(key)
+    if (paidNow.has(key)) {
+      changes.push({ kind: 'paid', amount: was.amount, text: `${was.name} ${was.amount < 0 ? 'arrived' : 'posted'} (${money(was.amount)})` })
+      continue
+    }
+    if (!now) {
+      // Its occurrence simply passed into the window's past without posting.
+      if (was.date < after.date) continue
+      changes.push({ kind: 'removed', amount: was.amount, text: `${was.name} no longer expected (was ${money(was.amount)} on ${day(was.date)})` })
+      continue
+    }
+    if (now.late && !was.late) {
+      changes.push({ kind: 'late', amount: now.amount, text: `${now.name} is late (expected ${day(was.date)})` })
+    } else if (now.date !== was.date && !now.late) {
+      changes.push({ kind: 'moved', text: `${now.name} moved ${day(was.date)} → ${day(now.date)}` })
+    }
+    if (Math.abs(now.amount - was.amount) >= 1) {
+      changes.push({ kind: 'amount', amount: now.amount - was.amount, text: `${now.name} now ${money(now.amount)} (was ${money(was.amount)})` })
+    }
+  }
+  for (const [key, now] of afterByKey) {
+    if (!beforeByKey.has(key) && !paidNow.has(key)) {
+      changes.push({ kind: 'new', amount: now.amount, text: `New: ${now.name}, ${money(now.amount)} on ${day(now.date)}` })
+    }
+  }
+  return changes
 }
 
 export interface ForecastPoint {

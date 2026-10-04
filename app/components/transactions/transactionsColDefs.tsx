@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { EmptyCell, SelectAllCheckbox, SelectRowCheckbox } from "../common/DataTable/cells"
 import { Amount, MerchantLogo } from "./TransactionCells"
 import { FilterOptionGroup } from "../common/ColumnFilter"
+import { groupCategoriesByRecency } from "../common/categoryFilterOptions"
 import { format, subMonths } from "date-fns"
 import { Category } from "@/app/interfaces/categories"
 
@@ -50,9 +51,18 @@ const monthFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => {
   return Array.from(byYear.values())
 }
 
-// How far back (from the newest category in view) a category still counts as
-// in use; anything older is tucked away until asked for or searched.
-const RECENT_CATEGORY_MONTHS = 3
+
+// What the Merchant column shows: Plaid's merchant name, or the transaction's
+// description when Plaid didn't identify one (e.g. transfers, CSV imports).
+const merchantLabel = (t: Transaction) => t.merchant_name || t.name || ''
+
+// Merchants by how often they appear (the list is long; search finds the rest).
+const merchantFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => [{
+  options: Array.from(facets.entries())
+    .filter(([value]) => typeof value === 'string' && value)
+    .map(([value, count]: [string, number]) => ({ value, label: value, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
+}]
 
 // Every month has its own copy of each category, so there's one option per
 // name. Categories are split into ones used recently and retired ones.
@@ -70,20 +80,11 @@ const userCategoryFilterOptions = (facets: Map<any, number>): FilterOptionGroup[
     byName.set(category.name, entry)
   })
 
-  const newest = Array.from(byName.values()).reduce((max, { latest }) => latest > max ? latest : max, '')
-  const cutoff = newest
-    ? format(subMonths(new Date(`${newest}-01T00:00:00`), RECENT_CATEGORY_MONTHS - 1), 'yyyy-MM')
-    : ''
-
-  const recent: FilterOptionGroup = { heading: 'Categories', options: [] }
-  const older: FilterOptionGroup = { heading: 'Older categories', options: [], collapsed: true }
-  Array.from(byName.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .forEach(([name, { count, latest }]) =>
-      (latest >= cutoff ? recent : older).options.push({ value: name, label: name, count })
-    )
-
-  const groups = [recent, older]
+  const groups = groupCategoriesByRecency(
+    Array.from(byName.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, { count, latest }]) => ({ option: { value: name, label: name, count }, latest }))
+  )
   if (unassigned) groups.unshift({ options: [{ value: 'unassigned', label: 'Unassigned', count: unassigned }] })
   return groups
 }
@@ -116,12 +117,14 @@ const columns: ColumnDef<Transaction, any>[] = [
       filterOptions: monthFilterOptions,
     }
   }),
-  columnHelper.accessor('merchant_name', {
+  columnHelper.accessor(merchantLabel, {
+    // Kept as merchant_name so saved column choices still apply.
+    id: 'merchant_name',
     header: 'Merchant',
     cell: info => {
       const transaction = info.row.original
-      const merchant = info.getValue() || transaction.name
-      const isAmazon = info.getValue()?.toLowerCase() === 'amazon'
+      const merchant = info.getValue()
+      const isAmazon = transaction.merchant_name?.toLowerCase() === 'amazon'
 
       return (
         <div className="flex min-w-0 items-center gap-2.5">
@@ -141,7 +144,12 @@ const columns: ColumnDef<Transaction, any>[] = [
         </div>
       )
     },
-    meta: { truncate: true },
+    filterFn: 'equalsString',
+    meta: {
+      truncate: true,
+      filterVariant: 'select',
+      filterOptions: merchantFilterOptions,
+    },
   }),
   columnHelper.accessor('name', {
     header: 'Description',

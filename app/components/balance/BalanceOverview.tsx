@@ -2,19 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { format, parseISO, subDays, startOfYear, subYears } from "date-fns"
-import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import useBalanceHistory from "@/app/hooks/useBalanceHistory"
-import useCategories from "@/app/hooks/useCategories"
 import { toCurrency } from "@/app/helpers/helperFunctions"
-import { Card, CardAction, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from "@/components/ui/chart"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -49,12 +46,6 @@ import {
 import type { CategoricalChartFunc } from "recharts/types/chart/types"
 
 const LIABILITY_TYPES = new Set(["credit", "loan"])
-const CATEGORY_PALETTE = ["var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"]
-
-function slugify(value: string) {
-  return value.replace(/[^a-zA-Z0-9]+/g, "_")
-}
-
 type RangePreset = "30d" | "90d" | "ytd" | "1y" | "all" | "custom"
 
 const PRESET_LABELS: Record<Exclude<RangePreset, "custom">, string> = {
@@ -127,20 +118,12 @@ export default function BalanceOverview() {
   )
 
   const { data, isLoading, error } = useBalanceHistory(start, end)
-  const { data: categories } = useCategories()
 
   const [includedAccountIds, setIncludedAccountIds] = useState<Set<string> | null>(null)
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [institutionFilter, setInstitutionFilter] = useState<string>("all")
   const [drillDownAccountId, setDrillDownAccountId] = useState<string>("all")
-  const [selectedCategoryNames, setSelectedCategoryNames] = useState<Set<string>>(new Set())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-
-  const categoryNames = useMemo(() => {
-    if (!categories) return []
-    return Array.from(new Set(categories.map((c) => c.name).filter((name): name is string => !!name)))
-      .sort((a, b) => a.localeCompare(b))
-  }, [categories])
 
   // Read after mount (not in useState initializers) to avoid a hydration mismatch.
   useEffect(() => {
@@ -205,18 +188,6 @@ export default function BalanceOverview() {
     })
   }
 
-  const toggleCategory = (categoryName: string) => {
-    setSelectedCategoryNames((prev) => {
-      const next = new Set(prev)
-      if (next.has(categoryName)) {
-        next.delete(categoryName)
-      } else {
-        next.add(categoryName)
-      }
-      return next
-    })
-  }
-
   const overallSeries = useMemo(() => {
     if (!data) return []
 
@@ -254,48 +225,6 @@ export default function BalanceOverview() {
       color: "var(--chart-1)",
     },
   }), [drillDownAccountName])
-
-  // "How has spending in this category changed over time?" is best answered
-  // by discrete monthly totals, not a cumulative running total — a cumulative
-  // line only ever goes in one direction and obscures month-to-month swings.
-  const months = useMemo(() => {
-    if (!data) return []
-    const seen = new Set<string>()
-    const ordered: string[] = []
-    data.dates.forEach((d) => {
-      const month = d.slice(0, 7)
-      if (!seen.has(month)) {
-        seen.add(month)
-        ordered.push(month)
-      }
-    })
-    return ordered
-  }, [data])
-
-  const categorySpendChartData = useMemo(() => {
-    if (!data) return []
-    return months.map((month) => {
-      const row: Record<string, number | string> = { month }
-      selectedCategoryNames.forEach((name) => {
-        const total = data.transactions
-          .filter((t) => t.categoryName === name && t.date.slice(0, 7) === month)
-          .reduce((sum, t) => sum + t.amount, 0)
-        row[slugify(name)] = Math.round(total * 100) / 100
-      })
-      return row
-    })
-  }, [data, months, selectedCategoryNames])
-
-  const categorySpendChartConfig = useMemo(() => {
-    const config: ChartConfig = {}
-    Array.from(selectedCategoryNames).forEach((name, i) => {
-      config[slugify(name)] = {
-        label: name,
-        color: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length],
-      }
-    })
-    return config
-  }, [selectedCategoryNames])
 
   const currentBalance = overallSeries[overallSeries.length - 1] ?? 0
   const startingBalance = overallSeries[0] ?? 0
@@ -335,30 +264,6 @@ export default function BalanceOverview() {
       </Card>
     )
   }
-
-  const categoriesMenu = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline">
-          Categories{selectedCategoryNames.size > 0 && ` (${selectedCategoryNames.size})`}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-h-80 w-64 overflow-y-auto">
-        <DropdownMenuLabel>Compare monthly spending</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {categoryNames.map((name) => (
-          <DropdownMenuCheckboxItem
-            key={name}
-            checked={selectedCategoryNames.has(name)}
-            onCheckedChange={() => toggleCategory(name)}
-            onSelect={(e) => e.preventDefault()}
-          >
-            {name}
-          </DropdownMenuCheckboxItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
 
   const includedAccounts = data?.accounts.filter((a) => includedAccountIds?.has(a.account_id)) ?? []
 
@@ -575,63 +480,6 @@ export default function BalanceOverview() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Category spending by month</CardTitle>
-          <CardDescription>
-            How spending in each selected category has changed over time
-          </CardDescription>
-          <CardAction>{categoriesMenu}</CardAction>
-        </CardHeader>
-        <CardContent>
-          {selectedCategoryNames.size === 0 ? (
-            <EmptyState
-              title="No categories selected"
-              description="Choose one or more categories to compare their monthly spending."
-              action={categoriesMenu}
-            />
-          ) : isLoading || !data ? (
-            <Skeleton className="h-72 w-full" />
-          ) : (
-            <ChartContainer config={categorySpendChartConfig} className="h-72 w-full">
-              <BarChart data={categorySpendChartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  tickFormatter={(value) => format(parseISO(`${value}-01`), "MMM yyyy")}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={8}
-                  width={80}
-                  tickFormatter={(value) => toCurrency(value).replace(/\.\d\d$/, "")}
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) => format(parseISO(`${value}-01`), "MMMM yyyy")}
-                    />
-                  }
-                />
-                <ChartLegend content={<ChartLegendContent />} />
-                {Array.from(selectedCategoryNames).map((name) => (
-                  <Bar
-                    key={name}
-                    dataKey={slugify(name)}
-                    fill={`var(--color-${slugify(name)})`}
-                    radius={4}
-                  />
-                ))}
-              </BarChart>
-            </ChartContainer>
-          )}
-        </CardContent>
-      </Card>
 
       <Dialog open={selectedDate !== null} onOpenChange={(open) => !open && setSelectedDate(null)}>
         <DialogContent className="sm:max-w-md">

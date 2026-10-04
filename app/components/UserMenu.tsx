@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ChevronsUpDownIcon, LogOutIcon, UserCogIcon, UsersIcon } from "lucide-react"
+import { ChevronsUpDownIcon, LogOutIcon, SparklesIcon, UserCogIcon, UsersIcon } from "lucide-react"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
@@ -63,6 +63,11 @@ export default function UserMenu() {
             {isAdmin &&
               <DropdownMenuItem asChild>
                 <Link href="/settings/users" onClick={closeMobile}><UsersIcon /> Manage users</Link>
+              </DropdownMenuItem>
+            }
+            {isAdmin &&
+              <DropdownMenuItem asChild>
+                <Link href="/settings/ai" onClick={closeMobile}><SparklesIcon /> AI assistant</Link>
               </DropdownMenuItem>
             }
             <DropdownMenuSeparator />

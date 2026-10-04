@@ -19,3 +19,13 @@ export const accounts = database.collection('accounts')
 export const scheduledTransactions = database.collection('scheduledTransactions')
 
 export const streamOverrides = database.collection('streamOverrides')
+
+export const aiSettings = database.collection('aiSettings')
+
+export const aiConversations = database.collection('aiConversations')
+
+export const paySchedules = database.collection('paySchedules')
+
+export const forecastSettings = database.collection('forecastSettings')
+
+export const forecastSnapshots = database.collection('forecastSnapshots')

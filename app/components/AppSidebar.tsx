@@ -7,12 +7,14 @@ import { useTheme } from "next-themes"
 import {
   ArrowLeftRightIcon,
   CalendarClockIcon,
+  ChartColumnIcon,
   LandmarkIcon,
   LayoutDashboardIcon,
   LineChartIcon,
   MonitorIcon,
   MoonIcon,
   RefreshCwIcon,
+  SparklesIcon,
   SunIcon,
   UploadIcon,
   WalletIcon,
@@ -58,6 +60,8 @@ const mainNav: NavLink[] = [
   { title: "Transactions", href: "/transactions", icon: ArrowLeftRightIcon, isActive: p => p.startsWith("/transactions") },
   { title: "Forecast", href: "/calendar", icon: CalendarClockIcon, isActive: p => p.startsWith("/calendar") },
   { title: "Balances", href: "/balance", icon: LineChartIcon, isActive: p => p.startsWith("/balance") },
+  { title: "Spending", href: "/spending", icon: ChartColumnIcon, isActive: p => p.startsWith("/spending") },
+  { title: "Assistant", href: "/assistant", icon: SparklesIcon, isActive: p => p.startsWith("/assistant") },
 ]
 
 const manageNav: NavLink[] = [
