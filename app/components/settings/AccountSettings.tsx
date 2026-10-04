@@ -12,6 +12,7 @@ import { authClient } from "@/app/lib/auth-client"
 import useCurrentUser from "@/app/hooks/useCurrentUser"
 import FormError from "../auth/FormError"
 import PageHeader from "../common/PageHeader"
+import ApiKeysCard from "./ApiKeysCard"
 
 function ProfileCard() {
   const { user, isAdmin } = useCurrentUser()
@@ -137,10 +138,11 @@ function PasswordCard() {
 export default function AccountSettings() {
   return (
     <div>
-      <PageHeader title="Account settings" description="Your name and password." />
+      <PageHeader title="Account settings" description="Your name, password, and API keys." />
       <div className="grid max-w-3xl gap-6">
         <ProfileCard />
         <PasswordCard />
+        <ApiKeysCard />
       </div>
     </div>
   )

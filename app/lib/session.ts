@@ -1,10 +1,11 @@
 import { headers } from "next/headers"
-import { ADMIN_ROLE, auth } from "./auth"
+import { ADMIN_ROLE, getRequestSession } from "./auth"
 
 // For route handlers. proxy.ts already turns away signed-out requests; these
-// re-check (and add the admin check) where it matters most.
+// re-check (and add the admin check) where it matters most. Requests with an
+// API key get the key owner's session.
 export async function getSession() {
-  return auth.api.getSession({ headers: await headers() })
+  return getRequestSession(await headers())
 }
 
 export const unauthorized = () => Response.json({ message: 'Sign in to continue.' }, { status: 401 })

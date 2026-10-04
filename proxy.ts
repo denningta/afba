@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { AUTH_USERS_COLLECTION, auth } from "@/app/lib/auth"
+import { AUTH_USERS_COLLECTION, getRequestSession } from "@/app/lib/auth"
 import { database } from "@/app/lib/mongodb"
 
 // Reachable without signing in. Everything else, pages and API alike, needs a
-// valid session (checked against the database, not just "a cookie exists").
+// valid session (checked against the database, not just "a cookie exists") or
+// a valid API key.
 const PUBLIC_PATHS = ['/login', '/setup', '/api/auth', '/api/setup']
 
 const isPublic = (pathname: string) =>
@@ -13,7 +14,7 @@ export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   if (isPublic(pathname)) return NextResponse.next()
 
-  const session = await auth.api.getSession({ headers: request.headers })
+  const session = await getRequestSession(request.headers)
   if (session) return NextResponse.next()
 
   if (pathname.startsWith('/api/')) {

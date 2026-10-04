@@ -99,6 +99,19 @@ docker exec -it afba node scripts/reset-password.mjs you@example.com --admin  # 
 
 It prompts for the password without echoing it and signs that user out everywhere.
 
+# API Access
+
+Anyone signed in can create personal API keys under **Account settings → API keys**. Send the key
+in an `x-api-key` header instead of signing in:
+
+```
+curl -H "x-api-key: afba_..." http://<server address>:3000/api/transactions
+```
+
+A key acts as the person who made it, with the same access (admin routes only work with an admin's
+key). The key is shown once, when it's created. Revoke a key from the same page; removing a user
+also removes their keys. Keys can't expire later than a year out.
+
 # Sync Production Data to Local Development
 
 One-time setup:
