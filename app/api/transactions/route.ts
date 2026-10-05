@@ -1,7 +1,8 @@
 import Transaction from '@/app/interfaces/transaction'
 import { database } from '@/app/lib/mongodb'
 import { listTransactions } from '@/app/queries/transactions'
-import { TransactionCategoryUpdate, updateTransactionCategories } from '@/app/queries/transaction'
+import { ObjectId } from 'mongodb'
+import { TransactionCategoryUpdate, deleteTransactions, updateTransactionCategories } from '@/app/queries/transaction'
 
 export async function GET(request: Request) {
   try {
@@ -38,4 +39,16 @@ export async function PATCH(request: Request) {
 
   const res = await updateTransactionCategories(updates)
   return Response.json(res)
+}
+
+// Deletes one or more transactions: { ids: [...] }.
+export async function DELETE(request: Request) {
+  const { ids }: { ids?: unknown } = await request.json()
+
+  if (!Array.isArray(ids) || !ids.length || ids.some(id => typeof id !== 'string' || !ObjectId.isValid(id))) {
+    return Response.json({ message: 'Expected { ids: [transaction id, ...] }' }, { status: 400 })
+  }
+
+  const { deletedCount } = await deleteTransactions(ids)
+  return Response.json({ deletedCount })
 }

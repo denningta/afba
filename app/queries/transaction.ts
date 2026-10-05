@@ -31,6 +31,12 @@ export async function insertTransaction(transaction: Transaction) {
   return res
 }
 
+// Deletes several transactions by id. Plaid sync only updates transactions it
+// already has, so deleted bank transactions don't come back on the next sync.
+export async function deleteTransactions(ids: string[]) {
+  return transactions.deleteMany({ _id: { $in: ids.map(id => new ObjectId(id)) } })
+}
+
 export async function deleteTransaction(query: any) {
   if (query._id) {
     query._id = new ObjectId(query._id)

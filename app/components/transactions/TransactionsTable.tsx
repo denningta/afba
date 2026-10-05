@@ -8,8 +8,10 @@ import { TransactionsFilter } from "@/app/queries/transactions"
 import { DataTable } from "../common/DataTable/DataTable"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { PlusIcon } from "lucide-react"
-import { useMemo } from "react"
+import { PlusIcon, Trash2Icon } from "lucide-react"
+import { useMemo, useState } from "react"
+import Transaction from "@/app/interfaces/transaction"
+import DeleteTransactionsDialog from "./DeleteTransactionsDialog"
 import PageHeader from "../common/PageHeader"
 import { EmptyState } from "../common/StateMessage"
 import Link from "next/link"
@@ -22,6 +24,9 @@ export const DEFAULT_TRANSACTION_COLUMN_VISIBILITY = {
   personal_finance_category: false,
   pending: false,
 }
+
+// Keeps the selection on the same rows when others are deleted.
+const getRowId = (transaction: Transaction) => String(transaction._id)
 
 interface TransactionsTableProps {
   searchParams?: TransactionsFilter
@@ -41,6 +46,7 @@ export default function TransactionsTable({
   } = useTransactions(searchParams ?? {})
 
   const stableData = useMemo(() => data ?? [], [data])
+  const [deleting, setDeleting] = useState<{ rows: Transaction[], clearSelection: () => void } | null>(null)
 
   const handleAddTransaction = async () => {
   }
@@ -92,6 +98,18 @@ export default function TransactionsTable({
         }
         columnVisibilityStorageKey="afba:transactions-columns"
         defaultColumnVisibility={DEFAULT_TRANSACTION_COLUMN_VISIBILITY}
+        getRowId={getRowId}
+        selectionActions={(rows, clearSelection) => (
+          <Button variant="outline" className="text-destructive" onClick={() => setDeleting({ rows, clearSelection })}>
+            <Trash2Icon />
+            Delete {rows.length}
+          </Button>
+        )}
+      />
+      <DeleteTransactionsDialog
+        transactions={deleting?.rows ?? []}
+        onOpenChange={open => { if (!open) setDeleting(null) }}
+        onDeleted={() => deleting?.clearSelection()}
       />
     </div>
   )

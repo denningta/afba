@@ -5,7 +5,8 @@ import TransactionForm from "./TransactionForm";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Ellipsis, SearchIcon } from "lucide-react";
+import { Ellipsis, SearchIcon, Trash2Icon } from "lucide-react";
+import DeleteTransactionsDialog from "./DeleteTransactionsDialog";
 import JsonView from "@uiw/react-json-view"
 import { githubDarkTheme } from "@uiw/react-json-view/githubDark"
 import { githubLightTheme } from "@uiw/react-json-view/githubLight"
@@ -22,6 +23,7 @@ export default function TransactionActions({
   transaction
 }: EditTransactionProps) {
   const [dialogMenu, setDialogMenu] = useState<string>('none')
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const handleDialogMenu = (): React.JSX.Element | null => {
 
@@ -37,6 +39,7 @@ export default function TransactionActions({
   }
 
   return (
+    <>
     <Dialog>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
@@ -62,14 +65,18 @@ export default function TransactionActions({
           >
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem
-          >
-            Delete
+          <DropdownMenuItem variant="destructive" onSelect={() => setConfirmingDelete(true)}>
+            <Trash2Icon /> Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       {handleDialogMenu()}
     </Dialog>
+    <DeleteTransactionsDialog
+      transactions={confirmingDelete ? [transaction] : []}
+      onOpenChange={open => { if (!open) setConfirmingDelete(false) }}
+    />
+    </>
   )
 
 }
