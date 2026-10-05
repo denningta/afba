@@ -1,10 +1,10 @@
-import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
+import { Column, ColumnDef, createColumnHelper } from "@tanstack/react-table"
 import TransactionActions from "./TransactionActions"
 import { formatShortDate, humanizeEnum, parseDisplayDate } from "@/app/helpers/helperFunctions"
 import UserCategoryCell from "./UserCategoryCell"
 import AmazonOrderLink from "./AmazonOrderLink"
 import Image from "next/image"
-import Transaction from "@/app/interfaces/transaction"
+import Transaction, { needsCategory } from "@/app/interfaces/transaction"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { EmptyCell, SelectAllCheckbox, SelectRowCheckbox } from "../common/DataTable/cells"
@@ -64,9 +64,15 @@ const merchantFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] =>
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label)),
 }]
 
+// Filter values for the User Category column that aren't category names.
+const UNASSIGNED = 'unassigned'
+const NEEDS_CATEGORY = 'needs-category'
+
 // Every month has its own copy of each category, so there's one option per
-// name. Categories are split into ones used recently and retired ones.
-const userCategoryFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => {
+// name. Categories are split into ones used recently and retired ones, below
+// "Needs category" (unassigned or an unconfirmed auto guess, the same set the
+// Assign Categories queue works through) and "Unassigned".
+const userCategoryFilterOptions = (facets: Map<any, number>, column: Column<Transaction, any>): FilterOptionGroup[] => {
   let unassigned = 0
   const byName = new Map<string, { count: number, latest: string }>()
   facets.forEach((count, category: Category | undefined) => {
@@ -85,7 +91,14 @@ const userCategoryFilterOptions = (facets: Map<any, number>): FilterOptionGroup[
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([name, { count, latest }]) => ({ option: { value: name, label: name, count }, latest }))
   )
-  if (unassigned) groups.unshift({ options: [{ value: 'unassigned', label: 'Unassigned', count: unassigned }] })
+  // Facets only see the category, not whether it was a confirmed guess, so
+  // count those from the rows the other filters leave.
+  const needing = column.getFacetedRowModel().rows.filter(row => needsCategory(row.original)).length
+  const special = [
+    ...needing ? [{ value: NEEDS_CATEGORY, label: 'Needs category', count: needing }] : [],
+    ...unassigned ? [{ value: UNASSIGNED, label: 'Unassigned', count: unassigned }] : [],
+  ]
+  if (special.length) groups.unshift({ options: special })
   return groups
 }
 
@@ -201,7 +214,8 @@ const columns: ColumnDef<Transaction, any>[] = [
     filterFn: (row, columnId, filterValue) => {
       const data = row.getValue(columnId) as any
       if (!filterValue) return true
-      if (!data && filterValue === 'unassigned') return true
+      if (filterValue === NEEDS_CATEGORY) return needsCategory(row.original)
+      if (!data && filterValue === UNASSIGNED) return true
       if (data && data.name === filterValue) return true
       return false
     },

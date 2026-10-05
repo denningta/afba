@@ -22,3 +22,9 @@ export default interface Transaction extends PlaidTransaction {
   account?: Pick<Account, 'name' | 'mask' | 'type' | 'subtype'>
 }
 
+// Still waiting on the user: no category yet, or one the auto-categorizer
+// guessed that nobody has confirmed. Client-side twin of NEEDS_CATEGORY_MATCH
+// in app/queries/transactions.ts; keep the two in step.
+export const needsCategory = (t: Transaction) =>
+  !t.userCategory || (t.categorySource === 'auto' && !t.categoryConfirmed)
+

@@ -32,8 +32,9 @@ declare module '@tanstack/react-table' {
     filterVariant?: 'text' | 'range' | 'select'
     // Turns the column's faceted values (value -> row count, already narrowed
     // by the other filters) into the options offered. Defaults to the distinct
-    // string values in alphabetical order.
-    filterOptions?: (facets: Map<any, number>) => FilterOptionGroup[]
+    // string values in alphabetical order. The column is passed too, for
+    // options that depend on more of the row than this column's value.
+    filterOptions?: (facets: Map<any, number>, column: Column<TData, TValue>) => FilterOptionGroup[]
   }
 }
 
@@ -50,8 +51,8 @@ const ColumnFilter = <TData, TValue>({ column }: ColumnFilterProps<TData, TValue
   const selected = (column.getFilterValue() as string | undefined) || undefined
   const facets = column.getFacetedUniqueValues()
   const groups = useMemo(
-    () => filterVariant === 'select' ? (filterOptions ?? defaultFilterOptions)(facets) : [],
-    [facets, filterOptions, filterVariant]
+    () => filterVariant === 'select' ? (filterOptions ?? defaultFilterOptions)(facets, column) : [],
+    [facets, filterOptions, filterVariant, column]
   )
 
   if (filterVariant !== 'select') return null
