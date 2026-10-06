@@ -19,7 +19,7 @@ const UserCategoryCell = (info: CellContext<Transaction, Category | undefined>) 
 
   const [date, setDate] = useState(defaultDate)
   const { data } = useCategories({ date: date })
-  const { upsertRecord } = useTransactions()
+  const { setCategory } = useTransactions()
   const onCategoryChange = useContext(CategoryChangeContext)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -29,22 +29,12 @@ const UserCategoryCell = (info: CellContext<Transaction, Category | undefined>) 
     if (onCategoryChange) return onCategoryChange(info.row.original, category)
 
     setIsLoading(true)
-    const transaction: Transaction = {
-      ...info.row.original,
-      userCategory: category ?? undefined,
-      categorySource: 'manual',
-      categoryConfirmed: true
-    }
-    await upsertRecord(transaction)
+    await setCategory(info.row.original, category)
     setIsLoading(false)
   }
 
   const handleConfirm = async () => {
-    const transaction: Transaction = {
-      ...info.row.original,
-      categoryConfirmed: true
-    }
-    await upsertRecord(transaction)
+    await setCategory(info.row.original, info.row.original.userCategory, { confirm: true })
   }
 
   const handleChangeDate = (date: string) => {

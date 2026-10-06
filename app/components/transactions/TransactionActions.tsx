@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import Transaction from "@/app/interfaces/transaction";
+import Transaction, { isManualTransaction, transactionLabel } from "@/app/interfaces/transaction";
 import useTransactions from "@/app/hooks/useTransactions";
-import TransactionForm from "./TransactionForm";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import TransactionForm, { TransactionFormValues } from "./TransactionForm";
+import type { TransactionFieldUpdate } from "@/app/queries/transaction";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Ellipsis, SearchIcon, Trash2Icon } from "lucide-react";
+import { Ellipsis, PencilIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import DeleteTransactionsDialog from "./DeleteTransactionsDialog";
 import JsonView from "@uiw/react-json-view"
 import { githubDarkTheme } from "@uiw/react-json-view/githubDark"
@@ -19,28 +21,16 @@ interface EditTransactionProps {
   transaction: Transaction
 }
 
+type ActionDialog = 'details' | 'edit' | 'delete' | null
+
 export default function TransactionActions({
   transaction
 }: EditTransactionProps) {
-  const [dialogMenu, setDialogMenu] = useState<string>('none')
-  const [confirmingDelete, setConfirmingDelete] = useState(false)
-
-  const handleDialogMenu = (): React.JSX.Element | null => {
-
-    switch (dialogMenu) {
-      case "view-transaction":
-        return <TransactionDetailsDialog
-          transaction={transaction}
-          onClose={() => setDialogMenu('none')}
-        />
-      default:
-        return null
-    }
-  }
+  const [dialog, setDialog] = useState<ActionDialog>(null)
+  const close = () => setDialog(null)
 
   return (
     <>
-    <Dialog>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -54,31 +44,28 @@ export default function TransactionActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-
-          <DialogTrigger asChild>
-            <DropdownMenuItem onSelect={() => setDialogMenu("view-transaction")}>
-              <SearchIcon /> View details
-            </DropdownMenuItem>
-          </DialogTrigger>
-
-          <DropdownMenuItem
-          >
-            Edit
+          <DropdownMenuItem onSelect={() => setDialog('details')}>
+            <SearchIcon /> View details
           </DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onSelect={() => setConfirmingDelete(true)}>
+          <DropdownMenuItem onSelect={() => setDialog('edit')}>
+            <PencilIcon /> Edit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onSelect={() => setDialog('delete')}>
             <Trash2Icon /> Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      {handleDialogMenu()}
-    </Dialog>
-    <DeleteTransactionsDialog
-      transactions={confirmingDelete ? [transaction] : []}
-      onOpenChange={open => { if (!open) setConfirmingDelete(false) }}
-    />
+      <Dialog open={dialog === 'details' || dialog === 'edit'} onOpenChange={open => { if (!open) close() }}>
+        {dialog === 'details' && <TransactionDetailsDialog transaction={transaction} onClose={close} />}
+        {dialog === 'edit' && <EditTransactionDialog transaction={transaction} onClose={close} />}
+      </Dialog>
+      <DeleteTransactionsDialog
+        transactions={dialog === 'delete' ? [transaction] : []}
+        onOpenChange={open => { if (!open) close() }}
+      />
     </>
   )
-
 }
 
 
@@ -89,7 +76,7 @@ export interface TransactionDetailsDialogProps {
 
 export function TransactionDetailsDialog({ transaction, onClose }: TransactionDetailsDialogProps) {
   const { resolvedTheme } = useTheme()
-  const merchant = transaction.merchant_name || transaction.name
+  const merchant = transactionLabel(transaction)
   const account = transaction.account
     ? `${transaction.account.name}${transaction.account.mask ? ` ••${transaction.account.mask}` : ''}`
     : transaction.account_id ? 'Unknown account' : 'Manual / Imported'
@@ -151,29 +138,34 @@ export interface EditTransactionDialogProps {
 }
 
 export function EditTransactionDialog({ transaction, onClose }: EditTransactionDialogProps) {
-  const { upsertRecord } = useTransactions()
+  const { updateTransaction, setCategory } = useTransactions()
+  const manual = isManualTransaction(transaction)
 
-  const handleUpdateTransaction = async (value: Transaction) => {
-    try {
-      await upsertRecord({ ...transaction, ...value })
-
-    } catch (e: any) {
-      console.error(e)
+  const handleSubmit = async ({ name, amount, date, category }: TransactionFormValues) => {
+    // A bank transaction's name is stored as our own displayName; matching the
+    // bank's name again clears it.
+    const fields: TransactionFieldUpdate = manual
+      ? { name, amount, date }
+      : { displayName: name === (transaction.merchant_name || transaction.name) ? null : name }
+    if (!await updateTransaction(transaction, fields)) return "Couldn't save the transaction."
+    const categoryChanged = String(category?._id ?? '') !== String(transaction.userCategory?._id ?? '')
+    if (categoryChanged && !await setCategory({ ...transaction, ...fields } as Transaction, category)) {
+      return "Saved, but couldn't change the category."
     }
+    toast.success('Transaction saved.')
+    onClose()
+    return null
   }
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Edit Transaction</DialogTitle>
+        <DialogTitle>Edit transaction</DialogTitle>
         <DialogDescription>
-          Make changes to this budget category.
+          {manual ? 'Change any detail of this transaction.' : 'Rename it or change its category. The bank keeps its own name for it too.'}
         </DialogDescription>
       </DialogHeader>
-      <TransactionForm
-        initialValues={transaction}
-        onSubmit={(value) => handleUpdateTransaction(value)}
-      />
+      <TransactionForm transaction={transaction} onSubmit={handleSubmit} />
     </DialogContent>
   )
 }

@@ -1,128 +1,24 @@
-import { accounts, transactions } from "@/app/lib/mongodb"
-import plaidClient from "@/app/lib/plaid"
-import { buildMerchantCategoryMap, suggestCategory } from "@/app/lib/autoCategorize"
-import { getLastTransactionSync, insertTransactionSync, TransactionSync } from "@/app/queries/transactionsSync"
-import { listUser } from "@/app/queries/users"
-import { RemovedTransaction, TransactionsSyncRequest, TransactionsSyncResponse } from "plaid"
-import Transaction from "@/app/interfaces/transaction"
+import { SyncError, syncAccount, syncAllAccounts } from "@/app/lib/syncTransactions"
 
 export interface TransactionsSyncParams {
-  userId?: string
   account_id?: string
-  count?: number
+  // true syncs every linked account and records the outcome for the
+  // "Synced 2h ago" line, like the background sync does.
+  all?: boolean
 }
 
 export async function POST(request: Request) {
+  const { account_id, all } = await request.json() as TransactionsSyncParams
+
+  if (all) return Response.json(await syncAllAccounts())
+  if (!account_id) return Response.json({ message: 'account_id is missing and is a required parameter' }, { status: 400 })
+
   try {
-    const {
-      userId,
-      account_id,
-      count
-    } = await request.json() as TransactionsSyncParams
-
-    const user = await listUser({ userId })
-    if (!user) return Response.json({ message: 'User does not exist' }, { status: 400 })
-    if (!account_id) return Response.json({ message: 'account_id is missing and is a required parameter' }, { status: 400 })
-
-    // Each account belongs to one item; its token is the only one Plaid will accept.
-    const account = await accounts.findOne({ account_id })
-    const item = user.items.find((i: { item_id: string }) => i.item_id === account?.item_id)
-    if (!item) return Response.json({ message: `No linked item found for account ${account_id}` }, { status: 404 })
-
-    const transactionSync = await getLastTransactionSync(account_id)
-    let cursor: string | null = transactionSync[0]?.next_cursor ?? null
-
-    let added: Array<Transaction> = []
-    let modified: Array<Transaction> = []
-    let removed: Array<RemovedTransaction> = []
-    let hasMore = true
-    let syncResponse = {}
-
-    while (hasMore) {
-      const req: TransactionsSyncRequest = {
-        client_id: process.env.PLAID_CLIENT_ID,
-        secret: process.env.PLAID_SECRET,
-        access_token: item.plaidAccessToken,
-        cursor: cursor,
-        options: { account_id }
-      }
-
-      if (count) req.count = count
-
-      const response = await plaidClient.transactionsSync(req)
-      const data = response.data
-
-      added = added.concat(data.added)
-      modified = modified.concat(data.modified)
-      removed = removed.concat(data.removed)
-
-      hasMore = data.has_more
-
-      cursor = data.next_cursor
-
-      syncResponse = {
-        account_id: account_id,
-        next_cursor: data.next_cursor,
-        has_more: data.has_more,
-        request_id: data.request_id,
-        transactions_update_status: data.transactions_update_status,
-        added: data.added.length,
-        modified: data.modified.length,
-        removed: data.removed.length,
-        syncTimestamp: new Date()
-      } as TransactionSync
-    }
-
-    if (added.length) {
-      const merchantCategoryMap = await buildMerchantCategoryMap()
-
-      for (const transaction of added) {
-        const suggestion = await suggestCategory(transaction, merchantCategoryMap)
-        if (suggestion) {
-          transaction.userCategory = suggestion.category
-          transaction.categorySource = 'auto'
-          transaction.categoryConfirmed = false
-          transaction.categoryConfidence = suggestion.confidence
-        }
-      }
-
-      await transactions.insertMany(added)
-    }
-
-    if (modified.length) {
-      const bulkOps = modified.map(transaction => ({
-        updateOne: {
-          filter: { transaction_id: transaction.transaction_id },
-          update: { $set: transaction }
-        }
-      }))
-
-      await transactions.bulkWrite(bulkOps)
-    }
-
-    if (removed.length) {
-      const transactionIds = removed.map(tx => tx.transaction_id)
-      await transactions.deleteMany({ transaction_id: { $in: transactionIds } })
-    }
-
-    syncResponse = {
-      ...syncResponse as TransactionSync,
-      added: added.length,
-      modified: modified.length,
-      removed: removed.length,
-      syncTimestamp: new Date()
-    }
-
-    const syncRes = await insertTransactionSync(syncResponse as TransactionSync)
-
-    return Response.json(syncResponse)
-
+    return Response.json(await syncAccount(account_id))
   } catch (error: any) {
-    // Plaid errors carry a readable message in the response body.
-    const message = error?.response?.data?.error_message ?? error?.message ?? 'Transaction sync failed'
+    const status = error instanceof SyncError ? error.status : 500
+    const message = error?.message ?? 'Transaction sync failed'
     console.error('Transaction sync failed:', message)
-    return Response.json({ message }, { status: 500 })
+    return Response.json({ message }, { status })
   }
 }
-
-

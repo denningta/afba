@@ -38,7 +38,7 @@ async function summarize(pipeline: Document[]): Promise<BreakdownGroup> {
           {
             $project: {
               _id: { $toString: "$_id" },
-              date: 1, amount: 1, name: 1, merchant_name: 1, logo_url: 1,
+              date: 1, amount: 1, name: 1, merchant_name: 1, displayName: 1, logo_url: 1,
               account: { name: "$account.name", mask: "$account.mask" },
               categoryName: "$userCategory.name",
               categoryDate: "$userCategory.date",

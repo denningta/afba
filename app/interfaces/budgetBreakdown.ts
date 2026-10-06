@@ -4,6 +4,7 @@ export interface BreakdownTransaction {
   amount: number
   name?: string
   merchant_name?: string | null
+  displayName?: string | null
   logo_url?: string | null
   account?: { name: string, mask?: string | null }
   categoryName?: string

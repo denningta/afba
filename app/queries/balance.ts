@@ -93,7 +93,7 @@ export function reconstructAccountSeries(
 }
 
 export function toBalanceTransactions(
-  rangeTransactions: Pick<Transaction, "_id" | "date" | "account_id" | "name" | "merchant_name" | "amount" | "pending" | "userCategory">[]
+  rangeTransactions: Pick<Transaction, "_id" | "date" | "account_id" | "name" | "merchant_name" | "displayName" | "amount" | "pending" | "userCategory">[]
 ): BalanceTransaction[] {
   return rangeTransactions
     .filter((t) => t.date)
@@ -102,7 +102,8 @@ export function toBalanceTransactions(
       date: t.date!,
       account_id: t.account_id,
       name: t.name,
-      merchant_name: t.merchant_name,
+      // The user's rename wins over Plaid's merchant name.
+      merchant_name: t.displayName || t.merchant_name,
       amount: t.amount,
       pending: t.pending,
       categoryName: t.userCategory?.name ?? null

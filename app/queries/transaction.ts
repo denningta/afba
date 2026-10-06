@@ -1,4 +1,4 @@
-import Transaction from "@/app/interfaces/transaction";
+import Transaction, { isManualTransaction } from "@/app/interfaces/transaction";
 import { transactions } from "../lib/mongodb";
 import { ObjectId } from "mongodb";
 
@@ -7,28 +7,63 @@ export async function listTransaction(filter: Transaction) {
   return res
 }
 
-export async function replaceTransaction(filter: any, replacement: Transaction) {
-  filter._id = new ObjectId(filter._id)
-
-  const {
-    _id,
-    ...rest
-  } = replacement
-
-  const res = await transactions
-    .replaceOne(
-      filter,
-      rest,
-    )
-
-  return res
+export interface ManualTransactionInput {
+  name: string
+  // Plaid's sign convention: positive is money out, negative is money in.
+  amount: number
+  date: string // YYYY-MM-DD
+  userCategory?: Transaction['userCategory']
 }
 
-export async function insertTransaction(transaction: Transaction) {
-  const res = await transactions
-    .insertOne(transaction)
+// Fields a save may touch. Plaid's sync $sets the bank's own fields, so bank
+// transactions only get fields of ours (a rename lives in displayName).
+export interface TransactionFieldUpdate {
+  displayName?: string | null
+  amazonOrderUrl?: string | null
+  // Manual transactions only.
+  name?: string
+  amount?: number
+  date?: string
+}
 
-  return res
+const BANK_EDITABLE = ['displayName', 'amazonOrderUrl'] as const
+const MANUAL_EDITABLE = [...BANK_EDITABLE, 'name', 'amount', 'date'] as const
+
+export async function createManualTransaction({ name, amount, date, userCategory }: ManualTransactionInput) {
+  const doc: Transaction = {
+    name,
+    amount,
+    date,
+    pending: false,
+    ...userCategory ? { userCategory, categorySource: 'manual' as const, categoryConfirmed: true } : {},
+  } as Transaction
+  const { insertedId } = await transactions.insertOne(doc)
+  return { ...doc, _id: insertedId.toString() }
+}
+
+// Sets only the given fields; null or '' clears one. Returns null when the
+// transaction doesn't exist, or the names of fields it can't take.
+export async function updateTransactionFields(id: string, fields: TransactionFieldUpdate) {
+  const existing = await transactions.findOne<{ transaction_id?: string }>({ _id: new ObjectId(id) }, { projection: { transaction_id: 1 } })
+  if (!existing) return null
+
+  const allowed: readonly string[] = isManualTransaction(existing) ? MANUAL_EDITABLE : BANK_EDITABLE
+  const rejected = Object.keys(fields).filter(key => !allowed.includes(key))
+  if (rejected.length) return { rejected }
+
+  const $set: Record<string, unknown> = {}
+  const $unset: Record<string, ''> = {}
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === null || value === '') $unset[key] = ''
+    else if (value !== undefined) $set[key] = value
+  }
+  if (!Object.keys($set).length && !Object.keys($unset).length) return { rejected: [] }
+
+  await transactions.updateOne(
+    { _id: new ObjectId(id) },
+    { ...Object.keys($set).length ? { $set } : {}, ...Object.keys($unset).length ? { $unset } : {} }
+  )
+  return { rejected: [] }
 }
 
 // Deletes several transactions by id. Plaid sync only updates transactions it

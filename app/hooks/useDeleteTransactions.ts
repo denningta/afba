@@ -1,18 +1,12 @@
 import axios from "axios";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
-import Transaction from "../interfaces/transaction";
-
-// Everything whose numbers include transactions: lists, counts, budgets,
-// spending, and the forecast.
-const isAffectedKey = (key: unknown) =>
-  typeof key === 'string'
-  && ['/api/transactions', '/api/categories', '/api/budget', '/api/category-spending', '/api/forecast']
-    .some(prefix => key.startsWith(prefix))
+import Transaction, { transactionLabel } from "../interfaces/transaction";
+import { isTransactionDerivedKey } from "./transactionKeys";
 
 export const describeTransactions = (transactions: Transaction[]) =>
   transactions.length === 1
-    ? transactions[0].merchant_name || transactions[0].name || '1 transaction'
+    ? transactionLabel(transactions[0]) || '1 transaction'
     : `${transactions.length} transactions`
 
 /**
@@ -34,7 +28,7 @@ export default function useDeleteTransactions() {
       toast.error(`Couldn't delete ${label}. Please try again.`)
       return false
     } finally {
-      await mutate(isAffectedKey)
+      await mutate(isTransactionDerivedKey)
     }
   }
 }

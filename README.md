@@ -66,6 +66,18 @@ docker compose pull afba
 docker compose up -d afba
 ```
 
+Some releases include a one-time data cleanup. `migrate-transactions.mjs` stores every transaction
+date as `YYYY-MM-DD` and removes fields older versions copied in. It's safe to run more than once:
+
+```
+docker exec afba node scripts/migrate-transactions.mjs --dry-run   # shows what it would change
+docker exec afba node scripts/migrate-transactions.mjs
+```
+
+Bank transactions sync in the background every 6 hours (set `AFBA_SYNC_INTERVAL_HOURS` in the
+server's `.env` to change it, `0` to turn it off). The sidebar shows when the last sync ran, and
+flags any account that failed, e.g. a bank login that needs renewing on the Connect page.
+
 The server's `docker-compose.yml` should match the one in this repo, minus the `build` section. It
 reads Plaid/Mongo settings from the server's own `.env` (`env_file`); the image contains no `.env`.
 The database lives in the external `afba_data` volume, so `docker compose down`/`up` never loses data

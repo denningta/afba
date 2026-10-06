@@ -7,6 +7,7 @@ import { Area, AreaChart, XAxis, YAxis } from "recharts"
 import { ArrowRight } from "lucide-react"
 import useCategories from "@/app/hooks/useCategories"
 import useTransactions from "@/app/hooks/useTransactions"
+import { transactionLabel } from "@/app/interfaces/transaction"
 import useBalanceHistory from "@/app/hooks/useBalanceHistory"
 import { dateToYYYYMM, formatShortDate, parseDisplayDate, toCurrency, YYYYMMToDate } from "@/app/helpers/helperFunctions"
 import { Button } from "@/components/ui/button"
@@ -173,7 +174,7 @@ function RecentTransactionsCard() {
         }
         <ul className="divide-y divide-border/60">
           {recent.map(transaction => {
-            const merchant = transaction.merchant_name || transaction.name
+            const merchant = transactionLabel(transaction)
             return (
               <li key={transaction.transaction_id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
                 <MerchantLogo src={transaction.logo_url} name={merchant} />

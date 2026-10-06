@@ -16,6 +16,7 @@ import {
   RefreshCwIcon,
   SparklesIcon,
   SunIcon,
+  TriangleAlertIcon,
   UploadIcon,
   WalletIcon,
 } from "lucide-react"
@@ -43,6 +44,10 @@ import {
 import useTransactionCount from "../hooks/useTransactionCount"
 import useAccounts from "../hooks/useAccounts"
 import useSyncTransactions from "../hooks/useSyncTransactions"
+import useSWR from "swr"
+import { formatDistanceToNowStrict } from "date-fns"
+import type { SyncStatus } from "../lib/syncTransactions"
+import fetcher from "../lib/fetcher"
 import { dateToYYYYMM } from "../helpers/helperFunctions"
 import UserMenu from "./UserMenu"
 
@@ -100,23 +105,50 @@ function NavGroup({ label, items, badges = {} }: { label: string, items: NavLink
   )
 }
 
+// "just now" under a minute, else "5 minutes ago", "2 hours ago", ...
+const syncedAgo = (date: string | Date) => {
+  const ms = Date.now() - new Date(date).getTime()
+  return ms < 60_000 ? 'just now' : `${formatDistanceToNowStrict(new Date(date))} ago`
+}
+
 function SyncAllButton() {
   const { data: accounts } = useAccounts()
   const { syncAll, loading } = useSyncTransactions()
-  // Only Plaid-linked accounts sync; the manual pseudo-account has no item.
-  const linked = accounts?.filter(account => account.item_id) ?? []
+  // Re-read every minute so "Synced … ago" stays current and background
+  // syncs show up without a reload.
+  const { data: status } = useSWR<SyncStatus | null>('/api/transactions/sync/status', fetcher, { refreshInterval: 60_000 })
+  const failures = status?.failures ?? []
+  const detail = loading ? 'Syncing…' : status ? `Synced ${syncedAgo(status.lastRunAt)}` : 'Never synced'
 
   return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
-        tooltip="Sync all accounts"
-        disabled={loading || !accounts}
-        onClick={() => syncAll(linked)}
-      >
-        <RefreshCwIcon className={loading ? "animate-spin" : undefined} />
-        <span>{loading ? "Syncing…" : "Sync all accounts"}</span>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
+    <>
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          size="lg"
+          tooltip={`Sync all accounts · ${detail}`}
+          disabled={loading || !accounts}
+          onClick={() => syncAll()}
+        >
+          <RefreshCwIcon className={loading ? "animate-spin" : undefined} />
+          <div className="grid min-w-0 leading-tight">
+            <span className="truncate">Sync all accounts</span>
+            <span className="truncate text-xs text-muted-foreground">{detail}</span>
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+      {failures.length > 0 &&
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild
+            tooltip={`Sync failed: ${failures.map(f => `${f.accountName} (${f.message})`).join(', ')}`}
+            className="text-warning hover:text-warning">
+            <Link href="/connect">
+              <TriangleAlertIcon />
+              <span>{failures.length === 1 ? `${failures[0].accountName} didn't sync` : `${failures.length} accounts didn't sync`}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      }
+    </>
   )
 }
 

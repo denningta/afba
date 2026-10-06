@@ -16,6 +16,9 @@ export default interface Transaction extends PlaidTransaction {
   categoryConfirmed?: boolean
   // The ratio (0-1) that triggered an auto-assignment, kept for debugging/analytics.
   categoryConfidence?: number
+  // The user's own name for the transaction. Kept apart from Plaid's name and
+  // merchant_name, which a sync overwrites.
+  displayName?: string
   // The specific Amazon order URL the user saved after manually finding it once.
   amazonOrderUrl?: string
   // Joined from the accounts collection by listTransactions; absent elsewhere.
@@ -28,3 +31,14 @@ export default interface Transaction extends PlaidTransaction {
 export const needsCategory = (t: Transaction) =>
   !t.userCategory || (t.categorySource === 'auto' && !t.categoryConfirmed)
 
+
+// Bank transactions carry Plaid's transaction_id; ones added by hand don't.
+export const isManualTransaction = (t: { transaction_id?: string | null }) => !t.transaction_id
+
+// The name to show: the user's own, else the merchant Plaid identified, else
+// the bank's description (e.g. transfers, imports).
+export const transactionLabel = (t: { displayName?: string | null, merchant_name?: string | null, name?: string | null }) =>
+  t.displayName || t.merchant_name || t.name || ''
+
+// Stored transaction dates are YYYY-MM-DD.
+export const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/

@@ -4,7 +4,7 @@ import { formatShortDate, humanizeEnum, parseDisplayDate } from "@/app/helpers/h
 import UserCategoryCell from "./UserCategoryCell"
 import AmazonOrderLink from "./AmazonOrderLink"
 import Image from "next/image"
-import Transaction, { needsCategory } from "@/app/interfaces/transaction"
+import Transaction, { needsCategory, transactionLabel } from "@/app/interfaces/transaction"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { EmptyCell, SelectAllCheckbox, SelectRowCheckbox } from "../common/DataTable/cells"
@@ -52,9 +52,9 @@ const monthFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => {
 }
 
 
-// What the Merchant column shows: Plaid's merchant name, or the transaction's
-// description when Plaid didn't identify one (e.g. transfers, CSV imports).
-const merchantLabel = (t: Transaction) => t.merchant_name || t.name || ''
+// What the Merchant column shows: the user's rename, else Plaid's merchant
+// name, else the description (e.g. transfers, manual transactions).
+const merchantLabel = transactionLabel
 
 // Merchants by how often they appear (the list is long; search finds the rest).
 const merchantFilterOptions = (facets: Map<any, number>): FilterOptionGroup[] => [{

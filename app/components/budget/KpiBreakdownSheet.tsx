@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Category } from "@/app/interfaces/categories"
-import Transaction from "@/app/interfaces/transaction"
+import Transaction, { transactionLabel } from "@/app/interfaces/transaction"
 import { BreakdownGroup, BreakdownTransaction } from "@/app/interfaces/budgetBreakdown"
 import { categoryTransactionsHref, dateToYYYYMM, formatShortDate, parseDisplayDate, toCurrency, YYYYMMToDate } from "@/app/helpers/helperFunctions"
 import useBudgetBreakdown from "@/app/hooks/useBudgetBreakdown"
@@ -263,7 +263,7 @@ function TransactionList({ transactions, month }: { transactions: (Transaction |
   return (
     <ul className="divide-y divide-border/60">
       {sorted.map((t, i) => {
-        const merchant = t.merchant_name || t.name || 'Transaction'
+        const merchant = transactionLabel(t) || 'Transaction'
         const date = parseDisplayDate(t.date)
         const otherMonth = date && dateToYYYYMM(date) !== month
         return (

@@ -12,7 +12,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import useTransactions from "@/app/hooks/useTransactions"
 import useCategories from "@/app/hooks/useCategories"
 import { dateToYYYYMM, formatShortDate } from "@/app/helpers/helperFunctions"
-import Transaction from "@/app/interfaces/transaction"
+import Transaction, { transactionLabel } from "@/app/interfaces/transaction"
 import { Category } from "@/app/interfaces/categories"
 import { CategoryPicker } from "@/app/components/common/CategoryPicker"
 import AmazonOrderLink from "@/app/components/transactions/AmazonOrderLink"
@@ -27,7 +27,7 @@ type Decision =
   | { type: 'skipped' }
 
 export default function AssignQueue() {
-  const { data, upsertRecord, error, mutate } = useTransactions({ needsCategory: 'true' })
+  const { data, setCategory, error, mutate } = useTransactions({ needsCategory: 'true' })
   const [queue, setQueue] = useState<Transaction[] | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [decisions, setDecisions] = useState<Map<string, Decision>>(new Map())
@@ -69,13 +69,7 @@ export default function AssignQueue() {
   const handleAssign = async (category: Category | undefined) => {
     if (!currentTransaction) return
     const id = String(currentTransaction._id)
-    const updated: Transaction = {
-      ...currentTransaction,
-      userCategory: category ?? undefined,
-      categorySource: 'manual',
-      categoryConfirmed: true,
-    }
-    await upsertRecord(updated)
+    await setCategory(currentTransaction, category)
     setDecisions(prev => new Map(prev).set(id, { type: 'assigned', category }))
     setCurrentIndex(i => i + 1)
   }
@@ -83,11 +77,7 @@ export default function AssignQueue() {
   const handleConfirm = async () => {
     if (!currentTransaction) return
     const id = String(currentTransaction._id)
-    const updated: Transaction = {
-      ...currentTransaction,
-      categoryConfirmed: true,
-    }
-    await upsertRecord(updated)
+    await setCategory(currentTransaction, currentTransaction.userCategory, { confirm: true })
     setDecisions(prev => new Map(prev).set(id, { type: 'assigned', category: currentTransaction.userCategory }))
     setCurrentIndex(i => i + 1)
   }
@@ -196,7 +186,7 @@ export default function AssignQueue() {
   const transactionId = String(transaction._id)
   const decision = decisions.get(transactionId)
   const currentValue = decision?.type === 'assigned' ? decision.category : transaction.userCategory
-  const description = transaction.merchant_name || transaction.name
+  const description = transactionLabel(transaction)
   const isAmazon = transaction.merchant_name?.toLowerCase() === 'amazon'
   // Auto-suggested and not yet reviewed this session - same condition
   // UserCategoryCell/UserCategorySelector use on the transactions table.

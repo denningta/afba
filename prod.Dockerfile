@@ -54,6 +54,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Lockout recovery: docker exec -it afba node scripts/reset-password.mjs <email>
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/reset-password.mjs ./scripts/
+# Data cleanup after a deploy: docker exec afba node scripts/migrate-transactions.mjs --dry-run
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/migrate-transactions.mjs ./scripts/
 
 # Environment variables must be redefined at run time
 ARG ENV_VARIABLE

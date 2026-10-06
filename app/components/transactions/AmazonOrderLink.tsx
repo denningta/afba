@@ -18,7 +18,7 @@ export interface AmazonOrderLinkProps {
 }
 
 export default function AmazonOrderLink({ transaction }: AmazonOrderLinkProps) {
-  const { upsertRecord } = useTransactions()
+  const { updateTransaction } = useTransactions()
   const [open, setOpen] = React.useState(false)
   const [url, setUrl] = React.useState(transaction.amazonOrderUrl ?? '')
 
@@ -28,12 +28,12 @@ export default function AmazonOrderLink({ transaction }: AmazonOrderLinkProps) {
   }
 
   const handleSave = async () => {
-    await upsertRecord({ ...transaction, amazonOrderUrl: url.trim() || undefined })
+    await updateTransaction(transaction, { amazonOrderUrl: url.trim() || null })
     setOpen(false)
   }
 
   const handleClear = async () => {
-    await upsertRecord({ ...transaction, amazonOrderUrl: undefined })
+    await updateTransaction(transaction, { amazonOrderUrl: null })
     setUrl('')
     setOpen(false)
   }

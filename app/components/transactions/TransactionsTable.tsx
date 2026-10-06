@@ -1,7 +1,7 @@
 'use client'
 
 import transactionColDefs from "./transactionsColDefs"
-import TransactionForm from "./TransactionForm"
+import TransactionForm, { TransactionFormValues } from "./TransactionForm"
 import AssignCategoriesButton from "./AssignCategoriesButton"
 import useTransactions from "@/app/hooks/useTransactions"
 import { TransactionsFilter } from "@/app/queries/transactions"
@@ -15,6 +15,7 @@ import DeleteTransactionsDialog from "./DeleteTransactionsDialog"
 import PageHeader from "../common/PageHeader"
 import { EmptyState } from "../common/StateMessage"
 import Link from "next/link"
+import { toast } from "sonner"
 
 // Everything not listed stays visible (date, merchant, description, account
 // type, user category, amount, and the select/actions columns).
@@ -43,12 +44,19 @@ export default function TransactionsTable({
     error,
     isLoading,
     mutate,
+    createTransaction,
   } = useTransactions(searchParams ?? {})
 
   const stableData = useMemo(() => data ?? [], [data])
   const [deleting, setDeleting] = useState<{ rows: Transaction[], clearSelection: () => void } | null>(null)
 
-  const handleAddTransaction = async () => {
+  const [adding, setAdding] = useState(false)
+
+  const handleAddTransaction = async ({ name, amount, date, category }: TransactionFormValues) => {
+    if (!await createTransaction({ name, amount, date, userCategory: category })) return "Couldn't add the transaction."
+    toast.success(`Added ${name}.`)
+    setAdding(false)
+    return null
   }
 
 
@@ -59,7 +67,7 @@ export default function TransactionsTable({
         actions={
           <>
             <AssignCategoriesButton />
-            <Dialog>
+            <Dialog open={adding} onOpenChange={setAdding}>
               <DialogTrigger asChild>
                 <Button>
                   <PlusIcon />
@@ -71,7 +79,8 @@ export default function TransactionsTable({
                   <DialogTitle>Add transaction</DialogTitle>
                   <DialogDescription>Record a transaction by hand, e.g. cash spending.</DialogDescription>
                 </DialogHeader>
-                <TransactionForm onSubmit={handleAddTransaction} />
+                {/* Mounted only while open, so each add starts with a blank form. */}
+                {adding && <TransactionForm onSubmit={handleAddTransaction} />}
               </DialogContent>
             </Dialog>
           </>
