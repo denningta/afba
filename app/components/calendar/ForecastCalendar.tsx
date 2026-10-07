@@ -6,7 +6,8 @@ import { addDays, format, parseISO } from "date-fns"
 import { Area, AreaChart, CartesianGrid, ReferenceDot, ReferenceLine, XAxis, YAxis } from "recharts"
 import { PlusIcon, Settings2Icon } from "lucide-react"
 import useAccounts from "@/app/hooks/useAccounts"
-import useForecast from "@/app/hooks/useForecast"
+import useForecast, { forecastAccounts } from "@/app/hooks/useForecast"
+import { useSearchParams } from "next/navigation"
 import { buildForecast, ForecastPoint } from "@/app/lib/forecast"
 import { toCurrency } from "@/app/helpers/helperFunctions"
 import { COMMITTED_SOURCES, ForecastStream, ScheduledTransaction } from "@/app/interfaces/forecast"
@@ -67,9 +68,7 @@ function StatCard({ label, value, detail, tone, onExplain }: {
 const ForecastCalendar = () => {
   const { data: accounts, error: accountsError } = useAccounts()
   // Plaid-linked checking/savings accounts, checking first.
-  const linked = useMemo(() => (accounts ?? [])
-    .filter(a => a.item_id && a.type === 'depository')
-    .sort((a, b) => Number(b.subtype === 'checking') - Number(a.subtype === 'checking')), [accounts])
+  const linked = useMemo(() => forecastAccounts(accounts), [accounts])
 
   const [chosenAccountId, setChosenAccountId] = useState<string | null>(null)
   const accountId = chosenAccountId ?? linked[0]?.account_id ?? null
@@ -86,7 +85,12 @@ const ForecastCalendar = () => {
   const [scheduledDialog, setScheduledDialog] = useState<{ open: boolean, item?: ScheduledTransaction }>({ open: false })
   const [editingStream, setEditingStream] = useState<ForecastStream | null>(null)
   const [deleting, setDeleting] = useState<ScheduledTransaction | null>(null)
-  const [explaining, setExplaining] = useState<ForecastKpiKey | null>(null)
+  // ?explain=safe opens a number's explanation straight away (the dashboard's
+  // Safe to spend card links here).
+  const explainParam = useSearchParams().get('explain')
+  const [explaining, setExplaining] = useState<ForecastKpiKey | null>(
+    (['safe', 'end', 'low', 'flows', 'budget'] as const).find(key => key === explainParam) ?? null
+  )
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const { forecast, estimated, committedEvents } = useMemo(() => {

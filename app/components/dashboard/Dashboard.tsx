@@ -7,6 +7,10 @@ import { Area, AreaChart, XAxis, YAxis } from "recharts"
 import { ArrowRight } from "lucide-react"
 import useCategories from "@/app/hooks/useCategories"
 import useTransactions from "@/app/hooks/useTransactions"
+import useAccounts from "@/app/hooks/useAccounts"
+import useForecast, { forecastAccounts } from "@/app/hooks/useForecast"
+import { useRouter } from "next/navigation"
+import SafeToSpendCard from "../calendar/SafeToSpendCard"
 import { transactionLabel } from "@/app/interfaces/transaction"
 import useBalanceHistory from "@/app/hooks/useBalanceHistory"
 import { dateToYYYYMM, formatShortDate, parseDisplayDate, toCurrency, YYYYMMToDate } from "@/app/helpers/helperFunctions"
@@ -199,6 +203,22 @@ function RecentTransactionsCard() {
   )
 }
 
+// The forecast's headline for the default account (checking first). Clicking
+// it opens the Forecast page with its breakdown showing.
+function DashboardSafeToSpend() {
+  const router = useRouter()
+  const { data: accounts } = useAccounts()
+  const account = forecastAccounts(accounts)[0]
+  const { data, error, isLoading } = useForecast(account?.account_id ?? null)
+
+  // No bank account to forecast: nothing to show (the Forecast page explains).
+  if (accounts && !account) return null
+  if (error) return null
+  if (isLoading || !data) return <Skeleton className="h-36 w-full rounded-xl" />
+
+  return <SafeToSpendCard safe={data.safeToSpend} onExplain={() => router.push('/calendar?explain=safe')} />
+}
+
 export default function Dashboard() {
   const month = dateToYYYYMM(new Date())
   const { data, isLoading, error, mutate } = useCategories({ date: month })
@@ -214,6 +234,7 @@ export default function Dashboard() {
           </Button>
         }
       />
+      <DashboardSafeToSpend />
       {error
         ? <Card><ErrorState title="Couldn't load this month's budget" error={error} onRetry={() => mutate()} /></Card>
         : <BudgetKpiCards data={data} isLoading={isLoading} month={month} />

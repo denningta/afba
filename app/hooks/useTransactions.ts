@@ -33,11 +33,13 @@ export default function useTransactions(filter?: TransactionsFilter) {
     query: filter
   })
 
-  // Shows a change in every loaded transaction list straight away.
-  const patchLists = (id: string, patch: Partial<Transaction>) =>
+  // Shows changes in every loaded transaction list straight away.
+  const patchLists = (patches: Map<string, Partial<Transaction>>) =>
     mutate<Transaction[]>(
       isTransactionListKey,
-      lists => Array.isArray(lists) ? lists.map(t => String(t._id) === id ? { ...t, ...patch } : t) : lists,
+      lists => Array.isArray(lists)
+        ? lists.map(t => patches.has(String(t._id)) ? { ...t, ...patches.get(String(t._id)) } : t)
+        : lists,
       { revalidate: false }
     )
 
@@ -45,8 +47,8 @@ export default function useTransactions(filter?: TransactionsFilter) {
   // a failed save.
   const refreshAll = () => mutate(isTransactionDerivedKey)
 
-  const save = async (id: string, patch: Partial<Transaction>, request: () => Promise<unknown>) => {
-    await patchLists(id, patch)
+  const save = async (patches: Map<string, Partial<Transaction>>, request: () => Promise<unknown>) => {
+    await patchLists(patches)
     try {
       await request()
       return true
@@ -62,25 +64,32 @@ export default function useTransactions(filter?: TransactionsFilter) {
   const updateTransaction = (transaction: Transaction, fields: TransactionFieldUpdate) => {
     const id = String(transaction._id)
     const patch = Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, value ?? undefined]))
-    return save(id, patch, () => axios.patch('/api/transaction', { _id: id, fields }))
+    return save(new Map([[id, patch]]), () => axios.patch('/api/transaction', { _id: id, fields }))
   }
 
-  // Assigns a category by hand, or with `confirm` accepts the auto-assigned one.
-  const setCategory = (transaction: Transaction, category: Category | undefined, { confirm = false } = {}) => {
-    const id = String(transaction._id)
+  // Assigns a category by hand to one or more transactions in one save, or
+  // with `confirm` accepts each one's own auto-assigned category.
+  const setCategories = (transactions: Transaction[], category: Category | undefined, { confirm = false } = {}) => {
+    if (!transactions.length) return Promise.resolve(true)
     const patch: Partial<Transaction> = confirm
       ? { categoryConfirmed: true }
       : { userCategory: category, categorySource: 'manual', categoryConfirmed: true }
-    const next = { ...transaction, ...patch }
-    return save(id, patch, () => axios.patch('/api/transactions', {
-      updates: [{
-        _id: id,
-        userCategory: next.userCategory,
-        categorySource: next.categorySource,
-        categoryConfirmed: next.categoryConfirmed,
-      }]
+    const patches = new Map(transactions.map(t => [String(t._id), patch]))
+    return save(patches, () => axios.patch('/api/transactions', {
+      updates: transactions.map(t => {
+        const next = { ...t, ...patch }
+        return {
+          _id: String(t._id),
+          userCategory: next.userCategory,
+          categorySource: next.categorySource,
+          categoryConfirmed: next.categoryConfirmed,
+        }
+      })
     }))
   }
+
+  const setCategory = (transaction: Transaction, category: Category | undefined, options?: { confirm?: boolean }) =>
+    setCategories([transaction], category, options)
 
   const createTransaction = async (input: ManualTransactionInput) => {
     try {
@@ -103,5 +112,6 @@ export default function useTransactions(filter?: TransactionsFilter) {
     createTransaction,
     updateTransaction,
     setCategory,
+    setCategories,
   }
 }

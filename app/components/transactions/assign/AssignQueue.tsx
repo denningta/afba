@@ -5,6 +5,8 @@ import Link from "next/link"
 import { CheckCircle2, Info, TriangleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
@@ -12,7 +14,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import useTransactions from "@/app/hooks/useTransactions"
 import useCategories from "@/app/hooks/useCategories"
 import { dateToYYYYMM, formatShortDate } from "@/app/helpers/helperFunctions"
-import Transaction, { transactionLabel } from "@/app/interfaces/transaction"
+import Transaction, { getMerchantKey, transactionLabel } from "@/app/interfaces/transaction"
 import { Category } from "@/app/interfaces/categories"
 import { CategoryPicker } from "@/app/components/common/CategoryPicker"
 import AmazonOrderLink from "@/app/components/transactions/AmazonOrderLink"
@@ -27,12 +29,15 @@ type Decision =
   | { type: 'skipped' }
 
 export default function AssignQueue() {
-  const { data, setCategory, error, mutate } = useTransactions({ needsCategory: 'true' })
+  const { data, setCategory, setCategories, error, mutate } = useTransactions({ needsCategory: 'true' })
   const [queue, setQueue] = useState<Transaction[] | null>(null)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [decisions, setDecisions] = useState<Map<string, Decision>>(new Map())
   const [categoryDate, setCategoryDate] = useState('')
   const [detailsOpen, setDetailsOpen] = useState(false)
+  // Whether a choice also goes to the queue's other transactions from the
+  // same merchant. Kept across cards so turning it off sticks.
+  const [applyToSameMerchant, setApplyToSameMerchant] = useState(true)
   // Auto-focusing the search box is great on desktop (no on-screen keyboard
   // to fight with), but on mobile it pops the keyboard up over half the
   // screen the instant a new transaction loads, before the user has even
@@ -66,20 +71,44 @@ export default function AssignQueue() {
     categoryDate ? { date: categoryDate } : undefined
   )
 
+  // Skipped transactions still need a category; only assigned ones are done.
+  const isAssigned = (t: Transaction, from = decisions) => from.get(String(t._id))?.type === 'assigned'
+
+  // The queue's other transactions from the current one's merchant that
+  // still need a category.
+  const currentMerchant = currentTransaction ? getMerchantKey(currentTransaction) : null
+  const sameMerchant = currentMerchant && queue
+    ? queue.filter(t => t !== currentTransaction && !isAssigned(t) && getMerchantKey(t) === currentMerchant)
+    : []
+  const alsoApplyTo = applyToSameMerchant ? sameMerchant : []
+
+  // Records the decision for each transaction and moves to the next one that
+  // still needs one (those just decided along with it are passed over).
+  const decide = (transactions: Transaction[], category: Category | undefined) => {
+    const next = new Map(decisions)
+    transactions.forEach(t => next.set(String(t._id), { type: 'assigned', category }))
+    setDecisions(next)
+    setCurrentIndex(i => {
+      const following = queue?.findIndex((t, index) => index > i && !isAssigned(t, next)) ?? -1
+      return following === -1 ? (queue?.length ?? i + 1) : following
+    })
+  }
+
   const handleAssign = async (category: Category | undefined) => {
     if (!currentTransaction) return
-    const id = String(currentTransaction._id)
-    await setCategory(currentTransaction, category)
-    setDecisions(prev => new Map(prev).set(id, { type: 'assigned', category }))
-    setCurrentIndex(i => i + 1)
+    const targets = [currentTransaction, ...alsoApplyTo]
+    await setCategories(targets, category)
+    decide(targets, category)
   }
 
   const handleConfirm = async () => {
     if (!currentTransaction) return
-    const id = String(currentTransaction._id)
-    await setCategory(currentTransaction, currentTransaction.userCategory, { confirm: true })
-    setDecisions(prev => new Map(prev).set(id, { type: 'assigned', category: currentTransaction.userCategory }))
-    setCurrentIndex(i => i + 1)
+    const category = currentTransaction.userCategory
+    // Confirming alone keeps the guess as an accepted auto category; applying
+    // it to others is a choice made by hand.
+    if (alsoApplyTo.length) await setCategories([currentTransaction, ...alsoApplyTo], category)
+    else await setCategory(currentTransaction, category, { confirm: true })
+    decide([currentTransaction, ...alsoApplyTo], category)
   }
 
   const handleSkip = () => {
@@ -271,6 +300,18 @@ export default function AssignQueue() {
             {needsReview && (
               <div className="text-sm text-muted-foreground">
                 Auto-assigned - tap the badge or press Enter to confirm, or search to change it.
+              </div>
+            )}
+            {sameMerchant.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="apply-same-merchant"
+                  checked={applyToSameMerchant}
+                  onCheckedChange={checked => setApplyToSameMerchant(checked === true)}
+                />
+                <Label htmlFor="apply-same-merchant" className="font-normal">
+                  Also apply to {sameMerchant.length} more from {description}
+                </Label>
               </div>
             )}
             {categoryDate && (

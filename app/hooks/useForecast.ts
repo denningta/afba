@@ -4,10 +4,17 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import fetcher from "@/app/lib/fetcher"
 import { ForecastResponse, ForecastSettings, PaySchedule, ScheduledTransaction, StreamOverride } from "@/app/interfaces/forecast"
+import { Account } from "@/app/interfaces/account"
 
 // Always fetch the longest horizon; the page trims it client-side, so switching
 // 30/60/90 days is instant.
 export const FORECAST_FETCH_DAYS = 90
+
+// Accounts a forecast can run on: Plaid-linked checking/savings, checking
+// first (the first one is the default everywhere a forecast shows).
+export const forecastAccounts = (accounts: Account[] | undefined) => (accounts ?? [])
+  .filter(a => a.item_id && a.type === 'depository')
+  .sort((a, b) => Number(b.subtype === 'checking') - Number(a.subtype === 'checking'))
 
 const isForecastKey = (key: unknown) => typeof key === 'string' && key.startsWith('/api/forecast')
 

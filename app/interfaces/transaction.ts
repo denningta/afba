@@ -42,3 +42,13 @@ export const transactionLabel = (t: { displayName?: string | null, merchant_name
 
 // Stored transaction dates are YYYY-MM-DD.
 export const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+// Which merchant a transaction is from: Plaid's merchant id when it has one,
+// else the merchant name or description, lowercased. Used to learn and apply
+// categories per merchant.
+export function getMerchantKey(transaction: Pick<Transaction, 'merchant_entity_id' | 'merchant_name' | 'name'>): string | null {
+  if (transaction.merchant_entity_id) return transaction.merchant_entity_id
+
+  const fallback = transaction.merchant_name ?? transaction.name
+  return fallback ? fallback.trim().toLowerCase() : null
+}

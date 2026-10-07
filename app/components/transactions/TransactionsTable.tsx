@@ -8,9 +8,9 @@ import { TransactionsFilter } from "@/app/queries/transactions"
 import { DataTable } from "../common/DataTable/DataTable"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { PlusIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, PlusIcon, Trash2Icon } from "lucide-react"
 import { useMemo, useState } from "react"
-import Transaction from "@/app/interfaces/transaction"
+import Transaction, { needsCategory } from "@/app/interfaces/transaction"
 import DeleteTransactionsDialog from "./DeleteTransactionsDialog"
 import PageHeader from "../common/PageHeader"
 import { EmptyState } from "../common/StateMessage"
@@ -45,12 +45,22 @@ export default function TransactionsTable({
     isLoading,
     mutate,
     createTransaction,
+    setCategories,
   } = useTransactions(searchParams ?? {})
 
   const stableData = useMemo(() => data ?? [], [data])
   const [deleting, setDeleting] = useState<{ rows: Transaction[], clearSelection: () => void } | null>(null)
 
   const [adding, setAdding] = useState(false)
+
+  // Accepts the auto-assigned category on each selected row that has one
+  // waiting for review; other selected rows are left as they are.
+  const confirmSelected = async (rows: Transaction[], clearSelection: () => void) => {
+    const guesses = rows.filter(t => t.userCategory && needsCategory(t))
+    if (!await setCategories(guesses, undefined, { confirm: true })) return
+    toast.success(`Confirmed ${guesses.length} categor${guesses.length === 1 ? 'y' : 'ies'}.`)
+    clearSelection()
+  }
 
   const handleAddTransaction = async ({ name, amount, date, category }: TransactionFormValues) => {
     if (!await createTransaction({ name, amount, date, userCategory: category })) return "Couldn't add the transaction."
@@ -108,12 +118,24 @@ export default function TransactionsTable({
         columnVisibilityStorageKey="afba:transactions-columns"
         defaultColumnVisibility={DEFAULT_TRANSACTION_COLUMN_VISIBILITY}
         getRowId={getRowId}
-        selectionActions={(rows, clearSelection) => (
-          <Button variant="outline" className="text-destructive" onClick={() => setDeleting({ rows, clearSelection })}>
-            <Trash2Icon />
-            Delete {rows.length}
-          </Button>
-        )}
+        selectionActions={(rows, clearSelection) => {
+          const guesses = rows.filter(t => t.userCategory && needsCategory(t)).length
+          return (
+            <>
+              {guesses > 0 &&
+                <Button variant="outline" onClick={() => confirmSelected(rows, clearSelection)}
+                  title="Accept the auto-assigned category on the selected transactions">
+                  <CheckIcon />
+                  Confirm {guesses}
+                </Button>
+              }
+              <Button variant="outline" className="text-destructive" onClick={() => setDeleting({ rows, clearSelection })}>
+                <Trash2Icon />
+                Delete {rows.length}
+              </Button>
+            </>
+          )
+        }}
       />
       <DeleteTransactionsDialog
         transactions={deleting?.rows ?? []}

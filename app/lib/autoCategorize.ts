@@ -1,7 +1,7 @@
 import { categories, transactions } from "@/app/lib/mongodb"
 import { dateToYYYYMM } from "@/app/helpers/helperFunctions"
 import { Category } from "@/app/interfaces/categories"
-import Transaction from "@/app/interfaces/transaction"
+import Transaction, { getMerchantKey } from "@/app/interfaces/transaction"
 
 export const MIN_SAMPLES = 2
 export const MIN_CONFIDENCE = 0.75
@@ -18,12 +18,8 @@ interface MerchantCategoryGroup {
   total: number
 }
 
-export function getMerchantKey(transaction: Transaction): string | null {
-  if (transaction.merchant_entity_id) return transaction.merchant_entity_id
-
-  const fallback = transaction.merchant_name ?? transaction.name
-  return fallback ? fallback.trim().toLowerCase() : null
-}
+// Shared with the browser (the Assign queue groups by merchant the same way).
+export { getMerchantKey }
 
 // Builds a merchant -> best-category lookup from the user's own categorization
 // history. Only transactions that were categorized by hand, or auto-categorized
